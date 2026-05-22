@@ -21,6 +21,8 @@ __pycache__/
 
 # JavaScript / Browser-App
 /node_modules/
+/test-results/
+/playwright-report/
 
 # macOS
 .DS_Store
