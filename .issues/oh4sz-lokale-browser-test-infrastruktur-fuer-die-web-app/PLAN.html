@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="artifact-source-sha256" content="82ee70067d196291bf05e79c39aa5549f846655ce13e8ad8626057ead7e7c2f3">
+<meta name="artifact-source-file" content="PLAN.md">
+<meta name="artifact-generated-at" content="2026-05-22">
+<meta name="design-system-version" content="ds-1">
+<title>Plan: Lokale Browser-Test-Infrastruktur fuer die Web-App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+</head>
+<body>
+<div class="page">
+
+<header class="row">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">oh4sz</span>Plan</p>
+  </div>
+  <div class="body">
+    <h1 class="masthead-title">Lokale Browser-Test-Infrastruktur fuer die Web-App</h1>
+    <p class="masthead-sub">Issue: oh4sz &middot; Generated 2026-05-22</p>
+  </div>
+</header>
+
+<hr class="rule">
+
+<section class="row" id="strategy">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">01</span>Strategy</p>
+    <p class="margin-note">Read this first &mdash; the rest is detail.</p>
+  </div>
+  <div class="body">
+    <h2>Strategy summary</h2>
+    <p>Eine headless <strong>Playwright</strong>-e2e-Test-Infrastruktur fuer die
+       statische Web-App <code>web/</code>, plus ein Build-Zeit-Versionsstempel
+       in der Fusszeile. Die Richtung:
+       <span class="mark mark-green">eine einzige Abhaengigkeit
+       (<code>@playwright/test</code>) deckt Runner, Browser, Server-Lifecycle,
+       Upload und Auto-Retry-Assertions ab</span> &mdash; kein eigener
+       Server-Tanz, keine festen Sleeps.</p>
+    <ul class="points">
+      <li class="point">
+        <p class="point-claim">Produktivcode zuerst, Specs danach.</p>
+        <p class="point-detail">Test-Seam, ECharts-Vendoring und Stempel
+          (Tasks 1&ndash;4) landen vor dem Harness &mdash; so testet jeder
+          Spec gegen einen vollstaendigen Produktivstand.</p>
+      </li>
+      <li class="point is-key">
+        <p class="point-claim">Der Sankey-Klick ist der harte Teil.</p>
+        <p class="point-detail">ECharts-Instanzen liegen in einer Closure,
+          <code>click</code> ist ein Maus-Event. Ein minimaler Test-Seam
+          (<code>window.__sankeyDrill</code>) macht den Drill-down
+          deterministisch &mdash; ohne Verhaltensaenderung.</p>
+      </li>
+      <li class="point is-note">
+        <p class="point-claim">Hermetisch durch Vendoring.</p>
+        <p class="point-detail">ECharts wandert vom CDN nach
+          <code>web/vendor/echarts/</code> &mdash; netzunabhaengige Tests und
+          offline-faehiges Deployment.</p>
+      </li>
+      <li class="point is-note">
+        <p class="point-claim">Anlassfall im Plan verankert.</p>
+        <p class="point-detail">Task 6 reproduziert den gemeldeten
+          Sankey-Fehler; ist es ein echter Bug, wird er im selben Zug in
+          <code>dashboard.js</code> behoben.</p>
+      </li>
+    </ul>
+    <div class="stats">
+      <div class="stat"><div class="stat-num">7</div>
+        <div class="stat-label">Tasks</div></div>
+      <div class="stat"><div class="stat-num is-green">7</div>
+        <div class="stat-label">mit Auto-Verify</div></div>
+      <div class="stat"><div class="stat-num">6</div>
+        <div class="stat-label">e2e-Specs</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="flow">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">02</span>Flow</p>
+  </div>
+  <div class="body">
+    <h2>Task flow &amp; dependencies</h2>
+    <div class="flow">
+      <div class="flow-node is-foundation">
+        <span class="n">Task 1</span>
+        <span class="t">Sankey-Test-Seam</span>
+        <span class="d">drillAufKnoten() + window.__sankeyDrill in dashboard.js.</span>
+      </div>
+      <div class="flow-node is-foundation">
+        <span class="n">Task 2</span>
+        <span class="t">ECharts vendoren</span>
+        <span class="d">CDN -&gt; web/vendor/echarts/, index.html umstellen.</span>
+      </div>
+      <div class="flow-node is-foundation">
+        <span class="n">Task 3</span>
+        <span class="t">Versionsstempel-UI</span>
+        <span class="d">#build-stamp im Footer, version.json laden.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 4</span>
+        <span class="t">pages.yml stempelt</span>
+        <span class="d">Schreibt version.json mit GITHUB_SHA beim Deploy.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 5</span>
+        <span class="t">Playwright-Harness</span>
+        <span class="d">devDependency, config, npm-Skript, Makefile, Doku.</span>
+      </div>
+      <div class="flow-node is-key">
+        <span class="n">Task 6</span>
+        <span class="t">e2e-Specs</span>
+        <span class="d">Smoke/Upload/Dashboard/Sankey/Persistenz/Stempel.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 7</span>
+        <span class="t">CI-Workflow</span>
+        <span class="d">Separater e2e.yml auf ubuntu-latest.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="decisions">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">03</span>Decisions</p>
+  </div>
+  <div class="body">
+    <h2>Key decisions &amp; options</h2>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Test-Tool</p>
+        <span class="lozenge is-chosen">Playwright Test</span>
+      </div>
+      <p class="decision-body">Eine Abhaengigkeit deckt Runner, Browser,
+        <code>webServer</code>-Orchestrierung, <code>setInputFiles</code> und
+        Auto-Retry-Assertions ab. Recherche hat Playwright 1.60 + Chromium im
+        Container real gestartet.</p>
+      <p class="decision-body rejected">Puppeteer/WebdriverIO &mdash; brauchen
+        separaten Runner und eigene Server-Lifecycle-Loesung.</p>
+      <p class="decision-body rejected">Cypress &mdash; In-Page-Modell
+        vertraegt sich schlecht mit WASM-Workern.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Sankey-Klick deterministisch testen</p>
+        <span class="lozenge is-chosen">Produktiv-Test-Seam</span>
+      </div>
+      <p class="decision-body">Handler-Rumpf in <code>drillAufKnoten(d)</code>
+        faktorisieren, <code>window.__sankeyDrill(name)</code> exponieren &mdash;
+        3&ndash;5 Zeilen, keine Verhaltensaenderung. Isoliert die Drill-Logik
+        von Render-/Timing-Effekten.</p>
+      <p class="decision-body rejected">Reiner Pixel-Klick auf den Canvas
+        &mdash; sproede; bleibt nur als zusaetzlicher Smoke-Test.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Versionsstempel-Mechanik</p>
+        <span class="lozenge is-chosen">version.json + fetch</span>
+      </div>
+      <p class="decision-body"><code>pages.yml</code> schreibt
+        <code>web/version.json</code> mit <code>GITHUB_SHA</code>; ein
+        committeter <code>dev</code>-Fallback haelt den lokalen Betrieb sauber.
+        <code>web/</code> bleibt im Git byte-identisch.</p>
+      <p class="decision-body rejected">Platzhalter-<code>sed</code> in
+        <code>index.html</code> &mdash; haesslicher Platzhalter im committeten
+        Quelltext, schlechtere lokale DX.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">CI-Anbindung</p>
+        <span class="lozenge is-note">Separater Workflow</span>
+      </div>
+      <p class="decision-body">Neuer <code>.github/workflows/e2e.yml</code> auf
+        <code>ubuntu-latest</code> mit
+        <code>playwright install --with-deps chromium</code> &mdash; getrennt
+        von <code>pages.yml</code>, kein e2e-Job im Deploy.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="detail">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">04</span>Detail</p>
+  </div>
+  <div class="body">
+    <h2>Full detail</h2>
+    <details class="detail">
+      <summary>Show full artifact source
+        <span class="summary-hint">click to expand</span></summary>
+      <div class="detail-body">
+        <pre><code id="artifact-source-target"></code></pre>
+      </div>
+    </details>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="provenance">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">05</span>Provenance</p>
+  </div>
+  <div class="body">
+    <h2>Provenance</h2>
+    <p>Generated from the canonical <code>.md</code>. This HTML is never
+       hand-edited &mdash; if the <code>.md</code> changes, regenerate with
+       <code>/issue:view</code>.</p>
+    <footer class="footer">
+      <span>Source: <code>PLAN.md</code> &middot;
+        SHA-256 <code>82ee70067d196291bf05e79c39aa5549f846655ce13e8ad8626057ead7e7c2f3</code></span>
+      <span>Generated 2026-05-22 &middot; design system ds-1</span>
+    </footer>
+  </div>
+</section>
+
+</div>
+
+<script type="application/json" id="artifact-source">
+{"source": "# Plan: Lokale Browser-Test-Infrastruktur fuer die Web-App\n\n<objective>\nWas dieser Plan erreicht: Eine lokal und in CI ausfuehrbare, headless\nPlaywright-e2e-Test-Infrastruktur fuer die statische Web-App (`web/`), die den\ngesamten Nutzerpfad abdeckt (Seite laedt, PDF-Upload, Dashboard, Tabs,\nSankey-Drill-down, Persistenz) sowie ein Build-Zeit-Versionsstempel in der\nFusszeile zur Erkennung veralteter Deployments.\n\nWarum es zaehlt: Die bestehenden JS-Tests (`tests/js/run.mjs`) decken nur die\nDatenpipeline in Node ab, nie die DOM-/Interaktionsschicht. Der gemeldete\n\"Sankey-Drill-down funktioniert nicht\" liess sich bislang nicht automatisiert\nvon einem veralteten Deployment unterscheiden. Diese Luecke schliesst der Plan.\n\nScope \u2014 im Plan: Playwright als devDependency, `playwright.config.mjs`,\n`tests/e2e/`-Specs, ein npm-Skript + Makefile-Ziel, ein separater\nGitHub-Actions-Workflow, ECharts-Vendoring nach `web/vendor/echarts/`, ein\nminimaler Test-Seam in `dashboard.js`, das `version.json`-Versionsstempel-System.\nAusser Scope: Aenderung der Datenpipeline, neue Test-IDs im DOM (vorhandene\nHooks reichen), Multi-Browser-Tests (nur Chromium).\n\nKein CONTEXT.md vorhanden \u2014 Entscheidungen folgen den Empfehlungen aus\nRESEARCH.md (allesamt vom Recherche-Schritt im Container real verifiziert).\n</objective>\n\n<strategy>\nRichtung: Playwright Test (`@playwright/test@^1.60.0`, nur Chromium) als\ne2e-Harness. Es ist die einzige Einzelabhaengigkeit, die Runner, Browser,\nServer-Orchestrierung (`webServer`), Datei-Upload (`setInputFiles`) und\nselbst-wiederholende Assertions abdeckt \u2014 fuer einen kleinen statischen\nVanilla-JS-Stack (ESM, WASM, IndexedDB, ECharts) die unstrittige Wahl.\n\nStrategische Optionen und warum die gewaehlte gewinnt:\n- Tool: Playwright vs. Puppeteer/Cypress/WebdriverIO \u2014 Playwright gewinnt, weil\n  alle anderen einen separaten Runner und/oder eine eigene Server-Lifecycle-\n  Loesung brauchen; Cypress' In-Page-Modell vertraegt sich schlecht mit\n  WASM-Workern. Recherche hat Playwright 1.60 + Chromium im Container real\n  gestartet.\n- Server: `scripts/serve.mjs` via Playwright `webServer` wiederverwenden statt\n  Server-Start/-Stop selbst zu bauen \u2014 `webServer` uebernimmt Start, Warten und\n  Teardown (auch bei Fehlschlag).\n- Sankey-Klick: Der schwierige Teil. Die ECharts-Instanzen liegen in einer\n  Closure in `dashboard.js`, ECharts' `click` ist ein Maus-Event (kein\n  `dispatchAction`). Gewaehlt: ein minimaler Produktiv-Seam \u2014 Handler-Rumpf in\n  eine benannte Funktion `drillAufKnoten(d)` faktorisieren und\n  `window.__sankeyDrill(name)` exponieren. Deterministisch, isoliert die\n  Drill-Logik von Render-/Timing-Effekten, beantwortet die Anlassfall-Frage\n  (echter Bug vs. stale Deploy) sauber. Alternative \u2014 Pixel-Klick auf den\n  Canvas \u2014 bleibt als zusaetzlicher duenner Smoke-Test erhalten, deckt die\n  reale `inst.on('click')`-Verdrahtung mit ab.\n- ECharts vom CDN: nach `web/vendor/echarts/` vendoren (wie mupdf/sqlite-wasm)\n  \u2014 hermetische, netzunabhaengige Tests und Offline-faehiges Deployment.\n- Versionsstempel: `version.json` (von `pages.yml` mit `${GITHUB_SHA}`\n  geschrieben) statt Platzhalter-`sed` in `index.html` \u2014 haelt `web/` im Git\n  byte-identisch, ein committeter `dev`-Fallback haelt den lokalen Betrieb\n  sauber.\n\nWichtige Entscheidungspunkte: Reihenfolge ist bewusst Seam/Vendoring/Stempel\nzuerst (Produktivcode), dann Harness, dann Specs, dann CI \u2014 so testet jeder\nSpec gegen einen bereits vollstaendigen Produktivstand. Der erste konkrete\nSankey-Lauf (Task 6) reproduziert den gemeldeten Fehler und fixt ihn ggf.\nim selben Zug.\n</strategy>\n\n<context>\nIssue: @.issues/oh4sz-lokale-browser-test-infrastruktur-fuer-die-web-app/ISSUE.md\nResearch: @.issues/oh4sz-lokale-browser-test-infrastruktur-fuer-die-web-app/RESEARCH.md\n\n<interfaces>\n<!-- Executor: diese Vertraege direkt verwenden. Codebase NICHT erkunden. -->\n\nscripts/serve.mjs \u2014 statischer Server, wiederverwendbar.\n  CLI:   node scripts/serve.mjs [port]      (Default-Port 8080)\n  URL:   http://localhost:PORT/web/         (App-Wurzel ist /web/)\n  WURZEL = process.cwd()  -> Server MUSS aus der Repo-Wurzel laufen.\n  Kein Stop-API, kein Port-0-Modus, setzt KEINE COOP/COEP-Header (bewusst).\n  -> Server nicht selbst start/kill basteln: Playwright webServer-Block nutzen\n     (command \"node scripts/serve.mjs 8080\", url http://localhost:8080/web/,\n      reuseExistingServer: !process.env.CI).\n\nweb/ \u2014 beobachtbare Zustaende fuer Assertions (DOM-Hooks stabil, KEINE neuen\n        test-ids noetig):\n  window.__appBereit === true                    -> App initialisiert (Erfolg\n                                                    ODER Fehler \u2014 app.js:54)\n  document.querySelector(\"#boot-banner\") === null -> kein Startfehler\n  #file-input (input type=file, hidden, display:none) -> setInputFiles direkt\n  Upload endet mit location.reload()             -> NACH dem Reload assertieren,\n                                                    NICHT auf #progress-list\n  #doc-tbody tr                                  -> geladene Dokumentzeilen\n  span.doc-status.ok                             -> Pruefstatus gruen (5/5)\n  #dashboard-leer (div, hidden umgeschaltet)     -> Empty-State\n  #dashboard-inhalt (div, hidden umgeschaltet)   -> Dashboard sichtbar/aus\n  .tab-btn[data-tab=\"...\"] / .tab-panel[data-panel=\"...\"], Klasse .is-active\n  #c_sankey                                      -> ECharts-Sankey-CANVAS\n  #sankey-hinweis  Klasse .is-visible            -> robustes Drill-down-Signal\n  #sankey-reset                                  -> Uebersicht-Button\n  Footer web/index.html:332-335 <footer class=\"footer\"> mit #fuss-quelle und\n    einem zweiten <span> -> Einbaustelle fuer #build-stamp.\n  Fixture-PDF: documents/VA-2026-Auflage.pdf (5,16 MB, bekannt 5/5 Pruefungen,\n    Nettoergebnis 474200 \u2014 bereits Referenzfall in tests/js/run.mjs).\n\nweb/js/app.js init() (app.js:35-55):\n  fetch(\"./schema.sql\") -> oeffneDb -> schemaAnwenden -> verdrahteUpload()\n  -> zeichneDokumentliste() -> zeichneDashboard() -> window.__appBereit = true\n  Es gibt KEIN bestehendes version/build-stamp-Handling \u2014 komplett neu.\n\nweb/vendor/dashboard/dashboard.js \u2014 klassisches IIFE, ECharts-Instanzen in der\n  Closure `var charts = {}` (charts[\"c_sankey\"] = { inst, kind, src }).\n  setupSankeyDrill() (dashboard.js:465-503) registriert\n  entry.inst.on(\"click\", function(params){ ... }) \u2014 der Handler prueft\n  params.dataType === \"node\", liest params.data ({drillSeite, drillKey,\n  drillExpandbar}), setzt sankeyExpand, ruft renderSankey() + updateSankeyHinweis().\n  ECharts' \"click\" ist ein MAUS-Event \u2014 dispatchAction loest es NICHT aus.\n  window.echarts ist global (CDN-<script>); echarts.getInstanceByDom(el) holt\n  die Instanz.\n\n.github/workflows/pages.yml \u2014 Job `deploy` auf ubuntu-latest, KEIN Build-Schritt\n  (laedt web/ unveraendert via upload-pages-artifact@v5). ${{ github.sha }} bzw.\n  $GITHUB_SHA im Workflow verfuegbar. Es existiert KEIN Test-Workflow.\n\npackage.json \u2014 \"type\":\"module\", KEINE devDependencies. Scripts: test:js, poc,\n  serve. package-lock.json minimal (1007 Bytes).\n\nMakefile \u2014 web-sync (kopiert schema.sql + sql/ nach web/), web-deps, web-test,\n  web-serve, web-docker, test-js. .PHONY-Liste am Ende listet alle web-*-Ziele.\n  WEB_PORT ?= 8080.\n</interfaces>\n\n<call_sites>\nSearched: `serve.mjs`, `playwright`, `test:js`/`test:e2e`, `web-e2e`,\n`echarts`, `version.json`, `__sankeyDrill`.\nSurfaces grepped: .github/workflows/, Makefile, package.json scripts, README,\nweb/index.html, web/js/.\n\nFound:\n- .github/workflows/pages.yml \u2014 `deploy`-Job, kein Build-Schritt \u2014 IN SCOPE\n  (Task 4: neuer Step schreibt web/version.json vor upload-pages-artifact).\n- Makefile `web-serve`/`web-docker` \u2014 rufen `node scripts/serve.mjs $(WEB_PORT)`\n  \u2014 OUT OF SCOPE (serve.mjs wird nicht geaendert; webServer ruft denselben\n  unveraenderten Befehl).\n- package.json scripts \u2014 `serve`, `test:js` \u2014 IN SCOPE (Task 5: neues Skript\n  `test:e2e`; bestehende Skripte unveraendert).\n- web/index.html:10 \u2014 `<script src=\"https://cdn.jsdelivr.net/...echarts...\">`\n  \u2014 IN SCOPE (Task 2: auf lokale vendorisierte Kopie umstellen).\n- web/index.html:332-335 Footer \u2014 IN SCOPE (Task 3: neues #build-stamp-<span>).\n- README.md \u2014 Build/Test-Doku \u2014 IN SCOPE (Task 5: lokale e2e-Ausfuehrung\n  dokumentieren).\nKein neuer CLI-Flag fuer serve.mjs noetig \u2014 der bestehende Positional-Port\ngenuegt fuer `webServer`.\n</call_sites>\n\nKey files:\n@web/vendor/dashboard/dashboard.js \u2014 Sankey-Klick-Verdrahtung (Test-Seam, Task 1)\n@web/index.html \u2014 ECharts-<script> + Footer (Tasks 2, 3)\n@web/js/app.js \u2014 Boot-Flow, version.json laden (Task 3)\n@scripts/serve.mjs \u2014 Test-Webserver (von webServer wiederverwendet, Task 5)\n@.github/workflows/pages.yml \u2014 Versionsstempel-Step (Task 4)\n</context>\n\n<commit_format>\nFormat: aus .issues/config.yaml \u2014 `{id}: {message}`, ohne Werkzeug-Attribution.\nIssue-ID: `oh4sz`.\nBeispiel: `oh4sz: Sankey-Test-Seam in dashboard.js ergaenzen`\nMuster: `oh4sz: <kurze deutsche Beschreibung im Imperativ>`\nKeine Conventional-Commit-Typen, keine \"claude\"/Tool-Erwaehnung in Commits,\nCode, Kommentaren oder Dateinamen.\n</commit_format>\n\n<tasks>\n\n<task type=\"auto\">\n  <name>Task 1: Test-Seam in dashboard.js fuer den Sankey-Drill-down</name>\n  <files>web/vendor/dashboard/dashboard.js</files>\n  <action>\n  Den Rumpf des Sankey-Klick-Handlers in `setupSankeyDrill()`\n  (dashboard.js:465-503) in eine benannte Funktion herausfaktorisieren, damit\n  der Drill-down deterministisch testbar ist, OHNE das Bedienverhalten zu\n  aendern.\n\n  Konkret, innerhalb der IIFE:\n  1. Eine benannte Funktion `function drillAufKnoten(d) { ... }` anlegen, die\n     EXAKT die bestehende Logik aus dem `inst.on(\"click\")`-Handler enthaelt:\n     - `d.drillSeite === \"mitte\" || !d.drillSeite` -> `sankeyExpand = null`\n     - `d.drillExpandbar` -> `sankeyExpand = { seite: d.drillSeite, key: d.drillKey }`\n     - Klick in bereits aufgeklappten Bereich (sankeyExpand passt zu d) -> `null`\n     - danach `renderSankey(); updateSankeyHinweis();`\n  2. Den `inst.on(\"click\", ...)`-Handler so kuerzen, dass er nur noch\n     `if (!params || params.dataType !== \"node\") return;` prueft und dann\n     `drillAufKnoten(params.data || {});` aufruft. Verhalten bleibt identisch.\n  3. Einen Test-Seam exponieren \u2014 innerhalb von `setupSankeyDrill()`, nach der\n     Handler-Registrierung:\n     ```js\n     window.__sankeyDrill = function (knotenName) {\n       var entry = charts[\"c_sankey\"];\n       if (!entry) return false;\n       var opt = entry.inst.getOption();\n       var knoten = (opt.series[0].data || []).find(function (n) {\n         return n.name === knotenName;\n       });\n       if (!knoten) return false;\n       drillAufKnoten(knoten);\n       return true;\n     };\n     ```\n  Der Seam ist minimal (kein neues UI, keine Verhaltensaenderung), nur ein\n  zusaetzlicher programmatischer Einstieg in den vorhandenen Code-Pfad.\n  Deutsche Bezeichner beibehalten, klassischer IIFE-Skriptstil (kein ESM,\n  `var`, keine Arrow-Functions ausser bereits vorhanden).\n  </action>\n  <verify>\n  <automated>node --check web/vendor/dashboard/dashboard.js && grep -q \"window.__sankeyDrill\" web/vendor/dashboard/dashboard.js && grep -q \"function drillAufKnoten\" web/vendor/dashboard/dashboard.js && npm run test:js</automated>\n  </verify>\n  <done>\n  - `dashboard.js` parst fehlerfrei (`node --check`)\n  - `drillAufKnoten(d)` existiert und enthaelt die komplette frueher inline\n    stehende Drill-Logik\n  - `inst.on(\"click\")` ruft `drillAufKnoten` auf \u2014 Bedienverhalten unveraendert\n  - `window.__sankeyDrill(name)` ist exponiert, gibt `true`/`false` zurueck\n  - Bestehende JS-Tests (`npm run test:js`) bleiben gruen\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 2: ECharts nach web/vendor/echarts/ vendoren</name>\n  <files>web/vendor/echarts/echarts.min.js, web/index.html</files>\n  <action>\n  ECharts vom CDN loesen, damit Tests und das Deployment hermetisch/offline-\n  faehig sind (analog zu den bereits vendorisierten mupdf/sqlite-wasm).\n  1. `web/vendor/echarts/echarts.min.js` anlegen \u2014 exakt die Version, die\n     `web/index.html:10` bisher per CDN laedt (`echarts@5.5.1`,\n     `cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js`). Herunterladen\n     mit `curl -fsSL <url> -o web/vendor/echarts/echarts.min.js` (Netz im\n     Container verfuegbar). Datei wird committet \u2014 sie ist Vendor-Code, nicht\n     `.gitignore`-pflichtig.\n  2. In `web/index.html:10` das `<script src=\"https://cdn.jsdelivr.net/...\">`\n     auf die lokale relative Kopie umstellen:\n     `<script src=\"./vendor/echarts/echarts.min.js\"><\/script>`. Position im\n     `<head>` (vor `js/app.js`) beibehalten \u2014 `window.echarts` muss global\n     bleiben, bevor `dashboard.js` nachgeladen wird.\n  Keine weitere CDN-Referenz fuer ECharts darf in `web/` zurueckbleiben.\n  </action>\n  <verify>\n  <automated>test -s web/vendor/echarts/echarts.min.js && grep -q './vendor/echarts/echarts.min.js' web/index.html && ! grep -rn 'cdn.jsdelivr.net' web/index.html && head -c 200 web/vendor/echarts/echarts.min.js | grep -qi echarts</automated>\n  </verify>\n  <done>\n  - `web/vendor/echarts/echarts.min.js` existiert, nicht leer, enthaelt ECharts\n  - `web/index.html` laedt ECharts aus der lokalen Vendor-Kopie\n  - Keine `cdn.jsdelivr.net`-Referenz mehr in `web/index.html`\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 3: Versionsstempel \u2014 #build-stamp im Footer + version.json laden</name>\n  <files>web/index.html, web/js/app.js, web/version.json</files>\n  <action>\n  Den Git-Commit, mit dem die Seite gebaut wurde, in der Fusszeile sichtbar\n  machen (Variante A aus der Recherche \u2014 `version.json` + `fetch`).\n  1. `web/index.html` Footer (Z.332-335, `<footer class=\"footer\">`): ein neues\n     `<span id=\"build-stamp\"></span>` ergaenzen (nach den vorhandenen zwei\n     Spans). Leerer Initialtext.\n  2. `web/version.json` als committeter Dev-Fallback anlegen:\n     `{ \"commit\": \"dev\", \"shortCommit\": \"dev\", \"builtAt\": \"\" }`. Diese Datei\n     bleibt im Repo (committet) und wird von CI im Runner ueberschrieben \u2014 sie\n     ist fuer den lokalen Betrieb (`scripts/serve.mjs`) noetig, sonst 404.\n  3. `.gitignore` NICHT aendern: `web/version.json` muss committet bleiben.\n     `pages.yml` (Task 4) ueberschreibt die Datei nur transient im CI-Runner,\n     committet sie nie zurueck \u2014 es entsteht also keine Stempel-Churn im Repo.\n  4. `web/js/app.js`: am Ende von `init()` (nach `window.__appBereit = true`)\n     den Stempel laden \u2014 entweder inline oder als eigene Funktion\n     `zeigeBuildStempel()`:\n     ```js\n     fetch(\"./version.json\")\n       .then((r) => (r.ok ? r.json() : null))\n       .then((v) => {\n         const el = document.getElementById(\"build-stamp\");\n         if (!el) return;\n         el.textContent = v && v.shortCommit\n           ? \"Build \" + v.shortCommit\n           : \"Build dev\";\n       })\n       .catch(() => {});\n     ```\n     Fehlt `version.json` oder schlaegt der Fetch fehl, faellt der Text sauber\n     auf \"Build dev\" zurueck \u2014 kein Boot-Fehler, `#boot-banner` bleibt aus.\n     Deutsche Texte beibehalten.\n  </action>\n  <verify>\n  <automated>node --check web/js/app.js && grep -q 'id=\"build-stamp\"' web/index.html && python3 -c \"import json; json.load(open('web/version.json'))\" && grep -q 'version.json' web/js/app.js</automated>\n  </verify>\n  <done>\n  - `web/index.html` Footer enthaelt `<span id=\"build-stamp\">`\n  - `web/version.json` ist gueltiges JSON mit `commit`/`shortCommit` (Dev-Wert)\n  - `web/js/app.js` laedt `version.json` und fuellt `#build-stamp`, mit\n    sauberem Fallback auf \"Build dev\" bei Fehlschlag\n  - `app.js` parst fehlerfrei\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 4: pages.yml schreibt version.json beim Deploy</name>\n  <files>.github/workflows/pages.yml</files>\n  <action>\n  Im `deploy`-Job von `.github/workflows/pages.yml` einen neuen Step VOR\n  `actions/upload-pages-artifact@v5` einfuegen, der den aktuellen Commit in\n  `web/version.json` schreibt (ueberschreibt den committeten Dev-Fallback):\n  ```yaml\n      - name: Build-Stempel schreiben\n        run: |\n          cat > web/version.json <<EOF\n          { \"commit\": \"${GITHUB_SHA}\", \"shortCommit\": \"${GITHUB_SHA:0:7}\", \"builtAt\": \"$(date -u +%FT%TZ)\" }\n          EOF\n  ```\n  Reihenfolge im Job: `checkout` -> `configure-pages` -> `Build-Stempel\n  schreiben` -> `upload-pages-artifact` -> `deploy-pages`. Die\n  `${GITHUB_SHA:0:7}`-Substitution funktioniert nur in einem `run:`-Shell-Step\n  (Bash) \u2014 daher die Slicing-Logik im `run:`-Block belassen, nicht in YAML-\n  Ausdruecken. `pages.yml` bekommt KEINEN e2e-Job \u2014 die Browser-Tests laufen\n  im separaten Workflow aus Task 7.\n  </action>\n  <verify>\n  <automated>python3 -c \"import yaml; d=yaml.safe_load(open('.github/workflows/pages.yml')); steps=d['jobs']['deploy']['steps']; names=[s.get('name','') for s in steps]; assert 'Build-Stempel schreiben' in names, names; ui=next(i for i,s in enumerate(steps) if 'upload-pages-artifact' in str(s.get('uses',''))); assert names.index('Build-Stempel schreiben') < ui, 'Stempel-Step muss vor upload-pages-artifact stehen'; print('ok')\"</automated>\n  </verify>\n  <done>\n  - `pages.yml` enthaelt einen `Build-Stempel schreiben`-Step\n  - Der Step steht vor `upload-pages-artifact`\n  - Der Step schreibt `web/version.json` mit `commit`, `shortCommit`, `builtAt`\n    aus `$GITHUB_SHA`\n  - YAML parst fehlerfrei\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 5: Playwright-Harness \u2014 Abhaengigkeit, Config, npm-Skript, Makefile, Doku</name>\n  <files>package.json, package-lock.json, playwright.config.mjs, Makefile, README.md, .gitignore</files>\n  <action>\n  Das Playwright-Test-Geruest aufsetzen \u2014 noch ohne Specs (die folgen in\n  Task 6).\n  1. `@playwright/test@^1.60.0` als devDependency aufnehmen:\n     `npm install -D @playwright/test@^1.60.0` (legt den `devDependencies`-Block\n     in `package.json` neu an und aktualisiert `package-lock.json`).\n     Anschliessend `npx playwright install --with-deps chromium` ausfuehren\n     (nur Chromium, kein Firefox/WebKit) \u2014 das Browser-Binary ist nicht\n     committet, nur die npm-Abhaengigkeit.\n  2. `playwright.config.mjs` im Repo-Wurzelverzeichnis anlegen (Repo ist\n     `\"type\":\"module\"`, daher `.mjs`):\n     ```js\n     import { defineConfig, devices } from '@playwright/test';\n     export default defineConfig({\n       testDir: 'tests/e2e',\n       fullyParallel: true,\n       retries: process.env.CI ? 1 : 0,\n       reporter: process.env.CI ? 'github' : 'list',\n       use: {\n         baseURL: 'http://localhost:8080',\n         trace: 'on-first-retry',\n       },\n       projects: [\n         {\n           name: 'chromium',\n           use: {\n             ...devices['Desktop Chrome'],\n             launchOptions: { args: ['--disable-dev-shm-usage'] },\n           },\n         },\n       ],\n       webServer: {\n         command: 'node scripts/serve.mjs 8080',\n         url: 'http://localhost:8080/web/',\n         reuseExistingServer: !process.env.CI,\n         timeout: 30_000,\n       },\n     });\n     ```\n     `--disable-dev-shm-usage` ist Pflicht (`/dev/shm` ~63 MB). NIEMALS\n     `channel:'chrome'` setzen \u2014 auf arm64 nur das gebuendelte `chromium`.\n     `serve.mjs` serviert aus `process.cwd()`; Specs nutzen daher `/web/...`\n     relativ zur `baseURL`.\n  3. `package.json` scripts: `\"test:e2e\": \"playwright test\"` ergaenzen\n     (bestehende Skripte `test:js`, `poc`, `serve` unveraendert lassen).\n  4. `Makefile`: ein Ziel `web-e2e` mit `web-sync` als Voraussetzung ergaenzen\n     (Stil wie `web-test`):\n     ```make\n     web-e2e: web-sync ## Browser-e2e-Tests der Web-App ausfuehren\n     \tnpm run test:e2e\n     ```\n     `web-e2e` der `.PHONY`-Liste am Dateiende hinzufuegen.\n  5. `.gitignore`: im \"JavaScript / Browser-App\"-Abschnitt\n     `/test-results/` und `/playwright-report/` ergaenzen (Playwright-\n     Artefakte). `node_modules` ist bereits ignoriert.\n  6. `README.md`: einen kurzen Abschnitt ergaenzen, der die lokale Ausfuehrung\n     dokumentiert: Erstmaliges `npx playwright install --with-deps chromium`,\n     danach `make web-e2e` bzw. `npm run test:e2e`. Den Server-Hinweis\n     erwaehnen (Playwright startet/stoppt `serve.mjs` selbst).\n  Keine Werkzeug-/Tool-Attribution in Kommentaren oder Doku.\n  </action>\n  <verify>\n  <automated>node -e \"const p=require('./package.json'); if(!p.devDependencies||!p.devDependencies['@playwright/test']) throw new Error('devDependency fehlt'); if(p.scripts['test:e2e']!=='playwright test') throw new Error('test:e2e fehlt');\" && node --check playwright.config.mjs && grep -q '^web-e2e:' Makefile && grep -q 'web-e2e' <(grep -A4 '.PHONY' Makefile) && npx playwright --version</automated>\n  </verify>\n  <done>\n  - `@playwright/test@^1.60.0` steht in `package.json` `devDependencies`,\n    `package-lock.json` aktualisiert\n  - `playwright.config.mjs` parst, nutzt `webServer` (`scripts/serve.mjs`),\n    nur das `chromium`-Projekt, `--disable-dev-shm-usage`\n  - `npm run test:e2e` ist verdrahtet; `make web-e2e` existiert und steht in\n    `.PHONY`\n  - `.gitignore` ignoriert `test-results/` und `playwright-report/`\n  - `README.md` dokumentiert die lokale e2e-Ausfuehrung\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 6: e2e-Specs \u2014 Smoke, Upload, Dashboard, Sankey, Persistenz, Build-Stempel</name>\n  <files>tests/e2e/helpers.mjs, tests/e2e/smoke.spec.mjs, tests/e2e/upload.spec.mjs, tests/e2e/dashboard.spec.mjs, tests/e2e/sankey.spec.mjs, tests/e2e/persistence.spec.mjs, tests/e2e/build-stamp.spec.mjs</files>\n  <action>\n  Die e2e-Testfaelle schreiben. Alle Specs sind ESM (`.mjs`), importieren aus\n  `@playwright/test`. KEINE festen `waitForTimeout`/`sleep` \u2014 auf\n  `window.__appBereit` und web-first `expect(...)`-Assertions setzen. Jeder\n  Test laeuft per Default in frischem `BrowserContext` (IndexedDB-Isolation) \u2014\n  AUSSER der Persistenz-Test, der eine Upload-Aktion und `page.reload()` in\n  EINEM Page/Context haelt.\n\n  `tests/e2e/helpers.mjs` \u2014 gemeinsame Helfer:\n  - `oeffneApp(page)`: `await page.goto('/web/');\n    await page.waitForFunction(() => window.__appBereit === true);`\n  - `ladeFixturePdf(page)`: ruft `oeffneApp`, dann\n    `await page.locator('#file-input').setInputFiles('documents/VA-2026-Auflage.pdf');`\n    Die App macht nach erfolgreicher Verarbeitung `location.reload()`; danach\n    erneut `await page.waitForFunction(() => window.__appBereit === true);`.\n    Pfad relativ zum Repo-Wurzelverzeichnis (Playwright laeuft von dort).\n  - Konstante `FIXTURE = 'documents/VA-2026-Auflage.pdf'` und der erwartete\n    Pruefstatus (5/5) zentral halten \u2014 keine `documents/`-Globs (wie in\n    `tests/js/run.mjs` gepinnt).\n\n  `smoke.spec.mjs` \u2014 \"Seite laedt ohne Boot-Fehler\":\n  - `oeffneApp(page)`, dann\n    `await expect(page.locator('#boot-banner')).toHaveCount(0);`\n\n  `upload.spec.mjs` \u2014 \"PDF-Upload fuellt Dokumentliste mit gruenem Status\":\n  - `ladeFixturePdf(page)`, dann nach dem Reload:\n    `await expect(page.locator('#doc-tbody tr')).toHaveCount(1, { timeout: 30000 });`\n    `await expect(page.locator('span.doc-status.ok').first()).toBeVisible();`\n    Grosszuegiges Timeout (mupdf-Parse dauert Sekunden).\n\n  `dashboard.spec.mjs` \u2014 \"Dashboard sichtbar, Tabs schalten, Charts rendern\":\n  - `ladeFixturePdf(page)`, dann\n    `await expect(page.locator('#dashboard-inhalt')).toBeVisible();`\n    `await expect(page.locator('#dashboard-leer')).toBeHidden();`\n  - Tab-Wechsel: Klick auf `[data-tab=\"einnahmen\"]`, dann\n    `await expect(page.locator('.tab-btn[data-tab=\"einnahmen\"]')).toHaveClass(/is-active/);`\n    `await expect(page.locator('.tab-panel[data-panel=\"einnahmen\"]')).toBeVisible();`\n  - Charts rendern: auf dem `ueberblick`-Panel\n    `await expect(page.locator('#c_sankey canvas')).toBeVisible();` und ein\n    weiteres Chart (z.B. `#c_wasserfall canvas`).\n\n  `sankey.spec.mjs` \u2014 \"Sankey-Drill-down\" (der Anlassfall):\n  - `ladeFixturePdf(page)`, sicherstellen dass der `ueberblick`-Tab aktiv ist.\n  - `await page.waitForFunction(() => { const c =\n    window.echarts.getInstanceByDom(document.getElementById('c_sankey'));\n    return c && (c.getOption().series[0].data||[]).length > 0; });`\n  - Knotenzahl vorher messen, einen aufklappbaren Knoten ueber den Test-Seam\n    ausloesen:\n    ```js\n    const vorher = await page.evaluate(() =>\n      window.echarts.getInstanceByDom(document.getElementById('c_sankey'))\n        .getOption().series[0].data.length);\n    // Namen eines drillExpandbar-Knotens aus der Option lesen:\n    const knoten = await page.evaluate(() => {\n      const d = window.echarts.getInstanceByDom(\n        document.getElementById('c_sankey')).getOption().series[0].data;\n      const k = d.find(n => n.drillExpandbar);\n      return k ? k.name : null;\n    });\n    expect(knoten).not.toBeNull();\n    await page.evaluate(n => window.__sankeyDrill(n), knoten);\n    ```\n  - Assertions auf das Drill-Ergebnis:\n    `await expect(page.locator('#sankey-hinweis')).toHaveClass(/is-visible/);`\n    `await expect.poll(() => page.evaluate(() =>\n      window.echarts.getInstanceByDom(document.getElementById('c_sankey'))\n        .getOption().series[0].data.length)).toBeGreaterThan(vorher);`\n  - Zusatz-Smoke (reale Maus-Plumbing): einen zweiten Test, der per\n    `#sankey-reset`-Klick zurueck auf die Uebersicht klappt und prueft, dass\n    `#sankey-hinweis` `.is-visible` verliert.\n  - WICHTIG \u2014 Anlassfall-Diagnose: Schlaegt der Drill-Test fehl, ist das ein\n    ECHTER Bug in der `setupSankeyDrill()`-Verdrahtung (Recherche hat bereits\n    bestaetigt: Deployment ist NICHT stale). In dem Fall im selben Task die\n    Ursache in `web/vendor/dashboard/dashboard.js` beheben (z.B. fehlende\n    Handler-Registrierung, falsche `drillExpandbar`-Auswertung,\n    `renderSankey()`/`buildSankeyOption`-Verdrahtung) \u2014 minimal, ohne andere\n    Funktionalitaet zu beruehren \u2014 bis der Test gruen ist. Schlaegt der Test\n    NICHT fehl, war es ein stale-Deployment-Effekt; das in der\n    Abschluss-Meldung festhalten.\n\n  `persistence.spec.mjs` \u2014 \"Persistenz ueberlebt Reload\":\n  - In EINEM Test, EINEM Page/Context: `ladeFixturePdf(page)`,\n    `await expect(page.locator('#doc-tbody tr')).toHaveCount(1)`, dann\n    `await page.reload(); await page.waitForFunction(() => window.__appBereit);`\n    danach erneut `await expect(page.locator('#doc-tbody tr')).toHaveCount(1);`.\n    KEIN neuer `browser.newContext()` zwischen Upload und Reload.\n\n  `build-stamp.spec.mjs` \u2014 \"Footer zeigt den Build-Commit\":\n  - `oeffneApp(page)`, `const stamp = page.locator('#build-stamp');`\n    `await expect(stamp).toBeVisible();`\n  - `const expected = process.env.EXPECTED_COMMIT;`\n    `if (expected) await expect(stamp).toContainText(expected.slice(0,7));`\n    `else await expect(stamp).not.toBeEmpty();`\n    Lokal (kein `EXPECTED_COMMIT`) prueft der Test nur, dass der Stempel\n    nicht leer ist (\"Build dev\"); in CI vergleicht er gegen `github.sha`.\n\n  Vor dem ersten Lauf `make web-sync` ausfuehren (kopiert `schema.sql`/`sql/`\n  nach `web/` \u2014 sonst boot-404). Deutsche Testbeschreibungen verwenden.\n  </action>\n  <verify>\n  <automated>make web-sync && npx playwright test --reporter=list</automated>\n  </verify>\n  <done>\n  - Alle sechs Spec-Dateien und `helpers.mjs` existieren unter `tests/e2e/`\n  - `npx playwright test` laeuft gruen durch (alle Specs bestehen)\n  - Der Sankey-Drill-down-Test prueft `#sankey-hinweis.is-visible` UND\n    Wachstum von `getOption().series[0].data.length`\n  - Der Persistenz-Test haelt Upload + Reload in einem Context\n  - Der gemeldete Sankey-Fehler ist reproduziert/diagnostiziert; falls echter\n    Bug \u2014 in `dashboard.js` behoben und der Test gruen\n  - Keine `waitForTimeout`/`sleep` in den Specs\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 7: Separater GitHub-Actions-Workflow fuer die Browser-Tests</name>\n  <files>.github/workflows/e2e.yml</files>\n  <action>\n  Einen NEUEN, von `pages.yml` getrennten Workflow `.github/workflows/e2e.yml`\n  anlegen, der die e2e-Tests in CI ausfuehrt:\n  ```yaml\n  name: Browser-Tests\n\n  on:\n    push:\n      branches: [main]\n    pull_request:\n\n  jobs:\n    e2e:\n      runs-on: ubuntu-latest\n      steps:\n        - name: Repository auschecken\n          uses: actions/checkout@v6\n\n        - name: Node einrichten\n          uses: actions/setup-node@v4\n          with:\n            node-version: 22\n            cache: npm\n\n        - name: Abhaengigkeiten installieren\n          run: npm ci\n\n        - name: Chromium installieren\n          run: npx playwright install --with-deps chromium\n\n        - name: schema.sql und sql/ synchronisieren\n          run: make web-sync\n\n        - name: Browser-Tests ausfuehren\n          run: npx playwright test\n          env:\n            EXPECTED_COMMIT: ${{ github.sha }}\n\n        - name: Playwright-Report sichern\n          if: ${{ !cancelled() }}\n          uses: actions/upload-artifact@v4\n          with:\n            name: playwright-report\n            path: playwright-report/\n            retention-days: 7\n  ```\n  Wichtig: `npm ci` braucht ein konsistentes `package-lock.json` (in Task 5\n  durch `npm install -D` aktualisiert). `make web-sync` MUSS vor dem Testlauf\n  laufen, sonst boot-404. `EXPECTED_COMMIT` aktiviert die strikte\n  Build-Stempel-Pruefung im `build-stamp.spec.mjs`. Dieser Workflow ist\n  bewusst getrennt von `pages.yml` \u2014 der e2e-Job darf NICHT in den\n  `deploy`-Job. Browser-Tests NICHT in `Dockerfile.claude` laufen lassen (kein\n  Browser-Deps-Layer); der `ubuntu-latest`-Runner mit `--with-deps` genuegt.\n  </action>\n  <verify>\n  <automated>python3 -c \"import yaml; d=yaml.safe_load(open('.github/workflows/e2e.yml')); j=d['jobs']['e2e']; steps=j['steps']; us=[str(s.get('uses',''))+str(s.get('run','')) for s in steps]; assert any('playwright install' in s for s in us), 'install fehlt'; assert any('web-sync' in s for s in us), 'web-sync fehlt'; assert any('playwright test' in s for s in us), 'test-run fehlt'; assert j['runs-on']=='ubuntu-latest'; print('ok')\" && python3 -c \"import yaml; assert 'e2e' not in yaml.safe_load(open('.github/workflows/pages.yml'))['jobs'], 'e2e darf nicht in pages.yml stehen'; print('getrennt ok')\"</automated>\n  </verify>\n  <done>\n  - `.github/workflows/e2e.yml` existiert, eigener Workflow (nicht in pages.yml)\n  - Job auf `ubuntu-latest`: checkout, setup-node, `npm ci`,\n    `npx playwright install --with-deps chromium`, `make web-sync`,\n    `npx playwright test` mit `EXPECTED_COMMIT: ${{ github.sha }}`\n  - Playwright-Report wird als Artefakt hochgeladen\n  - YAML parst fehlerfrei; `pages.yml` enthaelt keinen e2e-Job\n  </done>\n</task>\n\n</tasks>\n\n<verification>\nNach allen Tasks die Gesamt-Checks ausfuehren:\n- `make web-sync && npx playwright test` \u2014 alle e2e-Specs gruen\n- `npm run test:js` \u2014 bestehende Node-JS-Tests bleiben gruen\n- `/tmp/pdfvenv/bin/python -m pytest -q` \u2014 bestehende Python-Tests bleiben gruen\n- `ruff check . && mypy src/` \u2014 Linting/Typing sauber\n- `node --check playwright.config.mjs` und `node --check` fuer jede geaenderte\n  `web/`-JS-Datei \u2014 kein Syntaxfehler\n- `python3 -c \"import yaml; yaml.safe_load(open('.github/workflows/e2e.yml')); yaml.safe_load(open('.github/workflows/pages.yml'))\"` \u2014 beide Workflows valides YAML\n</verification>\n\n<success_criteria>\nMessbare Kriterien (1:1 zu den Acceptance Criteria aus ISSUE.md):\n- Browser-Tests laufen lokal mit einem Befehl (`make web-e2e` /\n  `npm run test:e2e`); Playwright `webServer` startet und stoppt\n  `scripts/serve.mjs` automatisch (Tasks 5, 6).\n- Ein Headless-Browser laedt die Seite, laedt `documents/VA-2026-Auflage.pdf`\n  hoch und prueft Dokumentliste samt gruenem Pruefstatus `span.doc-status.ok`\n  (Task 6, `upload.spec.mjs`).\n- Test prueft Dashboard sichtbar, Tab-Wechsel, Chart-Rendering (Task 6,\n  `dashboard.spec.mjs`).\n- Test prueft den Sankey-Drill-down ueber den Test-Seam \u2014 `#sankey-hinweis`\n  bekommt `.is-visible`, Knotenzahl waechst (Tasks 1, 6, `sankey.spec.mjs`).\n- Test prueft Persistenz: nach `page.reload()` sind die Dokumente noch da\n  (Task 6, `persistence.spec.mjs`).\n- Der gemeldete Sankey-Fehler ist mit dem Harness reproduziert/diagnostiziert\n  und \u2014 falls echter Bug \u2014 in `dashboard.js` behoben (Task 6).\n- In CI eingebunden: separater Workflow `.github/workflows/e2e.yml`; lokale\n  Ausfuehrung in `README.md` dokumentiert (Tasks 5, 7).\n- Die Seite zeigt den Git-Commit in der Fusszeile (`#build-stamp`); der\n  Browser-Test prueft ihn (Tasks 3, 4, 6, `build-stamp.spec.mjs`).\n- Bestehende Python- (`pytest -q`) und JS-Tests (`npm run test:js`) bleiben\n  gruen (Verification-Block).\n</success_criteria>\n"}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var dataEl = document.getElementById("artifact-source");
+  var target = document.getElementById("artifact-source-target");
+  if (dataEl && target) {
+    try {
+      target.textContent = JSON.parse(dataEl.textContent).source || "";
+    } catch (e) {
+      target.textContent = dataEl.textContent;
+    }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) { ev.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

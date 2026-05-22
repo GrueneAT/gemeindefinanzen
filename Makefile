@@ -58,6 +58,9 @@ web-deps: ## JS-Abhaengigkeiten installieren (mupdf, sqlite-wasm)
 web-test: ## JS-Tests der Browser-App ausfuehren
 	npm run test:js
 
+web-e2e: web-sync ## Browser-e2e-Tests der Web-App ausfuehren
+	npm run test:e2e
+
 web-serve: web-sync ## web/ lokal ausliefern (node direkt, ohne Container)
 	node scripts/serve.mjs $(WEB_PORT)
 
@@ -78,4 +81,4 @@ clean: ## Generierte Artefakte loeschen
 	rm -rf data/*.db data/*.csv data/*.xlsx build
 
 .PHONY: help setup db validate queries export test lint all clean \
-	web-sync web-deps web-test web-serve web-docker test-js
+	web-sync web-deps web-test web-e2e web-serve web-docker test-js

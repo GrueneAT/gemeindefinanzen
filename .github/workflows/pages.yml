@@ -31,6 +31,12 @@ jobs:
       - name: Pages konfigurieren
         uses: actions/configure-pages@v6
 
+      - name: Build-Stempel schreiben
+        run: |
+          cat > web/version.json <<EOF
+          { "commit": "${GITHUB_SHA}", "shortCommit": "${GITHUB_SHA:0:7}", "builtAt": "$(date -u +%FT%TZ)" }
+          EOF
+
       - name: web/ als Artefakt hochladen
         uses: actions/upload-pages-artifact@v5
         with:

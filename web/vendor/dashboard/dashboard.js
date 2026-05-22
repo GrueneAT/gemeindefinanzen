@@ -462,30 +462,48 @@
     }
   }
 
+  // Drill-Logik fuer einen angeklickten Sankey-Knoten. Die Daten stammen aus
+  // params.data des Klick-Events bzw. aus den Seriendaten der ECharts-Option.
+  function drillAufKnoten(d) {
+    // Mittlerer Knoten: klappt alles auf die Uebersicht zurueck.
+    if (d.drillSeite === "mitte" || !d.drillSeite) {
+      sankeyExpand = null;
+    } else if (d.drillExpandbar) {
+      // Eingeklappter Knoten -> aufklappen (ersetzt eine etwaige
+      // andere Ausklappung, es bleibt nur eine aktiv).
+      sankeyExpand = { seite: d.drillSeite, key: d.drillKey };
+    } else if (
+      sankeyExpand &&
+      sankeyExpand.seite === d.drillSeite &&
+      sankeyExpand.key === d.drillKey
+    ) {
+      // Klick in den bereits aufgeklappten Bereich -> einklappen.
+      sankeyExpand = null;
+    }
+    renderSankey();
+    updateSankeyHinweis();
+  }
+
   function setupSankeyDrill() {
     var entry = charts["c_sankey"];
     if (!entry) return;
     entry.inst.on("click", function (params) {
       if (!params || params.dataType !== "node") return;
-      var d = params.data || {};
-      // Mittlerer Knoten: klappt alles auf die Uebersicht zurueck.
-      if (d.drillSeite === "mitte" || !d.drillSeite) {
-        sankeyExpand = null;
-      } else if (d.drillExpandbar) {
-        // Eingeklappter Knoten -> aufklappen (ersetzt eine etwaige
-        // andere Ausklappung, es bleibt nur eine aktiv).
-        sankeyExpand = { seite: d.drillSeite, key: d.drillKey };
-      } else if (
-        sankeyExpand &&
-        sankeyExpand.seite === d.drillSeite &&
-        sankeyExpand.key === d.drillKey
-      ) {
-        // Klick in den bereits aufgeklappten Bereich -> einklappen.
-        sankeyExpand = null;
-      }
-      renderSankey();
-      updateSankeyHinweis();
+      drillAufKnoten(params.data || {});
     });
+    // Programmatischer Einstieg in denselben Drill-Pfad ueber den
+    // Knotennamen — ohne UI-Aenderung, nur fuer reproduzierbare Tests.
+    window.__sankeyDrill = function (knotenName) {
+      var entry = charts["c_sankey"];
+      if (!entry) return false;
+      var opt = entry.inst.getOption();
+      var knoten = (opt.series[0].data || []).find(function (n) {
+        return n.name === knotenName;
+      });
+      if (!knoten) return false;
+      drillAufKnoten(knoten);
+      return true;
+    };
     var resetBtn = document.getElementById("sankey-reset");
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {

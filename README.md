@@ -46,6 +46,20 @@ Die Seite ist ohne Build-Schritt **GitHub-Pages-tauglich** — der Ordner `web/`
 enthält alles, Bibliotheken vendorisiert unter `web/vendor/`. Details:
 [`docs/BROWSER-APP.md`](docs/BROWSER-APP.md).
 
+### Browser-e2e-Tests
+
+Headless-Browser-Tests prüfen die App end-to-end (Seite lädt, PDF-Upload,
+Dashboard, Tabs, Sankey-Drill-down, Persistenz, Versionsstempel):
+
+```sh
+npx playwright install --with-deps chromium   # einmalig: Chromium holen
+make web-e2e                                  # bzw. npm run test:e2e
+```
+
+Playwright startet und stoppt den statischen Server (`scripts/serve.mjs`)
+selbst — kein manueller Serverstart nötig. Die Tests laufen lokal und im
+GitHub-Actions-Workflow `.github/workflows/e2e.yml`.
+
 ## Python-CLI — Datenpipeline und Referenz
 
 Der `gemfin`-CLI parst dieselben PDFs serverseitig (PyMuPDF). Er ist die

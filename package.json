@@ -6,11 +6,15 @@
   "type": "module",
   "scripts": {
     "test:js": "node tests/js/run.mjs",
+    "test:e2e": "playwright test",
     "poc": "node scripts/mupdf-geometrie.mjs",
     "serve": "node scripts/serve.mjs"
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "^3.50.1-build1",
     "mupdf": "^1.26.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
   }
 }
