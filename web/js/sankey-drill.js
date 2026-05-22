@@ -230,7 +230,7 @@ export function buildSankeyOption(posten, dokId, expand) {
         top: 14,
         bottom: 14,
         nodeGap: 11,
-        nodeWidth: 13,
+        nodeWidth: 26,
         label: {
           fontFamily: "Inter, sans-serif",
           fontSize: 11,
