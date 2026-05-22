@@ -17,6 +17,13 @@ from __future__ import annotations
 CSS = """
 :root { --hair: var(--rule-hair, #cdc4b4); --raised: var(--paper-raised, #faf6ee); }
 
+/* Das Design System begrenzt .page auf Notebook-Lesebreite (72rem) — fuer ein
+   Dashboard mit breiten Tabellen und Diagrammen zu schmal. Hier auf die volle
+   Bildschirmbreite oeffnen (mit etwas Rand auf sehr breiten Displays). */
+.page { max-width: min(2400px, 95vw); }
+/* Fliesstext-Bloecke bleiben gut lesbar, statt ueber die ganze Breite zu laufen. */
+.masthead-sub, .lead, .tab-panel > p, .callout { max-width: 70rem; }
+
 .dash-controls { position: sticky; top: 0; z-index: 20;
   background: var(--paper, #F4EFE6); padding: .6rem 0 .3rem;
   border-bottom: 1px solid var(--hair); margin-bottom: 1.2rem; }
