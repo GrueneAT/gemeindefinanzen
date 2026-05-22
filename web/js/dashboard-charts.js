@@ -542,7 +542,7 @@ export function chartTrendKomm(trend) {
           show: true,
           position: "top",
           fontFamily: CHART_FONT,
-          fontSize: 10,
+          fontSize: LABEL_SIZE,
           formatter: "(p)=>(p.value/1e6).toLocaleString('de')+' Mio'",
         },
       },
