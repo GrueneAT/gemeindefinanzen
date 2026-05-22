@@ -391,3 +391,111 @@ melden uebereinstimmend 1403 Detailposten (Paritaet bestaetigt).
   (6 Tests) und `tests/js/run.mjs` (6 Tests): zwei/drei Fragmente,
   negatives Fragment, ganzes Zahlwort unveraendert, kleine ungeteilte
   Zahl unveraendert, Spaltengrenze trennt.
+
+---
+
+# T12 — Sankey-Drill-down
+
+**Datum:** 2026-05-22
+**Status:** abgeschlossen
+
+## Was gebaut wurde
+
+Das Geldfluss-Sankey im Ueberblick-Tab ist jetzt interaktiv: Knoten
+lassen sich anklicken, um eine Ebene tiefer zu gehen.
+
+- **Klick auf eine Aufgabengruppe** (Ausgabeseite) ersetzt diesen einen
+  Gruppenknoten durch je einen Knoten pro **Ansatz** der Gruppe, jeweils
+  von „Gemeindehaushalt" gespeist. Die uebrigen Gruppen bleiben
+  eingeklappt.
+- **Klick auf eine Einnahmequelle** (Einnahmeseite) ersetzt den
+  Quellenknoten durch je einen Knoten pro **Konto** dieser Quelle, jeweils
+  in „Gemeindehaushalt" muendend.
+- **Klick auf den zentralen Knoten „Gemeindehaushalt"** klappt alles auf
+  die Uebersicht zurueck.
+
+## Wie Aufklappen/Einklappen funktioniert
+
+- Der Zustand ist eine einzige Variable `sankeyExpand` in `dashboard.js`:
+  `null` (Uebersicht) oder `{ seite, key }`. Dadurch ist **je Seite
+  hoechstens ein Knoten** ausgeklappt — ein neuer Aufklapp-Klick ersetzt
+  den vorherigen, die Darstellung „explodiert" nicht.
+- **Einklappen** auf vier Wegen: (1) Klick auf einen bereits
+  aufgeklappten Detailknoten (Ansatz/Konto), (2) Klick auf den zentralen
+  Knoten, (3) der „Übersicht"-Button rechts ueber dem Diagramm,
+  (4) Dokumentwechsel ueber den Umschalter.
+- Eine Hinweiszeile ueber dem Diagramm erklaert die Interaktion und
+  wechselt im aufgeklappten Zustand den Text.
+- Lange Listen werden auf `TOP_N = 8` gekappt; der Rest wird in einen
+  Knoten „Sonstige Ansaetze" bzw. „Sonstige Konten" gebuendelt — konsistent
+  mit dem Umgang anderer Charts mit langen Listen.
+
+## Umsetzung
+
+- **Neues Modul `web/js/sankey-drill.js`** — reine, in Node testbare
+  Funktionen: `buildSankeyOption(posten, dokId, expand)` baut die
+  ECharts-Sankey-Optionen fuer jeden Zustand direkt aus `DATA.posten`;
+  `quelleVonPosten`, `kappen`, `einnahmePosten`, `ausgabePosten`, `TOP_N`
+  exportiert. Jeder Knoten traegt `drillSeite`/`drillKey`/`drillExpandbar`
+  fuer den Klick-Handler.
+- **`quelleVonPosten`** ist der JS-Port der `CASE`-Logik aus
+  `dashboard-data.js` (`sankey()`), damit die Quellen-Aggregation des
+  Drill-downs deckungsgleich mit der Uebersicht bleibt. Ausgabeseite:
+  `richtung==='ausgabe' && ew>0`, Wert `ew` — dieselbe Basis wie der
+  Ausgaben-Drill-down (`ausgabePosten`). Einnahmeseite:
+  `richtung==='einnahme' && ew>0`, Wert `ew`.
+- **`dashboard.js`**: `c_sankey` ist jetzt unter der neuen Chart-Art
+  `"sankey"` registriert; `chartOption` liefert dafuer `sankeyOption()`,
+  das `window.buildSankeyOption` mit `posten` und `sankeyExpand` aufruft.
+  Neue Funktion `setupSankeyDrill()` haengt `chartInstance.on('click', …)`
+  ein (`params.dataType === 'node'`), verdrahtet den Reset-Button und
+  registriert einen `onDocChange`-Hook. Faellt auf die vorberechnete
+  `CFG`-Sankey-Variante zurueck, falls der Builder fehlt.
+- **`dashboard-app.js`** (ESM) importiert `buildSankeyOption` und legt es
+  vor dem Nachladen von `dashboard.js` als `window.buildSankeyOption` ab —
+  `dashboard.js` ist ein klassisches Skript und kann nicht importieren.
+- **`index.html`**: Hinweiszeile `#sankey-hinweis` und Button
+  `#sankey-reset` ueber `#c_sankey`. **`app.css`**: Stil fuer
+  `.sankey-bar`/`.sankey-hint`/`.sankey-reset` im Design-System-Stil.
+
+## Entscheidungen
+
+- **Dynamischer Aufbau in `dashboard.js` statt nur aus dem `CFG`-Blob.**
+  Der Drill-down muss Knoten/Links je nach Klick neu berechnen — spiegelt
+  `renderDrill`, das ebenfalls aus `posten` rechnet. `chartSankey` in
+  `dashboard-charts.js` bleibt unveraendert als Fallback-Quelle der
+  Uebersicht.
+- **Globale Bruecke statt Modul-Umbau.** `dashboard.js` bleibt das
+  verbatim uebernommene klassische Skript; der Builder wird ueber
+  `window` hereingereicht — kein Umbau auf ESM, keine Aenderung der
+  Python-Referenz noetig.
+- **Eindeutige Sonstige-Labels** („Sonstige Ansaetze"/„Sonstige Konten")
+  verhindern Namenskollisionen mit echten Knoten im Sankey.
+
+## Commits
+
+- cac6c: interaktiver Drill-down im Geldfluss-Sankey
+
+## Verifikation
+
+- `npm run test:js` — **52 bestanden, 0 fehlgeschlagen** (35 bisherige
+  plus 17 neue): `quelleVonPosten` (5), `kappen` (4) und
+  `buildSankeyOption` (8) — u. a. Knotenstruktur, Aufklappen von
+  Gruppe/Quelle, Betragserhalt der Summen nach Aufklappen.
+- `PYTHONPATH=src python -m pytest -q` — 28 passed (keine Python-Aenderung).
+- `ruff check src tests` — All checks passed. `mypy src` — Success.
+- `node --check` auf `sankey-drill.js`, `dashboard-app.js`,
+  `dashboard.js` — fehlerfrei.
+- Asset-Check: `web/` ueber `scripts/serve.mjs` ausgeliefert; `/web/`,
+  `index.html`, das neue `js/sankey-drill.js`, `js/dashboard-app.js`,
+  `vendor/dashboard/dashboard.js` und `css/app.css` liefern HTTP 200.
+- Die Klick-Interaktion selbst (ECharts `on('click')`) laesst sich
+  headless nicht ausloesen; die Logik ist ueber `buildSankeyOption`
+  vollstaendig unit-getestet, der Handler ist bewusst duenn gehalten.
+
+## Self-Check
+
+- [x] Alle geaenderten/neuen Dateien vorhanden
+- [x] Volle Pruefung gruen (JS 52, Python 28, ruff/mypy sauber)
+- [x] Keine Stubs/TODOs/Platzhalter, kein Debug-Code
+- **Result:** PASSED
