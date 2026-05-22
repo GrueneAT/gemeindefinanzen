@@ -17,7 +17,7 @@ import { openDocument, documentMeta, sectionRanges } from "../../web/js/extract.
 import { parseDocumentBytes } from "../../web/js/parser.js"
 import { validate, pruefStatus } from "../../web/js/validate.js"
 import { spalten } from "../../web/js/loader.js"
-import { oeffneDb } from "../../web/js/db.js"
+import { oeffneDb, importBytes } from "../../web/js/db.js"
 import { verarbeitePdf } from "../../web/js/pipeline.js"
 import { collect } from "../../web/js/dashboard-data.js"
 import { alleCharts } from "../../web/js/dashboard-charts.js"
@@ -160,6 +160,21 @@ async function teste() {
   pruefe("oeffneDb ohne IndexedDB: persistent=false", db.persistent === false)
   const gesichert = await db.sichern()
   pruefe("sichern() ohne IndexedDB ist folgenlos", gesichert === false)
+
+  // Persistenz-Round-Trip: exportBytes -> deserialisieren muss den Stand
+  // exakt wiederherstellen. Genau dieser Pfad traegt die IndexedDB-Persistenz
+  // (sichern() exportiert, oeffneDb deserialisiert beim naechsten Besuch).
+  const postenVor = db.wert("SELECT COUNT(*) FROM posten")
+  const dokVor = db.wert("SELECT COUNT(*) FROM dokument")
+  const db2 = await importBytes(sqlite3InitModule, db.exportBytes())
+  const postenNach = db2.wert("SELECT COUNT(*) FROM posten")
+  const dokNach = db2.wert("SELECT COUNT(*) FROM dokument")
+  pruefe(
+    "Persistenz-Round-Trip stellt Dokumente und Posten exakt wieder her",
+    postenVor === postenNach && dokVor === dokNach && dokNach === 4,
+    `${dokVor}/${postenVor} -> ${dokNach}/${postenNach}`,
+  )
+  db2.close()
   db.close()
 
   // Optionaler Abgleich mit einer Python-Referenzdatei, falls vorhanden.
