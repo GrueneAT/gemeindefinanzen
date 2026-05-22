@@ -211,6 +211,18 @@ input, select { font-family: var(--gat-font-copy); }
   height: 3px;
   background: var(--metric-accent, var(--web-green));
 }
+/* Semantische Akzente je Kennzahl (Iteration 3): Der Akzentbalken
+   unterscheidet die vier Lagebild-Karten — Ertraege gruen, Aufwendungen
+   Clay, Nettoergebnis Schiefer; der Kommunalsteuer-Anteil bleibt Hero. */
+.metric-card--ertrag {
+  --metric-accent: var(--web-chart-green);
+}
+.metric-card--aufwand {
+  --metric-accent: var(--web-chart-clay);
+}
+.metric-card--netto {
+  --metric-accent: var(--web-chart-slate);
+}
 .metric-card--hero {
   background: var(--web-green-tint);
   --metric-accent: var(--web-green-deep);
