@@ -447,6 +447,85 @@ input, select { font-family: var(--gat-font-copy); }
 .web-panel__head .sankey-bar {
   margin: var(--gat-space-2) 0 0;
 }
+
+/* --- Vollbild-Steuerung je Diagramm-Panel ---------------------------------
+   "Vergroessern" legt das Diagramm-Panel ueber die Fullscreen-API auf den
+   ganzen Schirm — vor allem fuer die interaktiven Diagramme und fuer aeltere
+   Nutzer:innen eine deutlich bessere Lesbarkeit. Der Kopf traegt jetzt eine
+   Titelzeile (.web-panel__head-row), die Titel/Notiz links und den ruhigen
+   "Vergroessern"-Knopf rechts haelt. Der Knopf ist eine zurueckhaltende
+   Sekundaerflaeche, fuegt sich in die Bedienelement-Sprache ein. */
+.web-panel__head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gat-space-3);
+}
+.web-panel__head-row > h3 {
+  flex: 1 1 auto;
+}
+.web-panel__fs-btn {
+  flex: none;
+  font: inherit;
+  font-family: var(--gat-font-headline);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--web-hairline);
+  background: var(--web-surface);
+  color: var(--web-green-deep);
+  border-radius: var(--web-radius-control);
+  padding: 0.28rem 0.7rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s,
+    box-shadow 0.15s;
+}
+.web-panel__fs-btn:hover {
+  background: var(--web-green-tint);
+  border-color: var(--web-green-deep);
+}
+.web-panel__fs-btn:focus-visible {
+  outline: 2px solid var(--web-green-deep);
+  outline-offset: 2px;
+  box-shadow: var(--web-focus-ring);
+}
+
+/* --- Diagramm-Panel im Vollbild -------------------------------------------
+   Im Vollbild fuellt das Panel den Viewport: weisse Flaeche ohne Rahmen, der
+   Kopf (Titel) bleibt oben sichtbar, der Diagrammkoerper waechst auf die
+   verbleibende Hoehe. Der .dash-chart-Div traegt eine feste Inline-Hoehe —
+   im Vollbild wird sie ueberschrieben, damit ECharts (nach dem ausgeloesten
+   window-resize) die ganze Flaeche fuellt. */
+.web-panel:fullscreen {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--web-surface);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+.web-panel:fullscreen > .web-panel__head {
+  flex: none;
+}
+.web-panel:fullscreen > .web-panel__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+/* Diagramm-Container fuellt im Vollbild die verbleibende Hoehe statt der
+   festen Inline-Hoehe; ECharts passt sich ueber den resize-Event an. */
+.web-panel:fullscreen .dash-chart {
+  flex: 1 1 auto;
+  height: auto !important;
+  min-height: 0;
+}
+/* Im Vollbild aktive Bloecke (Drill-down-Liste) duerfen wachsen/scrollen. */
+.web-panel:fullscreen .drill-list {
+  flex: 1 1 auto;
+  overflow: auto;
+}
 /* Reiner Diagramm-Container — kein eigener Rahmen, Hintergrund oder
    Schatten. Behaelt id und Inline-Hoehe fuer die Dashboard-JS. */
 .dash-chart {
