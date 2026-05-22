@@ -267,3 +267,19 @@ Ergebnis: kein horizontaler Seiten-Ueberlauf bei 390/760/1440px, weder
 auf dem Ueberblick- noch auf dem Suche-Tab, auch nicht bei ausgeklappter
 Dokumentverwaltung. Breite Tabellen scrollen intern. **Tests gruen**
 (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 6 — Code-Struktur (in Arbeit)
+
+Die CSS ist ueber fuenf Runden organisch gewachsen. Aufraeumen, ohne das
+gerenderte Ergebnis zu veraendern:
+
+- `web/css/app.css` in klare Abschnitte gliedern (Tokens, Basis, Layout,
+  Komponenten, Bedienelemente) mit knappen Abschnittskommentaren.
+- Token-Schichten entwirren: `--web-*` ist die Quelle; `--gat-*`-Adapter
+  und `--app-*`-Aliase nur behalten, wo sie noch gebraucht werden; tote
+  oder doppelte Regeln entfernen.
+- Konsistente Radius-/Abstands-Tokens statt Streuwerte.
+- `dashboard.css` analog ordnen; keine Funktionsklasse umbenennen.
+- Rein strukturell — Pixel-Diff der gerenderten Seite = 0.
+
+_wird nach visueller Pruefung fortgeschrieben._
