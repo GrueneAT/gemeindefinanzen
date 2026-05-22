@@ -66,17 +66,47 @@ body {
   margin: 0;
   font-size: var(--gat-text-copy);
 }
+/* --- Ueberschriften-Typografie (Iteration 2) ------------------------------
+   Barlow Semi Condensed ist von Natur aus schmal — Gewicht 900 macht es
+   zusaetzlich laut. Ruhigere Skala laut docs/web-design-system.md:
+   h1 -> 800, h2 -> 700, h3 -> 700 (kleiner). Farbe --web-text statt
+   schwarz. Vertikaler Rhythmus: h2 beginnt einen Abschnitt (grosser
+   Oberabstand), h3 sitzt eng an seinem Inhalt. */
 h1, h2, h3 {
   font-family: var(--gat-font-headline);
-  font-weight: 900;
   /* Bewusst nicht --gat-leading-headline (0.9) — zu eng fuer mehrzeilige
      Dashboard-Ueberschriften. */
-  line-height: 1.15;
+  line-height: 1.18;
   color: var(--web-text);
 }
-h1 { font-size: var(--gat-text-h1); }
-h2 { font-size: var(--gat-text-h2); }
-h3 { font-size: var(--gat-text-h3); }
+h1 {
+  font-size: var(--gat-text-h1);
+  font-weight: 800;
+}
+h2 {
+  font-size: var(--gat-text-h2);
+  font-weight: 700;
+  /* Abschnittstitel — beginnt einen neuen Block, grosser Oberabstand. */
+  margin: var(--gat-space-6) 0 var(--gat-space-3);
+}
+h3 {
+  /* Panel-/Diagrammtitel — kleiner als zuvor (zwischen h3 und subline),
+     eng an den Inhalt gebunden, den er betitelt. */
+  font-size: var(--gat-text-subline);
+  font-weight: 700;
+  margin: var(--gat-space-5) 0 var(--gat-space-2);
+}
+/* Erste Ueberschrift in einem Tab-Panel braucht keinen Extra-Oberabstand —
+   die Steuerleiste darueber liefert ihn bereits. */
+.tab-panel > h2:first-child {
+  margin-top: var(--gat-space-3);
+}
+/* h3 als erstes Element eines Containers (Diagramm-Rasterzelle,
+   Dokument-Sektion) titelt direkt seinen Inhalt — kein Abschnittsabstand. */
+.dash-grid > div > h3:first-child,
+.doc-manager-body section > h2:first-child {
+  margin-top: 0;
+}
 table { border-collapse: collapse; }
 input, select { font-family: var(--gat-font-copy); }
 
@@ -161,6 +191,7 @@ input, select { font-family: var(--gat-font-copy); }
    Als .gat-card--primary umgesetzt; nur Leseweite begrenzen. */
 .callout {
   max-width: 70rem;
+  margin-top: var(--gat-space-3);
 }
 .callout p {
   margin: var(--gat-space-2) 0 0;
