@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="artifact-source-sha256" content="b2995a12504e738a0848b1218eb9de5b30f830c9679aa809e1ddecd6f8864e4e">
+<meta name="artifact-source-file" content="PLAN.md">
+<meta name="artifact-generated-at" content="2026-05-22">
+<meta name="design-system-version" content="ds-1">
+<title>Plan: UI-Rebuild auf das Gruene-AT-Design-System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+</head>
+<body>
+<div class="page">
+
+<header class="row">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">P</span>Plan</p>
+  </div>
+  <div class="body">
+    <h1 class="masthead-title">UI-Rebuild auf das Gruene-AT-Design-System</h1>
+    <p class="masthead-sub">Issue: ye9ih-ui-rebuild-auf-das-gruene-at-design-system &middot; Generated 2026-05-22</p>
+  </div>
+</header>
+
+<hr class="rule">
+
+<section class="row" id="strategy">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">01</span>Strategy</p>
+    <p class="margin-note">Zuerst lesen — der Rest ist Detail.</p>
+  </div>
+  <div class="body">
+    <h2>Strategy summary</h2>
+    <p>Die <code>web/</code>-App wird vom persoenlichen flomotlik-Design-System
+       auf das org-weite Gruene-AT-Design-System umgebaut. Die Richtung:
+       <span class="mark mark-green">Fundament zuerst aufbauen, dann strippen</span>
+       — der DS-Link und die Token-Adapterschicht in <code>app.css</code> stehen,
+       bevor der flomotlik-Link entfernt wird, damit die Seite nie kaputt ist.</p>
+    <ul class="points">
+      <li class="point is-risk">
+        <p class="point-claim">Der grosse Stolperstein ist nicht das Recoloring.</p>
+        <p class="point-detail">Die App setzt auf ~12 Klassen und alle
+          Basisstile (<code>body</code>, <code>h1..h3</code>) aus dem
+          flomotlik-Stylesheet auf. Das Gruene-AT-DS ist ein reines Token-/
+          Komponenten-Stylesheet ohne Reset — ein blosser Link-Tausch liesse die
+          Seite in Times New Roman dastehen.</p>
+      </li>
+      <li class="point">
+        <p class="point-claim">Custom-CSS auf DS-Tokens, echte Komponenten nur wo sinnvoll.</p>
+        <p class="point-detail">~30 funktionale Custom-Klassen
+          (<code>.dropzone</code>, <code>.doc-table</code>, <code>.drill-row</code>)
+          bleiben Custom-CSS, aber auf <code>--gat-*</code>-Tokens. Echte
+          <code>.gat-*</code>-Komponenten kommen fuer Header/Nav, Buttons und
+          Karten zum Einsatz.</p>
+      </li>
+      <li class="point is-note">
+        <p class="point-claim">Funktionale Klassen sind Vertrag.</p>
+        <p class="point-detail"><code>.tab-btn</code>/<code>.tab-panel</code>/
+          <code>is-active</code>, <code>.switch-btn</code> und
+          <code>span.doc-status.ok</code> werden von <code>dashboard.js</code>
+          gelesen und von der e2e-Suite geprueft. DS-Look kommt ueber eine
+          zusaetzliche Klasse am Element, nie durch Umbenennen.</p>
+      </li>
+    </ul>
+    <div class="stats">
+      <div class="stat"><div class="stat-num">6</div>
+        <div class="stat-label">Tasks</div></div>
+      <div class="stat"><div class="stat-num is-green">6</div>
+        <div class="stat-label">Web-Dateien</div></div>
+      <div class="stat"><div class="stat-num">0</div>
+        <div class="stat-label">Python-Aenderungen</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="flow">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">02</span>Flow</p>
+  </div>
+  <div class="body">
+    <h2>Task flow &amp; dependencies</h2>
+    <div class="flow">
+      <div class="flow-node is-foundation">
+        <span class="n">Task 1</span>
+        <span class="t">DS-Link + Token-Schicht</span>
+        <span class="d">DS-CSS einbinden, app.css-:root als DS-Adapter.</span>
+      </div>
+      <div class="flow-node is-key">
+        <span class="n">Task 2</span>
+        <span class="t">app.css migrieren, flomotlik entfernen</span>
+        <span class="d">Basisstile setzen, dann flomotlik-Link strippen.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 3</span>
+        <span class="t">index.html-Markup auf DS-Komponenten</span>
+        <span class="d">Header, Kennzahlen-Karten, Callout, Inline-Marks.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 4</span>
+        <span class="t">dashboard.css + Tab-/Buttons</span>
+        <span class="d">DS-Tokens, DS-Breakpoint, gat-btn an Buttons.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 5</span>
+        <span class="t">ECharts-Palette ableiten</span>
+        <span class="d">INK + MEHRJAHR_PALETTE aus Markenfarben.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 6</span>
+        <span class="t">Lizenz + Gesamtabnahme</span>
+        <span class="d">LIZENZEN.md aktualisieren, alle Tests gruen.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="decisions">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">03</span>Decisions</p>
+  </div>
+  <div class="body">
+    <h2>Key decisions &amp; options</h2>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Reihenfolge: Fundament vor dem Strippen</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">DS-Link einsetzen und app.css zum Token-Adapter
+        ausbauen (Task 1), dann erst den flomotlik-Link entfernen (Task 2) —
+        nachdem Basisstile und Ersatzklassen stehen.</p>
+      <p class="decision-body rejected">Link sofort tauschen — liesse die Seite
+        ungestylt in Times New Roman dastehen (DS hat keinen Reset).</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Markup-Umbautiefe</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Echte <code>.gat-*</code>-Komponenten fuer
+        Header/Nav, Buttons und Karten; die ~30 funktionalen Custom-Klassen
+        bleiben Custom-CSS auf DS-Tokens.</p>
+      <p class="decision-body rejected">Alles auf <code>.gat-*</code> umbauen —
+        das DS deckt die funktionalen Custom-Klassen nicht ab; unverhaeltnis-
+        maessiger Aufwand.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Semantik der Inline-Marks (blau/gruen/rot)</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Drei semantische Klassen
+        (<code>.mark-positiv/-neutral/-risiko</code>) lokal in
+        <code>app.css</code> auf DS-Markenfarben definieren — die Dreifach-
+        Semantik bleibt erhalten.</p>
+      <p class="decision-body rejected">Nur das DS-<code>.gat-highlight</code>
+        (gelb) — ein einziger Stil kann die heutige Farbcodierung nicht
+        abbilden.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Kategoriale ECharts-Palette</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">10-stufige Palette aus HSL-Tints/-Shades der
+        4 Markenfarben; Hex-Werte in JS hart gespiegelt (kein Build-Schritt;
+        ECharts liest keine CSS-Variablen).</p>
+      <p class="decision-body rejected">DS-Data-Viz-Palette nutzen — das DS
+        bietet keine; per <code>getComputedStyle</code> aufloesen — unnoetige
+        Komplexitaet.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="detail">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">04</span>Detail</p>
+  </div>
+  <div class="body">
+    <h2>Full detail</h2>
+    <details class="detail">
+      <summary>Show full artifact source
+        <span class="summary-hint">click to expand</span></summary>
+      <div class="detail-body">
+        <pre><code id="artifact-source-target"></code></pre>
+      </div>
+    </details>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="provenance">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">05</span>Provenance</p>
+  </div>
+  <div class="body">
+    <h2>Provenance</h2>
+    <p>Generated from the canonical <code>.md</code>. This HTML is never
+       hand-edited — if the <code>.md</code> changes, regenerate with
+       <code>/issue:view</code>.</p>
+    <footer class="footer">
+      <span>Source: <code>PLAN.md</code> &middot;
+        SHA-256 <code>b2995a12504e738a0848b1218eb9de5b30f830c9679aa809e1ddecd6f8864e4e</code></span>
+      <span>Generated 2026-05-22 &middot; design system ds-1</span>
+    </footer>
+  </div>
+</section>
+
+</div>
+
+<script type="application/json" id="artifact-source">
+{"source": "# Plan: UI-Rebuild auf das Gruene-AT-Design-System\n\n<objective>\nWas dieser Plan erreicht: Die Browser-App unter `web/` wird vom persoenlichen\nflomotlik-Design-System auf das org-weite Gruene-AT-Design-System umgebaut \u2014\nFarben, Typografie, Komponenten, Inline-Elemente und die ECharts-Palette folgen\nkuenftig dem Gruene-AT-DS.\n\nWarum es zaehlt: Die App ist ein Werkzeug der Gruenen AT; ihre Oberflaeche soll\ndem org-weiten Corporate Design entsprechen statt einem persoenlichen System.\n\nScope: Reines `web/`-Vorhaben. `index.html`, `web/css/app.css`,\n`web/vendor/dashboard/dashboard.css`, `web/js/dashboard-charts.js`,\n`web/js/sankey-drill.js` und `web/vendor/LIZENZEN.md`.\nNICHT im Scope: `src/gemeindefinanzen/` (kein Python-UI vorhanden \u2014 `html.py`/\n`report.py` existieren nicht; die im Issue genannte \u201ePython-Paritaet\" ist\ngegenstandslos), `web/vendor/dashboard/dashboard.js` (hauseigenes klassisches\nSkript, das nur Klassen liest \u2014 wird NICHT editiert), WASM-Vendor-Bibliotheken\n(`mupdf`, `sqlite-wasm`).\n</objective>\n\n<strategy>\nDer Rebuild hat drei Arbeitsstraenge mit klarer Reihenfolge, sodass die App\nzwischen keinem Commit kaputt ist:\n\n1. **Fundament zuerst, dann strippen.** Der grosse Stolperstein ist NICHT das\n   Diagramm-Recoloring, sondern dass die App auf ~12 Klassen und alle\n   Basisstile (`body`, `h1..h3`) aus dem flomotlik-Stylesheet aufsetzt. Das\n   Gruene-AT-DS ist ein reines Token-/Komponenten-Stylesheet ohne Reset und\n   ohne Element-Basisstile. Wuerde man den Link einfach tauschen, stuende die\n   Seite in Times New Roman da. Darum: ZUERST den DS-Link einsetzen UND\n   `app.css` zum DS-Adapter ausbauen (Basisstile + alle ersatzlos verlorenen\n   Klassen auf `--gat-*`-Tokens neu definieren), ERST DANN den\n   flomotlik-Link entfernen \u2014 in derselben Task, nachdem der Ersatz steht.\n\n2. **Custom-CSS auf DS-Tokens, echte DS-Komponenten nur wo sinnvoll.** Die App\n   hat ~30 funktionale Custom-Klassen (`.dropzone`, `.doc-table`, `.drill-row`,\n   `.filterbar` \u2026), die das DS gar nicht abbildet \u2014 die bleiben Custom-CSS,\n   aber auf `--gat-*`-Tokens statt flomotlik-Variablen/Hardcodes. Echte\n   `.gat-*`-Komponenten kommen dort zum Einsatz, wo das DS ein Pendant hat:\n   Header/Nav, Buttons, Karten. Verworfen: alles auf `.gat-*` umzubauen \u2014 das\n   DS deckt die funktionalen Custom-Klassen nicht ab und der Aufwand stuende in\n   keinem Verhaeltnis.\n\n3. **Funktionale Klassen sind Vertrag.** `.tab-btn`/`.tab-panel`/`is-active`,\n   `.switch-btn`, `span.doc-status.ok` mit Text \u201e5/5 Pruefungen\" sowie die\n   getesteten IDs werden von `dashboard.js` gelesen und von der e2e-Suite\n   geprueft. DS-Look wird durch eine ZUSAETZLICHE Klasse am selben Element\n   erreicht (`class=\"gat-btn tab-btn\"`), niemals durch Umbenennen.\n\nWichtige Entscheidungspunkte: (a) Die `.mark`-Semantik (blau/gruen/rot) wird\nlokal auf DS-Tokens nachgebaut, da das DS nur einen Highlight-Stil (gelb) hat\n\u2014 siehe Decisions. (b) Die kategoriale ECharts-Palette wird aus HSL-Tints/\n-Shades der Markenfarben abgeleitet, weil das DS keine Data-Viz-Palette bietet.\n(c) JS spiegelt die Palette-Hex-Werte hart (kein Build-Schritt; ECharts liest\nkeine CSS-Variablen).\n</strategy>\n\n<context>\nIssue: @.issues/ye9ih-ui-rebuild-auf-das-gruene-at-design-system/ISSUE.md\nResearch: @.issues/ye9ih-ui-rebuild-auf-das-gruene-at-design-system/RESEARCH.md\nContext: @.issues/ye9ih-ui-rebuild-auf-das-gruene-at-design-system/CONTEXT.md\n\n<interfaces>\n<!-- Executor: diese Kontrakte direkt verwenden. Codebasis NICHT erkunden. -->\n\n=== Gruene-AT-DS \u2014 verifizierte Tokens (design-system.css, HIGH) ===\nFarben:\n  --gat-color-dunkelgruen: #257639;  --gat-color-hellgruen: #56af31;\n  --gat-color-gelb: #ffed00;         --gat-color-magenta: #e6007e;\n  --gat-color-weiss: #ffffff;        --gat-color-anthrazit: #1d1d1b;\nSemantische Aliase:\n  --gat-color-primary = dunkelgruen   --gat-color-secondary = hellgruen\n  --gat-color-accent = magenta        --gat-color-highlight = gelb\n  --gat-color-text = anthrazit        --gat-color-surface = weiss\n  --gat-color-on-primary = weiss      --gat-color-on-secondary = anthrazit\nSchrift:\n  --gat-font-headline / --gat-font-copy = 'Barlow Semi Condensed', sans-serif\n  --gat-font-emphasis = 'Vollkorn', serif\nTypo-Groessen (Ratio 1.25):\n  --gat-text-h1: 2.441rem  --gat-text-h2: 1.953rem  --gat-text-h3: 1.563rem\n  --gat-text-subline: 1.25rem  --gat-text-copy: 1rem  --gat-text-small: 0.8rem\n  --gat-leading-headline: 0.9   --gat-leading-copy: 1.3\nAbstaende: --gat-space-1..6 = 0.25 / 0.5 / 1 / 1.5 / 2 / 3 rem\nMasse: --gat-radius-sm: 0.25rem  --gat-radius-md: 0.5rem\n  --gat-border-width: 2px  --gat-container-max: 72rem\n  --gat-breakpoint-sm: 36rem  --gat-breakpoint-md: 48rem\nDas DS importiert die Fonts selbst per @import (Barlow Semi Condensed +\nVollkorn) \u2014 die App braucht KEINE eigenen Font-Links.\nDas DS hat KEINEN Reset, KEINE body/h*-Basisstile, KEINE Chart-Palette,\nKEINE neutrale Grauskala.\n\n=== Gruene-AT-DS \u2014 Komponentenklassen + Pflicht-Markup (HIGH) ===\nLayout:\n  .gat-container    // max-width 72rem, zentriert, padding-inline space-4\n  .gat-grid         // auto-fit minmax(min(100%,16rem),1fr), gap space-4\n  .gat-grid--2 / --3  // 2 bzw. 3 feste Spalten; <36rem -> 1 Spalte\n  .gat-section      // padding-block space-6\nHeader \u2014 Pflichtstruktur:\n  <header class=\"gat-header\">\n    <div class=\"gat-header__inner\">\n      <a class=\"gat-header__logo\"><span class=\"gat-header__logo-mark\"></span></a>\n      <nav class=\"gat-nav\">\n        <a class=\"gat-nav__link gat-nav__link--active\">..</a>\n      </nav>\n    </div></header>\n  .gat-header -> bg primary (dunkelgruen), color on-primary (weiss)\n  .gat-header__logo-mark nutzt mask url('assets/gruene-logo.svg') RELATIV zur\n    DS-CSS \u2014 auf grueneat.github.io aufloesbar, KEIN lokales Asset noetig.\nButtons:  <button class=\"gat-btn gat-btn--primary\"> / gat-btn--secondary\n  primary: bg primary + weiss; secondary: transparent + dunkelgruener Rand\nCards:    <div class=\"gat-card gat-card--primary|--secondary\">\n            <div class=\"gat-card__title\">..</div>\n            <div class=\"gat-card__body\">..</div></div>\n  --primary: bg dunkelgruen / weiss; --secondary: bg hellgruen / anthrazit\nTypografie-Klassen: .gat-headline (h1, 900)  .gat-subline (600, 1.25rem)\n  .gat-fliesstext (400 copy)  .gat-emphasis (Vollkorn italic 900)\nCD-Elemente:\n  .gat-underline   // border-bottom 2px magenta\n  .gat-highlight   // bg gelb, text anthrazit \u2014 EINZIGER Highlight-Stil\n  .gat-stoerer / --gelb / --magenta   // gedrehtes Badge\n\n=== Bestehende App \u2014 getestete IDs/Klassen, die ERHALTEN bleiben MUESSEN ===\n(sonst brechen e2e-Tests / dashboard.js)\nIDs: #boot-banner, #dashboard-inhalt, #dashboard-leer, #c_sankey,\n  #c_wasserfall, #doc-tbody, #doc-manager, #file-input, #sankey-hinweis,\n  #sankey-reset, #build-stamp, #st-netto, #drill-list, #drill-crumbs,\n  #drill-sum, #mj-overlay, #such-* , #f-* , #mj-*\nKlassen (Vertrag \u2014 NICHT umbenennen, NICHT entfernen):\n  .tab-btn[data-tab=\"...\"], .tab-panel[data-panel=\"...\"], is-active,\n  .switch-btn (+ is-active), span.doc-status.ok mit Text \"5/5 Pruefungen\",\n  .arrow .sortable .row-pick .drill-row .chev .label .code .betrag .sep,\n  is-green/is-red (auf #st-netto), is-open (#mj-overlay),\n  is-visible (#sankey-hinweis), .open (#doc-manager)\nwindow.__appBereit / window.__sankeyDrill muessen gesetzt bleiben.\n\n=== ECharts INK-Palette \u2014 heute identisch in beiden Dateien ===\ndashboard-charts.js:10-17\n  const INK = { red:\"#8E2F2A\", blue:\"#1F4A6D\", orange:\"#9A4A1C\",\n                green:\"#2F6149\", soft:\"#5b5650\", paper:\"#F4EFE6\" }\nsankey-drill.js:23-29 (ohne `paper`)\n  const INK = { red:\"#8E2F2A\", blue:\"#1F4A6D\", orange:\"#9A4A1C\",\n                green:\"#2F6149\", soft:\"#5b5650\" }\ndashboard-charts.js:449-460 \u2014 10-stufige MEHRJAHR_PALETTE\n  [INK.blue, INK.orange, INK.green, INK.red, INK.soft,\n   \"#b7ad99\", \"#3d6f8e\", \"#bf6a3a\", \"#4a8068\", \"#a85852\"]\ndashboard-charts.js:156-163 \u2014 chartAufwandart-palette {Personal:INK.blue,\n  Sachaufwand:INK.orange, Transfers:INK.red, Finanz:INK.soft,\n  Sonstige:\"#b7ad99\"}\nchartTreemap color:235 \u2014 [INK.orange, INK.blue, INK.green, INK.red, INK.soft]\nsankey-drill.js QUELLE_GRUEN:47 \u2014 Set{\"Kommunalsteuer\",\"Ertragsanteile (Bund)\"}\n  -> INK.green; sonstige Quellen -> INK.blue (quelleFarbe():49-51)\nDiagramm-Achsen/-Text (dashboard-charts.js:19-49): Hardcodes #2b2825, #5b5650,\n  #cdc4b4, #e6dfd0; fontFamily \"Inter, sans-serif\" (~20 Fundstellen ueber\n  dashboard-charts.js + sankey-drill.js).\n\n=== INK-Schluessel-Semantik (bleibt erhalten \u2014 nur Werte aendern sich) ===\ngreen = positiv/Ertraege   blue = neutral/Personal   red = Aufwand/Risiko\norange = Sachaufwand       soft = neutral-grau       paper = Diagramm-Flaeche\n</interfaces>\n\n<call_sites>\nGegrept: Stylesheet-Link `flomotlik`, `design-system.css`, INK-Palette,\n`MEHRJAHR_PALETTE`, die Komponenten-Klassen.\nOberflaechen gegrept: web/ (HTML/CSS/JS), web/vendor/, .github/workflows/.\n\nBefund:\n- web/index.html:9 \u2014 flomotlik-Stylesheet-`<link>` \u2014 IN SCOPE (Task 1).\n- web/css/app.css:2 \u2014 Kommentar \"Erweitert das flomotlik Design System\" \u2014\n  IN SCOPE (Task 2).\n- web/vendor/dashboard/dashboard.css:1 \u2014 `--hair`/`--raised` mit\n  flomotlik-Fallback \u2014 IN SCOPE (Task 4).\n- web/vendor/LIZENZEN.md:29 \u2014 flomotlik-Erwaehnung \u2014 IN SCOPE (Task 6).\n- web/index.html:18 \u2014 Kommentar verweist auf nicht mehr existierende\n  `_chart_div()` aus `html.py` \u2014 IN SCOPE (Task 2, Inline-Style-Bereinigung).\n- INK-Palette: NUR web/js/dashboard-charts.js und web/js/sankey-drill.js \u2014\n  IN SCOPE (Task 5). Keine Python-Spiegelung (RESEARCH bestaetigt: `html.py`\n  existiert nicht).\n- .github/workflows/ \u2014 kein DS-/Palette-/Stylesheet-Bezug \u2014 OUT OF SCOPE\n  (CI ruft nur Tests; keine UI-Invocation).\nKeine weiteren Call-Sites gefunden.\n</call_sites>\n\nKey files:\n@web/index.html \u2014 Markup, Stylesheet-Links, Inline-`<style>`; voller Umbau.\n@web/css/app.css \u2014 Upload-/Dokumentverwaltungs-CSS; wird zum DS-Adapter.\n@web/vendor/dashboard/dashboard.css \u2014 Dashboard-CSS; auf DS-Tokens.\n@web/js/dashboard-charts.js \u2014 ECharts-Optionen; INK + MEHRJAHR_PALETTE.\n@web/js/sankey-drill.js \u2014 Sankey-Drill-down; zweite INK-Palette.\n@web/vendor/dashboard/dashboard.js \u2014 liest Klassen, wird NICHT editiert.\n</context>\n\n<commit_format>\nFormat: `{id}: {message}` (aus `.issues/config.yaml`), ohne Werkzeug-Attribution.\nBeispiel: `ye9ih: app.css zum Gruene-AT-DS-Adapter ausbauen`\nPattern: `ye9ih: {praegnante deutsche Beschreibung der Aenderung}`\nKeine `claude`-/`Generated with`-/`Co-Authored-By`-Zeilen.\n</commit_format>\n\n<tasks>\n\n<task type=\"auto\">\n  <name>Task 1: Gruene-AT-DS-Link einsetzen, Token-Schicht in app.css anlegen</name>\n  <files>web/index.html, web/css/app.css</files>\n  <action>\n  Fundament-Task: den DS-Link AKTIVIEREN und die Token-Adapterschicht vorbereiten\n  \u2014 der flomotlik-Link bleibt in dieser Task noch erhalten (er wird erst in\n  Task 2 entfernt, nachdem alle Ersatzstile stehen, damit die Seite nie kaputt\n  ist).\n\n  In `web/index.html`:\n  - Nach Zeile 9 (dem flomotlik-`<link>`) eine neue Zeile einfuegen:\n    `<link rel=\"stylesheet\" href=\"https://grueneat.github.io/design-system/design-system.css\">`.\n    Beide Links bleiben vorerst parallel. Die `preconnect`-Zeilen 7-8 bleiben\n    unveraendert (das Gruene-AT-DS importiert Fonts ebenfalls von Google).\n  - Ladereihenfolge sicherstellen: DS-CSS-`<link>` MUSS vor\n    `./vendor/dashboard/dashboard.css` (Z.11) und `./css/app.css` (Z.12)\n    stehen, damit `dashboard.css`/`app.css` die `--gat-*`-Tokens nutzen und\n    gezielt ueberschreiben koennen. KEINE eigenen Font-`<link rel=stylesheet>`\n    hinzufuegen \u2014 Anti-Pattern (doppelter Font-Import).\n\n  In `web/css/app.css`:\n  - Den Kopfkommentar (Z.1-3) umschreiben: nicht mehr \"Erweitert das flomotlik\n    Design System\", sondern beschreiben, dass app.css auf den `--gat-*`-Tokens\n    des Gruene-AT-DS aufbaut. Keine Werkzeug-Attribution.\n  - Den `:root`-Block (Z.5-13) ersetzen durch eine reine DS-Adapter-Schicht.\n    Das DS hat KEINE neutrale Grauskala \u2014 diese aus den Tokens ableiten.\n    Neue Variablen, alle aus `--gat-*` abgeleitet:\n      --app-hair: Linienfarbe \u2014 ein heller Grauton, z.B.\n        color-mix(in srgb, var(--gat-color-anthrazit) 18%, white);\n      --app-raised: leicht erhabene Flaeche \u2014 z.B.\n        color-mix(in srgb, var(--gat-color-anthrazit) 4%, white);\n      --app-soft: gedaempfter Text \u2014 z.B.\n        color-mix(in srgb, var(--gat-color-anthrazit) 55%, white);\n    Die bisherigen App-Farbvariablen auf DS-Markenfarben mappen:\n      --app-akzent-primaer: var(--gat-color-dunkelgruen);   (ersetzt --ink-blue)\n      --app-positiv:        var(--gat-color-dunkelgruen);   (ersetzt --ink-green)\n      --app-risiko:         var(--gat-color-magenta);       (ersetzt --ink-red)\n      --app-sachaufwand:    color-mix(in srgb, var(--gat-color-magenta) 70%,\n                                      var(--gat-color-gelb));  (ersetzt --ink-orange)\n    Hinweis: `--app-akzent-primaer` und `--app-positiv` sind bewusst beide\n    dunkelgruen \u2014 Gruen ist die org-Primaerfarbe; Unterscheidung erfolgt im\n    Kontext (Buttons vs. Statusfarben). Wo in spaeteren Tasks zwei gruene Toene\n    nebeneinander noetig sind, hellgruen `--gat-color-hellgruen` als zweiten\n    Ton nutzen.\n  - Diese Task aendert NUR den `:root`-Block und den Kopfkommentar; die\n    konkreten Selektoren (`.dropzone`, `.doc-table` \u2026) folgen in Task 2.\n    Damit die App in diesem Zwischenstand lauffaehig bleibt: die alten\n    Variablennamen (`--hair`, `--raised`, `--soft`, `--ink-*`) als Aliase auf\n    die neuen `--app-*`-Variablen im selben `:root`-Block behalten \u2014 so brechen\n    die noch nicht migrierten Selektoren nicht. Die Aliase werden in Task 2\n    entfernt, sobald alle Selektoren migriert sind.\n\n  Funktionale IDs/Klassen NICHT anfassen.\n  </action>\n  <verify>\n  <automated>cd web && python3 -c \"import pathlib; h=pathlib.Path('index.html').read_text(); assert 'grueneat.github.io/design-system/design-system.css' in h, 'DS-Link fehlt'; i_ds=h.index('grueneat.github.io/design-system'); i_app=h.index('css/app.css'); i_dash=h.index('vendor/dashboard/dashboard.css'); assert i_ds<i_dash<i_app, 'Ladereihenfolge falsch'; c=pathlib.Path('css/app.css').read_text(); assert '--gat-color' in c, 'app.css nutzt keine DS-Tokens'; print('OK')\" && cd .. && npm run test:js</automated>\n  </verify>\n  <done>\n  - `index.html` bindet die Gruene-AT-DS-CSS-URL per `<link>` ein.\n  - Ladereihenfolge: DS-CSS vor `dashboard.css` vor `app.css`.\n  - `app.css` `:root` definiert `--app-*`-Variablen ausschliesslich aus\n    `--gat-*`-Tokens; alte Variablennamen bleiben als Aliase.\n  - Kopfkommentar nennt kein flomotlik mehr.\n  - `npm run test:js` gruen.\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 2: app.css auf DS-Tokens migrieren, Basisstile setzen, flomotlik-Link entfernen</name>\n  <files>web/css/app.css, web/index.html</files>\n  <action>\n  Diese Task macht `app.css` vollstaendig DS-konform und entfernt DANN den\n  flomotlik-Link \u2014 die Reihenfolge ist wichtig: erst Ersatz, dann strippen.\n\n  In `web/css/app.css`:\n  - Alle verbliebenen flomotlik-Token-Referenzen und Hardcodes durch die\n    `--app-*`/`--gat-*`-Variablen aus Task 1 ersetzen. Konkret betroffen:\n    `--hair`-Fallback `#cdc4b4`, `--raised`-Fallback `#faf6ee`, Hardcodes\n    `#f1ebdf` (:54), `#eef2f6` (:81), `#173a57` (:103 \u2014 Hover dunkler), `#fff`\n    (:99), `#e6dfd0` (:135), `#eef3ef`/`#f6eeed` (Status-/Toast-Hintergruende\n    :188,193,247,252), `--paper`-Fallback `#f4efe6` (:230). Status-Hintergruende\n    als helle Tints der jeweiligen Statusfarbe via `color-mix` ableiten.\n  - Basisstile setzen, die das DS NICHT liefert \u2014 ans Ende oder an den Anfang\n    von app.css einen Block fuer Element-Selektoren:\n      body { font-family: var(--gat-font-copy); color: var(--gat-color-text);\n             background: var(--gat-color-weiss); line-height: var(--gat-leading-copy);\n             margin: 0; font-size: var(--gat-text-copy); }\n      h1, h2, h3 { font-family: var(--gat-font-headline); font-weight: 900;\n             line-height: 1.15; color: var(--gat-color-text); }\n      h1 { font-size: var(--gat-text-h1); }\n      h2 { font-size: var(--gat-text-h2); }\n      h3 { font-size: var(--gat-text-h3); }\n    Hinweis: NICHT `--gat-leading-headline` (0.9) fuer h2/h3 verwenden \u2014 zu eng\n    fuer mehrzeilige Dashboard-Ueberschriften; 1.15 lokal nutzen (im RESEARCH\n    als Conflict notiert).\n      table { border-collapse: collapse; }\n      input, select { font-family: var(--gat-font-copy); }\n    Diese Element-Selektoren ersetzen die mit dem flomotlik-Link verschwindenden\n    Basisstile.\n  - `.page` (Z.15-17, `max-width: min(2400px,95vw)`) BEHALTEN \u2014 das Dashboard\n    braucht die Breite; `.gat-container` (72rem) waere zu schmal. Nur ggf.\n    `padding-inline` mit `--gat-space-*` ergaenzen.\n  - Die in Task 1 eingefuehrten Alias-Variablen (`--hair`, `--raised`, `--soft`,\n    `--ink-*`) jetzt aus `:root` ENTFERNEN \u2014 alle Selektoren sind migriert.\n  - Den Inline-`<style>`-Block aus `index.html:13-26` (`.boot-banner`,\n    `.dashboard-leer`, `.dash-chart`) nach `app.css` verschieben und dabei auf\n    Tokens umstellen: `.boot-banner` Hintergrund auf `--gat-color-magenta` mit\n    weisser Schrift (Magenta traegt weisse Schrift \u2014 Kontrast ok; NICHT\n    dunkelgruen, da Boot-Fehler als Alarmfarbe erkennbar bleiben sollen),\n    Schriftfamilie `--gat-font-copy` statt Inter. `.dash-chart`-Rahmen/-Flaeche\n    auf `--app-hair`/`--app-raised`. Den veralteten `html.py`/`_chart_div()`-\n    Kommentar dabei entfernen.\n\n  In `web/index.html`:\n  - Den flomotlik-`<link>` (urspruenglich Z.9,\n    `href=\"https://flomotlik.github.io/claude-code/design-system.css\"`)\n    KOMPLETT entfernen.\n  - Den Inline-`<style>`-Block (Z.13-26) entfernen \u2014 sein Inhalt ist jetzt in\n    `app.css`.\n\n  Funktionale IDs/Klassen NICHT anfassen. Markup-Klassenumbau (`.masthead-*`,\n  `.stats`, `.callout`, `.mark`, Header) folgt in Task 3.\n  </action>\n  <verify>\n  <automated>cd web && python3 -c \"import pathlib; h=pathlib.Path('index.html').read_text(); assert 'flomotlik' not in h, 'flomotlik-Link noch da'; assert '<style>' not in h, 'Inline-style noch da'; c=pathlib.Path('css/app.css').read_text(); assert 'flomotlik' not in c, 'app.css nennt flomotlik'; assert 'body' in c and '--gat-font' in c, 'Basisstile fehlen'; import re; assert not re.search(r'#cdc4b4|#faf6ee|#1f4a6d|#8e2f2a', c, re.I), 'flomotlik-Hardcodes in app.css'; print('OK')\" && cd .. && npm run test:js && npm run test:e2e</automated>\n  </verify>\n  <done>\n  - Kein `flomotlik`-Vorkommen mehr in `index.html` oder `app.css`.\n  - Kein Inline-`<style>` mehr in `index.html`.\n  - `app.css` setzt `body`, `h1..h3`, `table`, `input`, `select` mit DS-Tokens.\n  - `.page`-Breite (`min(2400px,95vw)`) erhalten.\n  - Keine flomotlik-Hardcode-Hexwerte mehr in `app.css`.\n  - `npm run test:js` und `npm run test:e2e` gruen.\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 3: index.html-Markup auf DS-Komponenten heben (Header, Kennzahlen, Callout, Inline-Marks)</name>\n  <files>web/index.html, web/css/app.css</files>\n  <action>\n  Markup-Umbau gemaess Locked Decision \"voll auf DS-Komponenten\". Die\n  redaktionelle flomotlik-Scaffolding entfaellt.\n\n  Header (`index.html:32-46`): den `<header class=\"row\">`-Block mit\n  `.margin`/`.body`/`.kicker`/`.kicker-num`/`.margin-note`/`.masthead-title`/\n  `.masthead-sub` ERSETZEN durch die DS-Header-Pflichtstruktur:\n    <header class=\"gat-header\">\n      <div class=\"gat-header__inner\">\n        <a class=\"gat-header__logo\" href=\".\"><span class=\"gat-header__logo-mark\"></span></a>\n        <nav class=\"gat-nav\"><span class=\"gat-nav__link gat-nav__link--active\">Gemeindefinanzen</span></nav>\n      </div>\n    </header>\n  Da die App nur eine Seite ist, traegt die `.gat-nav` keinen echten\n  Navigationslink \u2014 der App-Titel \"Gemeindefinanzen\" steht als\n  `gat-nav__link--active`. Der bisherige Intro-Absatz (`.masthead-sub\n  .app-intro`, der VRV-Erklaertext) wird als eigener Absatz UNTER den Header\n  gesetzt, mit Klasse `.app-intro` (bleibt) plus `.gat-fliesstext`.\n  Den `.gat-headline`-Titel ggf. zusaetzlich sichtbar im Inhaltsbereich\n  fuehren, falls der Header allein zu knapp wirkt \u2014 Discretion des Executors.\n\n  Ueberblick-Kennzahlen (`index.html:128-137`, `.stats`/`.stat`/`.stat-num`/\n  `.stat-label`): als DS-Karten-Raster umsetzen. Den `<div class=\"stats\">`\n  durch `<div class=\"gat-grid gat-grid--3\">` ersetzen und jede `.stat` als\n  `.gat-card gat-card--secondary` mit `.gat-card__title` (= Wert) und\n  `.gat-card__body` (= Label) \u2014 oder umgekehrt, je nach Lesbarkeit. WICHTIG:\n  Die IDs `st-ertraege`, `st-aufwand`, `st-netto`, `st-komm-anteil` MUESSEN\n  erhalten bleiben (e2e + dashboard.js togglen `is-green`/`is-red` auf\n  `#st-netto`). Die Klasse `is-orange` auf `#st-komm-anteil` kann entfallen\n  (wird nicht getestet); falls Akzentfarbe gewuenscht, eine Karte\n  `.gat-card--primary` nutzen. Vier Karten in `gat-grid--3` brechen sauber um.\n\n  Callout Sparpotenzial (`index.html:240-247`, `.callout is-risk`/\n  `.callout-label`): das DS hat kein Callout. Als `.gat-card gat-card--primary`\n  (dunkelgruen/weiss) nachbauen \u2014 eine ruhige, klar abgesetzte Hinweisbox; der\n  Label-Text \"Wichtige Einordnung\" als `.gat-card__title`. ODER lokal eine\n  `.callout`-Klasse in `app.css` auf DS-Tokens neu definieren. Executor waehlt;\n  `.gat-card--primary` ist vorzuziehen (echte DS-Komponente).\n\n  Inline-Marks (`.mark mark-blue` :124, `.mark mark-green` :156,\n  `.mark mark-red` :214,222): siehe Decision unten. Umsetzung: in `app.css`\n  drei semantische Klassen `.mark-positiv`, `.mark-neutral`, `.mark-risiko`\n  auf DS-Tokens definieren (dezente farbige `border-bottom`/`background`-Tint\n  in dunkelgruen / hellgruen / magenta) und im Markup die alten\n  `mark mark-blue|green|red` darauf umstellen:\n    mark-blue  -> mark-neutral  (Nettoergebnis, neutral)\n    mark-green -> mark-positiv  (Kommunalsteuer als Einnahmequelle)\n    mark-red   -> mark-risiko   (Pflichtumlage / Transferaufwand)\n  Begruendung: das DS hat nur `.gat-highlight` (gelb) \u2014 ein einziger Stil\n  kann die heutige Dreifach-Semantik nicht abbilden. Die Semantik wird daher\n  lokal auf DS-Markenfarben erhalten (siehe Decision).\n\n  Restliche redaktionelle Reste: `.lead`-Absatz (:123) \u2014 Klasse `.lead`\n  behalten, aber in `app.css` (Task 2 oder hier) als gut lesbarer Vorspann\n  auf DS-Tokens definieren; `.footer` (:330-334) \u2014 Klasse behalten, in\n  `app.css` mit DS-Tokens neu (dezenter Grauton, `--gat-text-small`).\n  `.app-intro`/`.masthead-sub`/`.lead`-`max-width: 70rem` bleibt erhalten.\n\n  Alle in `<interfaces>` als ERHALTEN gelisteten IDs/Klassen unangetastet\n  lassen \u2014 insbesondere `.tab-btn`, `.tab-panel`, `.switch-btn`, `is-active`,\n  `span.doc-status.ok`-Markup wird in dieser Task NICHT veraendert.\n  </action>\n  <verify>\n  <automated>cd web && python3 -c \"import pathlib; h=pathlib.Path('index.html').read_text(); assert 'gat-header' in h and 'gat-nav' in h, 'DS-Header fehlt'; assert 'kicker' not in h and 'masthead' not in h and 'class=\\\"row\\\"' not in h, 'flomotlik-Scaffolding noch da'; assert 'gat-grid' in h, 'DS-Grid fehlt'; [h.index(x) for x in ('st-ertraege','st-aufwand','st-netto','st-komm-anteil','tab-btn','tab-panel','switch-btn','doc-status')]; print('OK')\" && cd .. && npm run test:js && npm run test:e2e</automated>\n  </verify>\n  <done>\n  - Header nutzt `.gat-header`/`.gat-header__inner`/`.gat-nav`-Pflichtstruktur.\n  - `.kicker*`, `.margin-note`, `.masthead-*`, das `.row`/`.margin`/`.body`-\n    Geruest sind aus `index.html` entfernt.\n  - Ueberblick-Kennzahlen als `.gat-grid`/`.gat-card`-Raster; IDs `st-*`\n    erhalten.\n  - Sparpotenzial-Hinweis als `.gat-card--primary` (oder DS-Token-Callout).\n  - `.mark mark-*` auf semantische `.mark-positiv/-neutral/-risiko` umgestellt,\n    in `app.css` auf DS-Markenfarben definiert.\n  - Alle getesteten IDs/Klassen unveraendert; `test:js` + `test:e2e` gruen.\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 4: dashboard.css auf DS-Tokens umstellen, Tabs/Buttons als DS-Komponenten</name>\n  <files>web/vendor/dashboard/dashboard.css, web/index.html</files>\n  <action>\n  `web/vendor/dashboard/dashboard.css` ist hauseigenes CSS (KEINE externe\n  Vendor-Bibliothek) und wird auf DS-Tokens umgestellt. `dashboard.js` im selben\n  Ordner wird NICHT angefasst.\n\n  In `web/vendor/dashboard/dashboard.css`:\n  - `:root`-Zeile 1 (`--hair`/`--raised` mit flomotlik-Fallback) ersetzen \u2014 auf\n    die `--app-*`/`--gat-*`-Tokens umstellen oder die `--app-*`-Variablen aus\n    `app.css` nutzen (app.css laedt vor dashboard.css? NEIN \u2014 Ladereihenfolge\n    ist DS-CSS, dann dashboard.css, dann app.css). Daher: die `:root`-Variablen\n    in dashboard.css direkt aus `--gat-*`-Tokens ableiten (gleiche Formeln wie\n    `--app-hair`/`--app-raised` in app.css), NICHT auf `--app-*` referenzieren,\n    da app.css spaeter laedt.\n  - `.page` (Z.6, `max-width: min(2400px,95vw)`) BEHALTEN.\n  - Alle hartkodierten flomotlik-Tinten ersetzen:\n    `#1F4A6D` (Switcher/Mehrjahr-Primaer-Hintergrund :23,51,73,97) ->\n      `var(--gat-color-dunkelgruen)`; zugehoeriger weisser Text bleibt weiss\n      (dunkelgruen traegt weisse Schrift \u2014 Kontrastregel erfuellt). Beachte:\n      heutiger Text auf `#1F4A6D` ist `#F4EFE6` (Papier) \u2014 auf\n      `var(--gat-color-weiss)` umstellen.\n    `#2b2825`/`#5b5650`/`#9a8f78` (Text/Grau) -> `var(--gat-color-text)` bzw.\n      abgeleitete Grautoene.\n    `#e6dfd0` (Tabellen-Trennlinien) -> die abgeleitete Hair-Variable.\n    `rgba(31,74,109,0.06)` (Zeilen-Hover) -> dezenter dunkelgruener Tint, z.B.\n      `color-mix(in srgb, var(--gat-color-dunkelgruen) 7%, transparent)`.\n    `#9a4a1c` (`.table-hint`/`.mj-empty`) -> der Sachaufwand-Ton bzw. ein\n      gedaempfter Hinweiston aus DS-Tokens.\n    `var(--paper,#F4EFE6)` (:11,116 Hintergruende) -> `var(--gat-color-weiss)`\n      oder die Raised-Variable.\n  - `.dash-grid`-Umbruch (Z.39, `@media (max-width: 860px)`): auf einen\n    DS-Breakpoint legen \u2014 `48rem` (`--gat-breakpoint-md`) verwenden, damit das\n    Akzeptanzkriterium \"DS-Breakpoints 36rem/48rem\" erfuellt ist.\n  - `.tab-btn.is-active`, `.switch-btn.is-active`, `.mj-btn.is-primary` nutzen\n    heute `#1F4A6D` \u2014 auf `--gat-color-dunkelgruen`/`--gat-color-weiss` heben.\n\n  In `web/index.html`:\n  - An den sieben `.tab-btn`-Buttons (Z.112-118) zusaetzlich die DS-Klasse\n    `gat-btn` fuehren: `class=\"gat-btn tab-btn\"`. `.tab-btn` und `data-tab`\n    bleiben unveraendert (Vertrag). Das gibt den Tabs DS-Button-Optik, ohne\n    Klassen umzubenennen.\n  - Analog die statischen Buttons mit `gat-btn`/`gat-btn--secondary`\n    ausstatten, wo sie nicht funktional-getestet sind: `#sankey-reset`\n    (`.sankey-reset`), `#mj-selected`/`#mj-group` (`.mj-btn`), `#doc-clear-all`\n    (`.doc-clear-btn`), `#pick-btn` (`.dropzone-btn`). Beide Klassen am Element\n    fuehren \u2014 z.B. `class=\"gat-btn gat-btn--secondary sankey-reset\"`. Die\n    funktionalen Klassen NIEMALS entfernen.\n  - `.switch-btn` wird dynamisch von `dashboard-app.js` erzeugt \u2014 NICHT im\n    Markup vorhanden; dort nichts zu tun (Styling kommt aus dashboard.css).\n  Hinweis: Wo `gat-btn` und eine Custom-Button-Klasse kollidieren (z.B.\n  Polsterung), in `app.css`/`dashboard.css` die Custom-Klasse gezielt\n  nachjustieren \u2014 DS-Komponente gewinnt optisch, funktionale Klasse bleibt.\n  </action>\n  <verify>\n  <automated>cd web && python3 -c \"import pathlib,re; d=pathlib.Path('vendor/dashboard/dashboard.css').read_text(); assert not re.search(r'#1f4a6d|#9a4a1c|#f4efe6|#2b2825', d, re.I), 'flomotlik-Hardcodes in dashboard.css'; assert '--gat-' in d, 'dashboard.css nutzt keine DS-Tokens'; assert '48rem' in d or '--gat-breakpoint' in d, 'DS-Breakpoint fehlt'; h=pathlib.Path('index.html').read_text(); assert 'gat-btn tab-btn' in h or 'tab-btn gat-btn' in h or re.search(r'class=\\\"gat-btn[^\\\"]*tab-btn', h), 'tab-btn ohne gat-btn'; print('OK')\" && cd .. && npm run test:js && npm run test:e2e</automated>\n  </verify>\n  <done>\n  - `dashboard.css` enthaelt keine flomotlik-Hardcodes mehr, leitet `:root`\n    aus `--gat-*`-Tokens ab; `.page`-Breite erhalten.\n  - `.dash-grid`-Umbruch auf DS-Breakpoint 48rem.\n  - `.tab-btn`-Buttons tragen zusaetzlich `gat-btn`; `data-tab`/`.tab-btn`/\n    `is-active` unveraendert.\n  - Statische Buttons (sankey-reset, mj-*, doc-clear, pick) tragen `gat-btn`;\n    funktionale Klassen erhalten.\n  - `npm run test:js` + `npm run test:e2e` gruen.\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 5: ECharts-Palette aus Gruene-Markenfarben ableiten</name>\n  <files>web/js/dashboard-charts.js, web/js/sankey-drill.js</files>\n  <action>\n  Die ECharts-Palette wird aus den Gruene-Markenfarben abgeleitet. ECharts liest\n  KEINE CSS-Variablen \u2014 die Hex-Werte werden in JS hart gespiegelt, mit einem\n  Quellenkommentar, der die Herkunft (DS-Markenfarben + abgeleitete Tints)\n  dokumentiert. Kein Build-Schritt, keine `getComputedStyle`-Aufloesung noetig.\n\n  Palette ableiten (Methode: HSL-Tints/-Shades der 4 Markenfarben, benachbarte\n  Stufen kontrastieren in Helligkeit ODER Farbton; gelb NICHT als Serienfarbe).\n  Basis-Markenfarben: dunkelgruen #257639, hellgruen #56af31, magenta #e6007e,\n  anthrazit #1d1d1b. Eine 10-stufige kategoriale Palette bilden, je Markenfarbe\n  einen helleren Tint und/oder dunkleren Shade (HSL-Lightness ca. +/-12-18 %),\n  Reihenfolge so, dass aufeinanderfolgende Serien maximal kontrastieren.\n  Konkreter Vorschlag (Executor darf feinjustieren, muss aber Unterscheidbarkeit\n  und Kontrast gegen Weiss wahren):\n    1 dunkelgruen   #257639\n    2 magenta       #e6007e\n    3 hellgruen     #56af31\n    4 anthrazit     #1d1d1b\n    5 dunkelgruen-tint   #3f9457  (heller)\n    6 magenta-shade      #a8005c  (dunkler)\n    7 hellgruen-shade    #3c8a22  (dunkler)\n    8 anthrazit-tint     #5a5a57  (heller, neutral-grau)\n    9 magenta-tint       #f25aa8  (heller)\n    10 dunkelgruen-shade #18532a  (dunkler)\n\n  INK-Schluessel neu belegen (Schluesselnamen BEIBEHALTEN \u2014 der restliche Code\n  referenziert `INK.red`/`INK.blue` etc.; nur die Werte aendern sich; siehe\n  INK-Semantik in <interfaces>):\n    red    -> #e6007e   (Aufwand/Risiko = magenta)\n    blue   -> #3c8a22   (neutral/Personal = ein zweiter Gruenton, dunkler\n                         hellgruen \u2014 deutlich vom dunkelgruenen `green` zu\n                         unterscheiden)\n    orange -> #a8005c   (Sachaufwand = magenta-Shade, waermer; gut von `red`\n                         magenta unterscheidbar)\n    green  -> #257639   (positiv/Ertraege = dunkelgruen)\n    soft   -> #5a5a57   (neutral-grau = anthrazit-Tint)\n    paper  -> #ffffff   (Diagramm-Flaeche = weiss; nur dashboard-charts.js)\n  Falls `orange` (magenta-Shade) und `red` (magenta) im selben Chart zu nah\n  wirken (chartAufwandart, chartTrendAufwand: beide Serien nebeneinander), fuer\n  `orange` stattdessen einen klar warmen, magenta-fernen Ton waehlen, der\n  dennoch aus den Markenfarben ableitbar ist \u2014 Executor prueft optisch.\n\n  In `web/js/dashboard-charts.js`:\n  - Den `INK`-Block (Z.10-17) neu belegen; den Kommentar Z.9 (\"Die vier Tinten\n    des Design Systems\") aktualisieren auf \"Aus den Gruene-AT-Markenfarben\n    abgeleitete Palette; Quelle: Markenfarben des Gruene-AT-DS\".\n  - `MEHRJAHR_PALETTE` (Z.449-460) durch die 10-stufige Palette oben ersetzen.\n  - `chartAufwandart`-`palette` (Z.157-163): die `Sonstige`-Farbe `#b7ad99`\n    durch eine abgeleitete Stufe ersetzen (z.B. Palette-Stufe 8 `#5a5a57`).\n  - `baseText`/`catAxis`/`valAxis` (Z.19-49): `fontFamily: \"Inter, sans-serif\"`\n    durchgaengig auf `\"Barlow Semi Condensed, sans-serif\"` aendern (Diagramm-\n    Parit\u00e4t zur Seitenschrift). Die Achsen-/Grid-Hardcodes `#2b2825`, `#5b5650`,\n    `#cdc4b4`, `#e6dfd0` durch passende abgeleitete Grautoene ersetzen (anthrazit\n    fuer Text, hellere Toene fuer Linien) \u2014 als JS-Hex-Konstanten, da ECharts\n    keine CSS-Variablen liest.\n  - Treemap `colorSaturation` (RESEARCH: `[0.32,0.62]`) belassen oder leicht\n    anpassen, falls Kinder-Kacheln auf den neuen Farben kontrastschwach werden.\n\n  In `web/js/sankey-drill.js`:\n  - Den `INK`-Block (Z.23-29) identisch zu dashboard-charts.js neu belegen\n    (ohne `paper`); den Kommentar Z.21-22 entsprechend aktualisieren.\n  - Falls die Datei ebenfalls `fontFamily: \"Inter...\"` setzt: auf\n    `\"Barlow Semi Condensed, sans-serif\"` umstellen.\n  - `QUELLE_GRUEN`/`quelleFarbe()` (Z.47-51) unveraendert lassen \u2014 die Logik\n    nutzt `INK.green`/`INK.blue`, die jetzt automatisch die neuen Werte tragen.\n\n  Kontrastregel beachten: ECharts-Labels AUF farbigen Sankey-Knoten/Treemap-\n  Kacheln muessen lesbar sein \u2014 auf dunklen Stufen (dunkelgruen, magenta,\n  anthrazit, deren Shades) weisse Labels, auf hellen Stufen (Tints) anthrazit.\n  Gelb wird NICHT als Serienfarbe verwendet. Keine exportierte Funktionssignatur\n  aendern (sonst brechen die JS-Unit-Tests).\n  </action>\n  <verify>\n  <automated>cd web && python3 -c \"import pathlib,re; a=pathlib.Path('js/dashboard-charts.js').read_text(); s=pathlib.Path('js/sankey-drill.js').read_text(); assert '#8E2F2A' not in a and '#1F4A6D' not in a, 'alte INK-Werte in dashboard-charts.js'; assert '#8E2F2A' not in s and '#1F4A6D' not in s, 'alte INK-Werte in sankey-drill.js'; assert 'Inter' not in a and 'Inter' not in s, 'Inter-Font noch referenziert'; assert '#e6007e' in a.lower() and '#257639' in a.lower(), 'Markenfarben fehlen'; print('OK')\" && cd .. && npm run test:js && npm run test:e2e</automated>\n  </verify>\n  <done>\n  - Beide `INK`-Objekte tragen aus Markenfarben abgeleitete Werte; Schluessel-\n    namen unveraendert.\n  - `MEHRJAHR_PALETTE` ist eine 10-stufige, unterscheidbare Markenfarben-Palette.\n  - `chartAufwandart`-`palette` ohne flomotlik-Hardcode `#b7ad99`.\n  - Kein `Inter`-`fontFamily` mehr in beiden Dateien; Achsen-Hardcodes ersetzt.\n  - Keine exportierte Signatur geaendert; `test:js` + `test:e2e` gruen.\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 6: Lizenzhinweis aktualisieren, Gesamtabnahme</name>\n  <files>web/vendor/LIZENZEN.md</files>\n  <action>\n  In `web/vendor/LIZENZEN.md` (Zeile ~29) den flomotlik-Design-System-Eintrag\n  durch den Gruene-AT-DS-Eintrag ersetzen: Name \"Gruene-AT-Design-System\",\n  Quelle `https://grueneat.github.io/design-system/`, Lizenz \"CC BY 4.0\",\n  Urheber \"Die Gruenen\". Format und Stil der bestehenden Eintraege uebernehmen.\n  Falls der flomotlik-Eintrag andere benachbarte Eintraege beeinflusst (z.B.\n  Sortierung), Konsistenz wahren. Keine Werkzeug-Attribution.\n\n  Anschliessend Gesamtabnahme: alle Akzeptanzkriterien des Issues gegen den\n  Stand pruefen \u2014 DS-CSS per Link eingebunden, flomotlik entfernt, Typografie/\n  Farben/Komponenten DS-konform, Kontrastregel eingehalten, Diagramm-Palette\n  abgeleitet, alle Funktionen lauffaehig, Responsivverhalten an DS-Breakpoints.\n  </action>\n  <verify>\n  <automated>cd web && python3 -c \"import pathlib; l=pathlib.Path('vendor/LIZENZEN.md').read_text(); assert 'flomotlik' not in l, 'LIZENZEN.md nennt flomotlik'; assert 'grueneat.github.io' in l, 'Gruene-AT-DS fehlt in LIZENZEN.md'; print('OK')\" && cd .. && npm run test:js && npm run test:e2e && PYTHONPATH=src pytest -q && ruff check src tests && mypy src</automated>\n  </verify>\n  <done>\n  - `web/vendor/LIZENZEN.md` nennt das Gruene-AT-DS (CC BY 4.0, \"Die Gruenen\"),\n    kein flomotlik mehr.\n  - `npm run test:js` und `npm run test:e2e` gruen.\n  - `PYTHONPATH=src pytest -q`, `ruff check src tests`, `mypy src` gruen\n    (Regressionsschranke \u2014 Python wurde nicht angefasst).\n  </done>\n</task>\n\n</tasks>\n\n<verification>\nNach allen Tasks die Gesamtschranke laufen lassen:\n- `npm run test:js` \u2014 JS-Unit-Tests (Parser/Validator/Dashboard-Daten).\n- `npm run test:e2e` \u2014 Playwright-e2e-Suite (smoke, dashboard, sankey, upload,\n  persistence, build-stamp).\n- `PYTHONPATH=src pytest -q` \u2014 Python-Regression (unveraendert, muss gruen sein).\n- `ruff check src tests` \u2014 Python-Linter (Regression).\n- `mypy src` \u2014 Python-Typecheck (Regression).\nManuelle Sichtpruefung empfohlen (nicht automatisierbar): Seite im Browser\noeffnen, DS-Typografie (Barlow Semi Condensed) und Farben pruefen, ein PDF\nhochladen, durch alle Tabs klicken, Sankey-Drill-down und Mehrjahres-Vergleich\nausloesen \u2014 Kontrastregel und Diagramm-Lesbarkeit visuell bestaetigen.\n</verification>\n\n<success_criteria>\nMessbare Kriterien (1:1 zu den Akzeptanzkriterien aus ISSUE.md):\n- `index.html` bindet `https://grueneat.github.io/design-system/design-system.css`\n  per `<link>` ein; der flomotlik-Stylesheet-Link ist entfernt.\n- Farben, Typografie (Barlow Semi Condensed / Vollkorn ueber den DS-`@import`)\n  und Ueberschriften-Skala der gesamten Seite folgen dem Gruene-AT-DS-Tokens.\n- Buttons (`gat-btn`), Karten (`gat-card`), Header/Navigation (`gat-header`/\n  `gat-nav`) und Inline-Marks nutzen DS-Komponenten bzw. -Tokens.\n- Die ECharts-Diagramme nutzen eine aus den Gruene-Markenfarben abgeleitete\n  10-stufige kategoriale Palette; Serien bleiben unterscheidbar.\n- DS-Kontrastregel eingehalten: weisse Schrift nur auf Dunkelgruen, Anthrazit\n  auf Hellgruen/Gelb \u2014 auch in ECharts-Labels.\n- Upload, Parsing, Dashboard-Tabs, Dokument-Umschalter, Suche/Filter, Sankey-\n  und Ausgaben-Drill-down sowie Mehrjahres-Vergleich unveraendert lauffaehig\n  (durch die e2e-Suite belegt).\n- Responsives Verhalten an den DS-Breakpoints 36rem / 48rem.\n- Alle Tests gruen: `npm run test:js`, Playwright-e2e, `pytest -q`, `ruff`,\n  `mypy`.\n</success_criteria>\n"}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var dataEl = document.getElementById("artifact-source");
+  var target = document.getElementById("artifact-source-target");
+  if (dataEl && target) {
+    try {
+      target.textContent = JSON.parse(dataEl.textContent).source || "";
+    } catch (e) {
+      target.textContent = dataEl.textContent;
+    }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) { ev.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
