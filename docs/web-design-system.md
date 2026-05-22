@@ -341,3 +341,19 @@ Visuelle Pruefung mit Playwright/Chromium (1440px, Fixture-PDF
 geprueft — jeder Tab liest sich als klare Panel-Sequenz, der restilte
 Tooltip erscheint beim Hover ueber dem Wasserfall als helle Karte.
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 8 — Barrierefreiheit & Qualitaet (in Arbeit)
+
+- **Kontrast** (WCAG AA): Text auf `--web-green-deep`-Header, auf
+  `--web-green-tint`-Flaechen, Sekundaertext auf `--web-bg`,
+  Diagrammfarben auf Weiss — pruefen, bei Bedarf Tokens nachziehen.
+- **Tastatur**: sichtbarer `:focus-visible`-Ring auf allen interaktiven
+  Elementen (Tabs, Buttons, Umschalter, Felder, Brotkrumen, Links,
+  Tabellen-Sortierkoepfe); sinnvolle Fokusreihenfolge.
+- **Overlay**: `role="dialog"`/`aria-modal` vorhanden — Fokusfang und
+  Schliessen per Esc pruefen (nur falls bereits per JS geregelt; kein
+  `dashboard.js`-Eingriff — sonst nur dokumentieren).
+- **`prefers-reduced-motion`**: Uebergaenge bei reduzierter Bewegung aus.
+- Abschliessende visuelle Defektpruefung bei 390/760/1440px.
+
+_wird nach visueller Pruefung fortgeschrieben._
