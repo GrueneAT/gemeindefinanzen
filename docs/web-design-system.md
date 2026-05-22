@@ -115,4 +115,37 @@ Lagebild-Raster 3+1 (4 Karten in `gat-grid--3`), Kennzahlen als geflutete
 Knallgruen-Karten. Visuell als „anstrengend zu lesen" bewertet. Der Sankey
 (bereits `color-mix`-gedaempft) ist die ruhige Referenz.
 
-_Folgende Iterationen werden hier fortgeschrieben._
+### Iteration 1 — Fundament (erledigt)
+
+`--web-*`-Tokenschicht, ruhiger Grundton (`--web-bg`), zentrierter Container
+(`.page` 1200px, mittig), Lagebild als 4-spaltiges `.metric-card`-Raster,
+Diagrammpalette entsaettigt (8 ruhige Toene, kein Magenta). Visuelle Pruefung:
+deutlich ruhiger, Kernprobleme geloest. **Tests gruen.**
+
+Verbleibende Befunde fuer die naechsten Runden:
+- Ueberschriften durchgehend Gewicht 900, schwarz, condensed — wirken schreiend.
+- Header ist ein hoher, wuchtiger Dunkelgruen-Block; Logo winzig; Wortmarke
+  „Gemeindefinanzen" doppelt (Header-Nav + Body-h1).
+- Diagramm-Ueberschriften (`h3`) schweben frei ueber den Panels.
+- Metric-Card-Akzentbalken alle gruen — keine semantische Unterscheidung.
+
+## Typografie & Rhythmus (ab Iteration 2)
+
+Barlow Semi Condensed (Headline) ist von Natur aus schmal — Gewicht 900
+zusaetzlich macht es laut. Ruhigere Skala:
+
+| Ebene | Gewicht | Einsatz |
+| --- | --- | --- |
+| h1 | 800 | Seitentitel, einmal pro Seite |
+| h2 | 700 | Abschnittstitel (Lagebild, Einnahmestruktur …) |
+| h3 | 700 | Panel-/Diagrammtitel, kleiner |
+| Label/Kicker | 600, uppercase, `letter-spacing` | Metric-Label, Spaltenkopf |
+
+- Klarer vertikaler Rhythmus: `h2` mit grossem Oberabstand, `h3` enger an
+  seinen Inhalt gebunden.
+- Header: schlank (~64–72px), Logo + Wortmarke als Markenleiste; nicht als
+  hoher Farbblock.
+
+### Iteration 2 — Typografie & Header (in Arbeit)
+
+_wird nach visueller Pruefung fortgeschrieben._
