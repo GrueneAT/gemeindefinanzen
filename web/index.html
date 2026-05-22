@@ -66,18 +66,20 @@
         <p class="persist-note" id="persist-note">wird geladen ...</p>
         <p class="doc-empty" id="doc-empty" hidden>Noch keine Dokumente
           geladen.</p>
-        <table class="doc-table">
-          <thead>
-            <tr>
-              <th>Dokument</th>
-              <th>Quelldatei</th>
-              <th class="num">Detailposten</th>
-              <th>Pruefstatus</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="doc-tbody"></tbody>
-        </table>
+        <div class="doc-table-scroll">
+          <table class="doc-table">
+            <thead>
+              <tr>
+                <th>Dokument</th>
+                <th>Quelldatei</th>
+                <th class="num">Detailposten</th>
+                <th>Pruefstatus</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="doc-tbody"></tbody>
+          </table>
+        </div>
         <p class="doc-clear-zeile">
           <button type="button" class="gat-btn gat-btn--secondary doc-clear-btn" id="doc-clear-all" hidden>
             Alle Dokumente entfernen</button>
