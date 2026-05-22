@@ -169,19 +169,30 @@ Verbleibende Befunde fuer die naechsten Runden:
 - Metric-Card-Akzentbalken alle gruen — keine semantische Unterscheidung.
 - Diagramm-Container (`.dash-chart`) noch nicht als `.web-panel` umgesetzt.
 
-### Iteration 3 — Chart-Panels, Sektionsstruktur, Metric-Akzente (in Arbeit)
+### Iteration 3 — Chart-Panels, Sektionsstruktur, Metric-Akzente (erledigt)
 
 Ziel: echte Komponentenstruktur statt frei schwebender Ueberschriften.
 
-- **`.web-panel` als Diagramm-Komponente.** Jedes Diagramm sitzt mit seiner
-  `h3`-Ueberschrift (und ggf. Kurzbeschreibung) in einer Karte:
-  `.web-panel` > `.web-panel__head` (h3) > `.web-panel__body` (Chart).
-  Die frei stehenden `<h3>` ueber `.dash-chart`-Containern entfallen.
+- **`.web-panel` als Diagramm-Komponente umgesetzt.** Jedes Diagramm aller
+  Tabs sitzt jetzt mit seiner `h3`-Ueberschrift (und ggf. Kurzbeschreibung
+  als `.web-panel__note`) in einer Karte: `.web-panel` >
+  `.web-panel__head` > `.web-panel__body`. Der Kopf traegt eine subtile
+  untere Haarlinie, die Sankey-Drill-down-Leiste sitzt im Panel-Kopf. Die
+  frei stehenden `<h3>` ueber `.dash-chart`-Containern entfallen.
+  `.dash-chart` ist auf einen reinen, rahmenlosen Container reduziert (nur
+  `margin: 0`) — kein doppelter Rahmen/Schatten mehr. Panels in der
+  2-spaltigen `.dash-grid` fuellen ihre Rasterzelle gleich hoch aus.
+  Chart-`id`s und Inline-Hoehen unveraendert (Dashboard-JS).
 - **`.metric-card`-Akzente semantisch.** Modifier je Kennzahl: Ertraege
-  gruen (`--web-chart-green`), Aufwendungen Ton (`--web-chart-clay`),
-  Nettoergebnis Schiefer (`--web-chart-slate`), Kommunalsteuer-Anteil als
-  Hero (gruener Tint). Der Akzentbalken nimmt die jeweilige Farbe.
-- **Sektionskopf.** `h2`-Abschnitte bekommen einen ruhigen, konsistenten
-  Kopf (Titel + einleitender Absatz als Einheit), klare Trennung der Tabs.
+  gruen (`.metric-card--ertrag`, `--web-chart-green`), Aufwendungen Clay
+  (`--aufwand`, `--web-chart-clay`), Nettoergebnis Schiefer (`--netto`,
+  `--web-chart-slate`), Kommunalsteuer-Anteil bleibt Hero (gruener Tint).
+  Der Akzentbalken setzt `--metric-accent`.
+- **Sektionskopf `.web-section-head`.** Jeder Tab oeffnet mit `h2`-Titel
+  und einleitendem Absatz als ruhige Einheit, klar von der Steuerleiste
+  getrennt. Der Intro-Absatz nutzt `--web-text-soft`.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung (Screenshots Ueberblick + Ausgaben): Diagramme als klar
+abgegrenzte Karten, keine Karte-in-Karte-Optik, differenzierte
+Metric-Akzente, gruppierte Sektionskoepfe. **Tests gruen**
+(`npm run test:js`, `npm run test:e2e`).
