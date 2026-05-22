@@ -68,8 +68,20 @@ web-deps: ## JS-Abhaengigkeiten installieren (mupdf, sqlite-wasm)
 web-test: ## JS-Tests der Browser-App ausfuehren
 	npm run test:js
 
-web-serve: web-sync ## web/ lokal unter http://localhost:8080/web/ ausliefern
-	node scripts/serve.mjs
+web-serve: web-sync ## web/ lokal ausliefern (node direkt, ohne Container)
+	node scripts/serve.mjs $(WEB_PORT)
+
+# Container-Variante: startet den statischen Server in einem Docker-Container
+# und veroeffentlicht den Port auf dem Host. Im Browser http://localhost:8080/web/
+# oeffnen — 'localhost' ist ein sicherer Kontext, daher funktioniert auch die
+# OPFS-Persistenz. Beenden mit Strg-C.
+WEB_PORT  ?= 8080
+WEB_IMAGE ?= node:slim
+web-docker: web-sync ## web/ im Docker-Container ausliefern (Port veroeffentlicht)
+	@echo "Browser oeffnen: http://localhost:$(WEB_PORT)/web/   (Strg-C beendet)"
+	docker run --rm -p $(WEB_PORT):$(WEB_PORT) \
+		-v "$(CURDIR)":/app -w /app $(WEB_IMAGE) \
+		node scripts/serve.mjs $(WEB_PORT)
 
 test-js: web-test ## Alias fuer web-test
 
@@ -77,4 +89,4 @@ clean: ## Generierte Artefakte loeschen
 	rm -rf data/*.db data/*.csv data/*.xlsx reports/*.html site build
 
 .PHONY: help setup db validate report pages queries export test lint all clean \
-	web-sync web-deps web-test web-serve test-js
+	web-sync web-deps web-test web-serve web-docker test-js

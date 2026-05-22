@@ -39,11 +39,15 @@ async function init() {
   note.textContent = db.persistent
     ? "Daten werden lokal im Browser gespeichert (OPFS) — beim naechsten " +
       "Besuch ist der Stand wieder da."
-    : "Hinweis: persistente Speicherung (OPFS) ist in diesem Browser nicht " +
-      "verfuegbar — die Daten gelten nur fuer diese Sitzung."
+    : "Hinweis: dauerhafte Speicherung (OPFS) ist hier nicht aktiv — die " +
+      "Daten gelten nur fuer diese Sitzung. OPFS braucht einen sicheren " +
+      "Kontext: die Seite ueber http://localhost oder die veroeffentlichte " +
+      "HTTPS-Adresse oeffnen, dann bleibt der Stand erhalten. Die Analyse " +
+      "funktioniert auch ohne Persistenz uneingeschraenkt."
 
   verdrahteUpload()
   zeichneDokumentliste()
+  window.__appBereit = true
 }
 
 // --- Dokumentliste -------------------------------------------------------- //
@@ -261,6 +265,9 @@ function escapeHtml(s) {
 }
 
 init().catch((e) => {
+  // Start verlief mit Fehler — gilt fuer den Waechter dennoch als erledigt,
+  // damit nicht zusaetzlich die allgemeine Ausbleiben-Meldung erscheint.
+  window.__appBereit = true
   document.getElementById("toast-box").innerHTML =
     `<div class="toast fehl">Initialisierung fehlgeschlagen: ${escapeHtml(
       e.message || String(e),
