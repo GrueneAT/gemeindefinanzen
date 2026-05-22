@@ -342,18 +342,66 @@ geprueft — jeder Tab liest sich als klare Panel-Sequenz, der restilte
 Tooltip erscheint beim Hover ueber dem Wasserfall als helle Karte.
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 8 — Barrierefreiheit & Qualitaet (in Arbeit)
+### Iteration 8 — Barrierefreiheit & Qualitaet (erledigt)
 
-- **Kontrast** (WCAG AA): Text auf `--web-green-deep`-Header, auf
-  `--web-green-tint`-Flaechen, Sekundaertext auf `--web-bg`,
-  Diagrammfarben auf Weiss — pruefen, bei Bedarf Tokens nachziehen.
-- **Tastatur**: sichtbarer `:focus-visible`-Ring auf allen interaktiven
-  Elementen (Tabs, Buttons, Umschalter, Felder, Brotkrumen, Links,
-  Tabellen-Sortierkoepfe); sinnvolle Fokusreihenfolge.
-- **Overlay**: `role="dialog"`/`aria-modal` vorhanden — Fokusfang und
-  Schliessen per Esc pruefen (nur falls bereits per JS geregelt; kein
-  `dashboard.js`-Eingriff — sonst nur dokumentieren).
-- **`prefers-reduced-motion`**: Uebergaenge bei reduzierter Bewegung aus.
-- Abschliessende visuelle Defektpruefung bei 390/760/1440px.
+Abschliessende Haertung: Kontrast auf WCAG-AA-Niveau, durchgaengiger
+Tastatur-Fokus, reduzierte Bewegung und eine letzte Defektpruefung.
 
-_wird nach visueller Pruefung fortgeschrieben._
+- **Kontrast (WCAG AA).** Alle Token-Paare gemessen (sRGB-Leuchtdichte,
+  Schwelle 4.5 fuer Fliesstext, 3.0 fuer Grosstext und den 3px-Akzent-
+  balken). Drei Befunde nachgezogen, jeweils kleine Verschiebungen, die
+  den ruhigen, entsaettigten Charakter wahren:
+  - `--web-text-mute` von `#8b8f82` (3.0–3.3 — durchgefallen) auf
+    `#6b6f63` — Hinweise, Sankey-Hinweis, Spaltenpfeile, Drill-Code.
+  - Neuer Token `--web-clay-text` `#9c5a38` fuer Risiko-/Fehler-**Text**
+    (`#b9744f` aus der Diagrammpalette war als Text mit 3.2–3.7 zu hell):
+    Fehl-Pruefstatus, `.doc-remove`, `.doc-clear`, `.progress-error`,
+    Fehler-Toast. Die Diagrammfuellung `--web-chart-clay` bleibt unberuehrt.
+  - `.doc-clear-btn:hover` (weiss auf Clay) nutzt jetzt `--web-clay-text`
+    als Flaeche.
+
+  Gemessene Kontrastwerte nach der Iteration (alle bestehen AA):
+
+  | Paar | Ratio |
+  | --- | --- |
+  | `--web-text` auf `--web-bg` / `--web-surface` | 13.85 / 15.20 |
+  | `--web-text` auf `--web-green-tint` | 12.92 |
+  | `--web-text-soft` auf `--web-bg` / `--web-surface` | 5.62 / 6.17 |
+  | `--web-text-soft` auf `--web-green-tint` | 5.25 |
+  | `--web-text-mute` auf bg / surface / surface-sunk | 4.69 / 5.15 / 4.86 |
+  | Weiss auf `--web-green-deep` (Header) | 6.16 |
+  | `--web-green-deep` auf `--web-green-tint` (Hero-Label) | 5.23 |
+  | Callout: Weiss auf DS-Gruen `#257639` | 5.63 |
+  | Metric-Label `--web-text-soft` auf Weiss / Hero-Tint | 6.17 / 5.25 |
+  | `--web-clay-text` auf Fehl-Tint / Weiss | 4.67 / 5.34 |
+  | Weiss auf `--web-clay-text` (`.doc-clear`-Hover) | 5.34 |
+
+- **Tastatur-Fokus.** Ein gemeinsamer `:focus-visible`-Block in `app.css`
+  gibt jedem interaktiven Element dieselbe sichtbare Markierung — 2px-
+  Kontur in `--web-green-deep` plus den weichen `--web-focus-ring`:
+  Reiter, alle Buttons (`.gat-btn`, Dropzone-Auswahl, `.doc-remove`,
+  `.doc-clear`, `.mj-btn`, `.mj-drill`, `.mj-close`, `.sankey-reset`),
+  Dokument-Umschalter, Filter-/Suchfelder, Brotkrumen, sortierbare
+  Spaltenkoepfe, Auswahl-Checkboxen und die Dokumentverwaltungs-Summary.
+  Neuer lokaler Token `--web-focus-offset`: Elemente, die buendig an einer
+  Kante sitzen (Reiter, Sortierkoepfe, Summary), setzen ihn negativ, damit
+  die Kontur nicht abgeschnitten wird. Der Marken-Link im dunklen Header
+  bekommt eine helle Kontur. Verstreute, nur-Kontur-Fokusregeln in
+  `dashboard.css` wurden auf den gemeinsamen Block zurueckgefuehrt.
+- **`prefers-reduced-motion`.** Neuer Abschnitt 6 in `app.css`: bei
+  reduzierter Bewegung werden Transitions/Animationen global auf nahezu
+  null gesetzt (Hover-/Fokus-Farbwechsel, Fortschrittsbalken, Dropzone,
+  Aufklapp-Pfeil, Tableiste).
+- **Overlay-Semantik.** Schliessen per Esc und Klick auf den Hintergrund
+  sind bereits in `dashboard.js` geregelt (`setupMehrjahr`) — unveraendert.
+  Die fehlende Tastatur-Fokusfuehrung wurde minimal in `app.js`
+  (`verdrahteOverlayFokus`) ergaenzt: ein `MutationObserver` auf der
+  `is-open`-Klasse setzt den Fokus beim Oeffnen in den Dialog, faengt Tab
+  innerhalb des Dialogs (Fokusfalle) und gibt den Fokus beim Schliessen an
+  das ausloesende Element zurueck. `dashboard.js` bleibt unangetastet.
+- **Visuelle Defektpruefung.** Playwright/Chromium, Fixture-PDF
+  `VA-2026-Auflage.pdf`, alle sieben Tabs plus Landing bei 390/760/1440px:
+  kein horizontaler Ueberlauf, keine geclippten Texte, keine schiefen
+  Panels — die Politur der Iterationen 1–7 bleibt intakt.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).

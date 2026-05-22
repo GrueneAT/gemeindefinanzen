@@ -49,10 +49,67 @@ async function init() {
       "uneingeschraenkt."
 
   verdrahteUpload()
+  verdrahteOverlayFokus()
   zeichneDokumentliste()
   zeichneDashboard()
   window.__appBereit = true
   zeigeBuildStempel()
+}
+
+// --- Mehrjahres-Overlay: Fokusverwaltung --------------------------------- //
+// Das Overlay traegt role="dialog"/aria-modal; Schliessen per Esc und
+// Klick auf den Hintergrund regelt dashboard.js. Was dort fehlt, ist die
+// Tastatur-Fokusfuehrung: Fokus beim Oeffnen in den Dialog setzen, Tab im
+// Dialog fangen (Fokusfalle) und beim Schliessen auf das ausloesende
+// Element zuruecksetzen. Das wird hier ergaenzt, ohne dashboard.js
+// anzufassen — beobachtet wird allein die is-open-Klasse des Overlays.
+function verdrahteOverlayFokus() {
+  const overlay = document.getElementById("mj-overlay")
+  if (!overlay || !("MutationObserver" in window)) return
+  let zuletztFokussiert = null
+
+  const fokussierbar = () =>
+    [...overlay.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )].filter((el) => !el.disabled && el.offsetParent !== null)
+
+  // Tab innerhalb des Dialogs halten, solange er offen ist.
+  overlay.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Tab") return
+    const ziele = fokussierbar()
+    if (ziele.length === 0) return
+    const erstes = ziele[0]
+    const letztes = ziele[ziele.length - 1]
+    if (ev.shiftKey && document.activeElement === erstes) {
+      ev.preventDefault()
+      letztes.focus()
+    } else if (!ev.shiftKey && document.activeElement === letztes) {
+      ev.preventDefault()
+      erstes.focus()
+    }
+  })
+
+  const beobachter = new MutationObserver(() => {
+    const offen = overlay.classList.contains("is-open")
+    if (offen && document.activeElement !== overlay
+        && !overlay.contains(document.activeElement)) {
+      // Frisch geoeffnet — Ausloeser merken, Fokus in den Dialog setzen.
+      zuletztFokussiert = document.activeElement
+      const schliessen = document.getElementById("mj-close")
+      const ziel = schliessen || fokussierbar()[0]
+      if (ziel) ziel.focus()
+    } else if (!offen && zuletztFokussiert) {
+      // Geschlossen — Fokus auf das ausloesende Element zuruecksetzen.
+      if (typeof zuletztFokussiert.focus === "function") {
+        zuletztFokussiert.focus()
+      }
+      zuletztFokussiert = null
+    }
+  })
+  beobachter.observe(overlay, {
+    attributes: true,
+    attributeFilter: ["class"],
+  })
 }
 
 // Build-Commit aus version.json in die Fusszeile schreiben. Fehlt die Datei
