@@ -34,10 +34,15 @@ function baseText() {
   return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
 }
 
-// Einheitliche Balkenbreiten-Deckelung: bei Ein-Dokument-Ansichten mit
-// wenigen Kategorien wuerden Balken sonst absurd breit. Ein gemeinsamer
-// Hoechstwert haelt alle Balken-/Saeulen-Diagramme ruhig und vergleichbar.
-const BAR_MAX = 40
+// Balkenbreiten-Deckelung je Datendichte. Auf den jetzt vollbreiten Panels
+// (~2000px auf einem 4K-Schirm) wuerde ein globaler schmaler Deckel
+// kategorienarme Diagramme zu duennen Strichen verkommen lassen. Daher zwei
+// Stufen: BAR_MAX_DICHT fuer Diagramme mit vielen Kategorien (horizontale
+// Balkenlisten, Korridor), BAR_MAX_WEIT fuer kategorienarme Saeulendiagramme
+// (Wasserfall mit 3 Saeulen, Trend ueber wenige Dokumente) — dort sollen die
+// Saeulen substanziell wirken statt als Slivers in leerer Flaeche.
+const BAR_MAX_DICHT = 56
+const BAR_MAX_WEIT = 130
 
 // Gemeinsame, ruhige Grid-Raender — jedes Diagramm nutzt seine Panel-
 // flaeche gleichmaessig. containLabel haelt Achsenbeschriftungen drin;
@@ -117,7 +122,7 @@ function round(x) {
   return ab % 2 === 0 ? ab : ab + 1
 }
 
-function bar(categories, values, color, colors = null) {
+function bar(categories, values, color, colors = null, barMax = BAR_MAX_DICHT) {
   const data = colors
     ? values.map((v, i) => ({
         value: round(v),
@@ -135,7 +140,7 @@ function bar(categories, values, color, colors = null) {
         type: "bar",
         data,
         barWidth: "62%",
-        barMaxWidth: BAR_MAX,
+        barMaxWidth: barMax,
         itemStyle: { color, borderRadius: 2 },
       },
     ],
@@ -202,16 +207,20 @@ export function chartEinnahmen(agg) {
   return bar(cats, vals, INK.blue, cols)
 }
 
+// Kostentreiber und Investitionen sitzen seit Iteration 13 in vollbreiten
+// Einzel-Chart-Panels. Haben sie nur wenige Posten, blieben die liegenden
+// Balken bei knappem Deckel duenne Streifen in viel Hoehe — daher der
+// weitere BAR_MAX_WEIT-Deckel statt des dichten.
 export function chartTreiber(agg) {
   const cats = agg.treiber.map(([b]) => b.slice(0, 34)).reverse()
   const vals = agg.treiber.map(([, d]) => d).reverse()
-  return bar(cats, vals, INK.red)
+  return bar(cats, vals, INK.red, null, BAR_MAX_WEIT)
 }
 
 export function chartInvestitionen(agg) {
   const cats = agg.investitionen.map(([b]) => b.slice(0, 36)).reverse()
   const vals = agg.investitionen.map(([, , v]) => v).reverse()
-  return bar(cats, vals, INK.orange)
+  return bar(cats, vals, INK.orange, null, BAR_MAX_WEIT)
 }
 
 export function chartAufwandart(agg) {
@@ -336,14 +345,14 @@ export function chartWasserfall(agg, jahr) {
         data: sockel,
         silent: true,
         barWidth: "45%",
-        barMaxWidth: BAR_MAX,
+        barMaxWidth: BAR_MAX_WEIT,
       },
       {
         type: "bar",
         stack: "w",
         data: sichtbar,
         barWidth: "45%",
-        barMaxWidth: BAR_MAX,
+        barMaxWidth: BAR_MAX_WEIT,
         itemStyle: { borderRadius: 2 },
         // Ruhige Verbindungslinie zwischen den Wasserfall-Stufen — eine
         // duenne Haarlinie macht den Treppen-Verlauf ablesbar, ohne den
@@ -395,7 +404,7 @@ export function chartKorridor(agg) {
         data: einzeln,
         itemStyle: { color: INK.orange, borderRadius: 2 },
         barWidth: "52%",
-        barMaxWidth: BAR_MAX,
+        barMaxWidth: BAR_MAX_DICHT,
       },
       {
         name: "kumuliert",
@@ -426,14 +435,14 @@ export function chartTrendEckwerte(trend) {
         name: "Ertraege",
         type: "bar",
         data: reihe.map((r) => r[1]),
-        barMaxWidth: BAR_MAX,
+        barMaxWidth: BAR_MAX_WEIT,
         itemStyle: { color: INK.green, borderRadius: 2 },
       },
       {
         name: "Aufwendungen",
         type: "bar",
         data: reihe.map((r) => r[2]),
-        barMaxWidth: BAR_MAX,
+        barMaxWidth: BAR_MAX_WEIT,
         itemStyle: { color: INK.red, borderRadius: 2 },
       },
       {
@@ -498,7 +507,7 @@ export function chartTrendAufwand(trend) {
       type: "bar",
       stack: "a",
       data: reihe.map((r) => r[idx]),
-      barMaxWidth: BAR_MAX,
+      barMaxWidth: BAR_MAX_WEIT,
       itemStyle: { color: col },
     })),
   }
