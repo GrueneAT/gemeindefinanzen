@@ -21,32 +21,123 @@
   --app-sachaufwand: color-mix(in srgb, var(--gat-color-magenta) 70%,
                                var(--gat-color-gelb));
 
-  /* Uebergangs-Aliase auf die alten Variablennamen, damit die noch nicht
-     migrierten Selektoren waehrend des Umbaus lauffaehig bleiben. Werden in
-     Task 2 entfernt, sobald alle Selektoren migriert sind. */
-  --hair: var(--app-hair);
-  --raised: var(--app-raised);
-  --soft: var(--app-soft);
-  --ink-blue: var(--app-akzent-primaer);
-  --ink-red: var(--app-risiko);
-  --ink-green: var(--app-positiv);
-  --ink-orange: var(--app-sachaufwand);
 }
+
+/* --- Basisstile -----------------------------------------------------------
+   Das Gruene-AT-DS ist ein reines Token-/Komponenten-Stylesheet ohne Reset
+   und ohne Element-Basisstile. Die folgenden Selektoren versorgen body,
+   Ueberschriften, Tabellen und Formularfelder direkt aus den DS-Tokens. */
+body {
+  font-family: var(--gat-font-copy);
+  color: var(--gat-color-text);
+  background: var(--gat-color-weiss);
+  line-height: var(--gat-leading-copy);
+  margin: 0;
+  font-size: var(--gat-text-copy);
+}
+h1, h2, h3 {
+  font-family: var(--gat-font-headline);
+  font-weight: 900;
+  /* Bewusst nicht --gat-leading-headline (0.9) — zu eng fuer mehrzeilige
+     Dashboard-Ueberschriften. */
+  line-height: 1.15;
+  color: var(--gat-color-text);
+}
+h1 { font-size: var(--gat-text-h1); }
+h2 { font-size: var(--gat-text-h2); }
+h3 { font-size: var(--gat-text-h3); }
+table { border-collapse: collapse; }
+input, select { font-family: var(--gat-font-copy); }
 
 .page {
   max-width: min(2400px, 95vw);
+  padding-inline: var(--gat-space-3);
 }
-.masthead-sub,
-.lead,
-.app-intro {
+.app-intro,
+.lead {
   max-width: 70rem;
+}
+
+/* Vorspann-Absatz unter dem Header. */
+.app-intro {
+  color: var(--app-soft);
+  font-size: var(--gat-text-subline);
+  line-height: var(--gat-leading-copy);
+  margin: var(--gat-space-4) 0;
+}
+.lead {
+  font-size: var(--gat-text-subline);
+  line-height: var(--gat-leading-copy);
+}
+
+/* Seitenfuss — dezente Grundzeile. */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gat-space-3);
+  justify-content: space-between;
+  margin-top: var(--gat-space-6);
+  padding-top: var(--gat-space-3);
+  border-top: 1px solid var(--app-hair);
+  color: var(--app-soft);
+  font-size: var(--gat-text-small);
+}
+
+/* --- Boot-Fehlerbanner / Empty-State / Diagramm-Container -----------------
+   Frueher Inline-<style> in index.html; hierher verschoben und auf DS-Tokens
+   umgestellt. */
+.boot-banner {
+  background: var(--gat-color-magenta);
+  color: var(--gat-color-weiss);
+  padding: var(--gat-space-2) var(--gat-space-3);
+  font-family: var(--gat-font-copy);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.boot-banner strong {
+  color: var(--gat-color-weiss);
+}
+.dashboard-leer {
+  margin: var(--gat-space-5) 0;
+  color: var(--app-soft);
+}
+.dash-chart {
+  margin: var(--gat-space-2) 0;
+  border: 1px solid var(--app-hair);
+  border-radius: var(--gat-radius-sm);
+  background: var(--app-raised);
+  padding: 6px;
+}
+
+/* --- Inline-Hervorhebungen ------------------------------------------------
+   Das DS kennt nur einen Highlight-Stil (gelb). Die dreifache Semantik der
+   App (positiv / neutral / Risiko) wird daher lokal auf DS-Markenfarben
+   nachgebaut — dezente farbige Unterstreichung mit hellem Tint. */
+.mark-positiv,
+.mark-neutral,
+.mark-risiko {
+  padding: 0.05em 0.15em;
+  border-radius: var(--gat-radius-sm);
+  font-weight: 600;
+}
+.mark-positiv {
+  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 14%, white);
+  border-bottom: 2px solid var(--gat-color-dunkelgruen);
+}
+.mark-neutral {
+  background: color-mix(in srgb, var(--gat-color-hellgruen) 18%, white);
+  border-bottom: 2px solid var(--gat-color-hellgruen);
+}
+.mark-risiko {
+  background: color-mix(in srgb, var(--gat-color-magenta) 12%, white);
+  border-bottom: 2px solid var(--gat-color-magenta);
 }
 
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
 .doc-manager {
-  border: 1px solid var(--hair);
+  border: 1px solid var(--app-hair);
   border-radius: 5px;
-  background: var(--raised);
+  background: var(--app-raised);
   margin: 1.4rem 0;
 }
 .doc-manager-summary {
@@ -65,7 +156,7 @@
 }
 .doc-manager-summary::before {
   content: "\25B8"; /* rechts zeigendes Dreieck */
-  color: var(--soft);
+  color: var(--app-soft);
   font-size: 0.85rem;
   transition: transform 0.15s;
 }
@@ -73,40 +164,40 @@
   transform: rotate(90deg);
 }
 .doc-manager-summary:hover {
-  background: #f1ebdf;
+  background: color-mix(in srgb, var(--gat-color-anthrazit) 8%, white);
 }
 .doc-manager-title {
   font-weight: 600;
 }
 .doc-manager-count {
-  color: var(--soft);
+  color: var(--app-soft);
   font-size: 0.85rem;
 }
 .doc-manager-body {
   padding: 0 1rem 0.4rem;
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--app-hair);
 }
 
 /* --- Drag-&-Drop-Zone ---------------------------------------------------- */
 .dropzone {
-  border: 2px dashed var(--hair);
+  border: 2px dashed var(--app-hair);
   border-radius: 6px;
-  background: var(--raised);
+  background: var(--app-raised);
   padding: 2.4rem 1.4rem;
   text-align: center;
   margin: 1.2rem 0;
   transition: border-color 0.15s, background 0.15s;
 }
 .dropzone.is-over {
-  border-color: var(--ink-blue);
-  background: #eef2f6;
+  border-color: var(--app-akzent-primaer);
+  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 8%, white);
 }
 .dropzone-title {
   font-size: 1.05rem;
   margin: 0 0 0.3rem;
 }
 .dropzone-hint {
-  color: var(--soft);
+  color: var(--app-soft);
   font-size: 0.85rem;
   margin: 0 0 0.9rem;
 }
@@ -115,13 +206,13 @@
   font-size: 0.88rem;
   cursor: pointer;
   padding: 0.4rem 1rem;
-  border: 1px solid var(--ink-blue);
-  background: var(--ink-blue);
-  color: #fff;
+  border: 1px solid var(--app-akzent-primaer);
+  background: var(--app-akzent-primaer);
+  color: var(--gat-color-weiss);
   border-radius: 3px;
 }
 .dropzone-btn:hover {
-  background: #173a57;
+  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 75%, black);
 }
 .dropzone input[type="file"] {
   display: none;
@@ -134,9 +225,9 @@
   margin: 1rem 0;
 }
 .progress-item {
-  border: 1px solid var(--hair);
+  border: 1px solid var(--app-hair);
   border-radius: 4px;
-  background: var(--raised);
+  background: var(--app-raised);
   padding: 0.6rem 0.85rem;
   margin-bottom: 0.5rem;
 }
@@ -150,11 +241,11 @@
   font-weight: 600;
 }
 .progress-stage {
-  color: var(--soft);
+  color: var(--app-soft);
 }
 .progress-bar {
   height: 5px;
-  background: #e6dfd0;
+  background: var(--app-hair);
   border-radius: 3px;
   margin-top: 0.45rem;
   overflow: hidden;
@@ -162,17 +253,17 @@
 .progress-fill {
   height: 100%;
   width: 0;
-  background: var(--ink-blue);
+  background: var(--app-akzent-primaer);
   transition: width 0.2s;
 }
 .progress-item.is-error .progress-fill {
-  background: var(--ink-red);
+  background: var(--app-risiko);
 }
 .progress-item.is-done .progress-fill {
-  background: var(--ink-green);
+  background: var(--app-positiv);
 }
 .progress-error {
-  color: var(--ink-red);
+  color: var(--app-risiko);
   font-size: 0.82rem;
   margin: 0.35rem 0 0;
 }
@@ -188,13 +279,13 @@
 .doc-table td {
   text-align: left;
   padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--app-hair);
 }
 .doc-table th {
   font-size: 0.72rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--soft);
+  color: var(--app-soft);
 }
 .doc-table td.num {
   text-align: right;
@@ -207,30 +298,30 @@
   border: 1px solid;
 }
 .doc-status.ok {
-  color: var(--ink-green);
-  border-color: var(--ink-green);
-  background: #eef3ef;
+  color: var(--app-positiv);
+  border-color: var(--app-positiv);
+  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 10%, white);
 }
 .doc-status.fehl {
-  color: var(--ink-red);
-  border-color: var(--ink-red);
-  background: #f6eeed;
+  color: var(--app-risiko);
+  border-color: var(--app-risiko);
+  background: color-mix(in srgb, var(--gat-color-magenta) 8%, white);
 }
 .doc-remove {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  border: 1px solid var(--hair);
-  background: var(--raised);
-  color: var(--ink-red);
+  border: 1px solid var(--app-hair);
+  background: var(--app-raised);
+  color: var(--app-risiko);
   border-radius: 3px;
   padding: 0.2rem 0.6rem;
 }
 .doc-remove:hover {
-  border-color: var(--ink-red);
+  border-color: var(--app-risiko);
 }
 .doc-empty {
-  color: var(--soft);
+  color: var(--app-soft);
   font-style: italic;
 }
 .doc-clear-zeile {
@@ -240,15 +331,15 @@
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
-  border: 1px solid var(--ink-red);
-  background: var(--raised);
-  color: var(--ink-red);
+  border: 1px solid var(--app-risiko);
+  background: var(--app-raised);
+  color: var(--app-risiko);
   border-radius: 3px;
   padding: 0.32rem 0.8rem;
 }
 .doc-clear-btn:hover {
-  background: var(--ink-red);
-  color: var(--paper, #f4efe6);
+  background: var(--app-risiko);
+  color: var(--gat-color-weiss);
 }
 .doc-clear-btn:disabled {
   opacity: 0.5;
@@ -257,7 +348,7 @@
 
 .persist-note {
   font-size: 0.8rem;
-  color: var(--soft);
+  color: var(--app-soft);
 }
 .toast {
   font-size: 0.85rem;
@@ -266,14 +357,14 @@
   margin: 0.6rem 0;
 }
 .toast.ok {
-  background: #eef3ef;
-  border: 1px solid var(--ink-green);
-  color: var(--ink-green);
+  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 10%, white);
+  border: 1px solid var(--app-positiv);
+  color: var(--app-positiv);
 }
 .toast.fehl {
-  background: #f6eeed;
-  border: 1px solid var(--ink-red);
-  color: var(--ink-red);
+  background: color-mix(in srgb, var(--gat-color-magenta) 8%, white);
+  border: 1px solid var(--app-risiko);
+  color: var(--app-risiko);
 }
 [hidden] {
   display: none !important;
@@ -291,22 +382,22 @@
 .sankey-hint {
   margin: 0;
   font-size: 0.8rem;
-  color: var(--soft);
+  color: var(--app-soft);
 }
 .sankey-hint.is-visible {
-  color: var(--ink-blue);
+  color: var(--app-akzent-primaer);
 }
 .sankey-reset {
   flex: none;
   font-size: 0.8rem;
   padding: 0.25rem 0.7rem;
-  border: 1px solid var(--hair);
-  background: var(--raised);
-  color: var(--soft);
+  border: 1px solid var(--app-hair);
+  background: var(--app-raised);
+  color: var(--app-soft);
   border-radius: 4px;
   cursor: pointer;
 }
 .sankey-reset:hover {
-  border-color: var(--ink-blue);
-  color: var(--ink-blue);
+  border-color: var(--app-akzent-primaer);
+  color: var(--app-akzent-primaer);
 }
