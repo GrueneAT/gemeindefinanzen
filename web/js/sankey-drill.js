@@ -18,15 +18,21 @@ const MITTE = "Gemeindehaushalt"
 // Hoechstzahl Detailknoten je ausgeklapptem Bereich; der Rest wird gebuendelt.
 export const TOP_N = 8
 
-// Die vier Tinten des Design Systems — semantisch eingesetzt, identisch zu
-// dashboard-charts.js.
+// Aus den Gruene-AT-Markenfarben abgeleitete Palette — semantisch eingesetzt,
+// identisch zu dashboard-charts.js. green=positiv/Ertraege,
+// blue=neutral/Personal (zweiter Gruenton), red=Aufwand/Risiko,
+// orange=Sachaufwand, soft=neutral-grau.
 const INK = {
-  red: "#8E2F2A",
-  blue: "#1F4A6D",
-  orange: "#9A4A1C",
-  green: "#2F6149",
-  soft: "#5b5650",
+  red: "#e6007e",
+  blue: "#3c8a22",
+  orange: "#a8005c",
+  green: "#257639",
+  soft: "#5a5a57",
 }
+
+// Diagrammschrift = Seitenschrift (Gruene-AT-DS).
+const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const ACHSE_TEXT = "#1d1d1b"
 
 // Einnahmequelle eines Postens — Portierung der CASE-Logik aus
 // dashboard-data.js (sankey()), damit die Quellen-Aggregation des
@@ -232,7 +238,7 @@ export function buildSankeyOption(posten, dokId, expand) {
   })
 
   return {
-    textStyle: { fontFamily: "Inter, sans-serif", color: "#2b2825" },
+    textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT },
     tooltip: { trigger: "item" },
     series: [
       {
@@ -244,9 +250,9 @@ export function buildSankeyOption(posten, dokId, expand) {
         nodeGap: 11,
         nodeWidth: 26,
         label: {
-          fontFamily: "Inter, sans-serif",
+          fontFamily: CHART_FONT,
           fontSize: 11,
-          color: "#2b2825",
+          color: ACHSE_TEXT,
         },
         lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
         emphasis: { focus: "adjacency" },

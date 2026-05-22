@@ -6,18 +6,31 @@
 // eingebettet und clientseitig von dashboard.js per revive() in echte
 // Funktionen zurueckverwandelt.
 
-// Die vier Tinten des Design Systems — semantisch eingesetzt.
+// Aus den Gruene-AT-Markenfarben abgeleitete Palette; Quelle: Markenfarben des
+// Gruene-AT-DS (Dunkelgruen #257639, Hellgruen #56af31, Magenta #e6007e,
+// Anthrazit #1d1d1b). ECharts liest keine CSS-Variablen — die Hex-Werte werden
+// hier gespiegelt. Semantik der Schluessel: green=positiv/Ertraege,
+// blue=neutral/Personal (zweiter Gruenton), red=Aufwand/Risiko,
+// orange=Sachaufwand, soft=neutral-grau, paper=Diagramm-Flaeche.
 const INK = {
-  red: "#8E2F2A",
-  blue: "#1F4A6D",
-  orange: "#9A4A1C",
-  green: "#2F6149",
-  soft: "#5b5650",
-  paper: "#F4EFE6",
+  red: "#e6007e",
+  blue: "#3c8a22",
+  orange: "#a8005c",
+  green: "#257639",
+  soft: "#5a5a57",
+  paper: "#ffffff",
 }
 
+// Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsen-/Linientoene aus den
+// Markenfarben abgeleitete neutrale Grautoene (anthrazit-basiert).
+const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const ACHSE_TEXT = "#1d1d1b"
+const ACHSE_TEXT_SOFT = "#5a5a57"
+const ACHSE_LINIE = "#c7c7c5"
+const ACHSE_SPLIT = "#e3e3e2"
+
 function baseText() {
-  return { fontFamily: "Inter, sans-serif", color: "#2b2825" }
+  return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
 }
 
 function catAxis(data, fontsize = 11, rotate = 0) {
@@ -25,13 +38,13 @@ function catAxis(data, fontsize = 11, rotate = 0) {
     type: "category",
     data,
     axisLabel: {
-      fontFamily: "Inter, sans-serif",
+      fontFamily: CHART_FONT,
       fontSize: fontsize,
-      color: "#2b2825",
+      color: ACHSE_TEXT,
       rotate,
       interval: 0,
     },
-    axisLine: { lineStyle: { color: "#cdc4b4" } },
+    axisLine: { lineStyle: { color: ACHSE_LINIE } },
   }
 }
 
@@ -39,12 +52,12 @@ function valAxis(formatter = "(v)=>(v/1000).toLocaleString('de')+'k'") {
   return {
     type: "value",
     axisLabel: {
-      fontFamily: "Inter, sans-serif",
+      fontFamily: CHART_FONT,
       fontSize: 10,
-      color: "#5b5650",
+      color: ACHSE_TEXT_SOFT,
       formatter,
     },
-    splitLine: { lineStyle: { color: "#e6dfd0" } },
+    splitLine: { lineStyle: { color: ACHSE_SPLIT } },
   }
 }
 
@@ -118,9 +131,9 @@ export function chartSankey(agg) {
         nodeGap: 11,
         nodeWidth: 26,
         label: {
-          fontFamily: "Inter, sans-serif",
+          fontFamily: CHART_FONT,
           fontSize: 11,
-          color: "#2b2825",
+          color: ACHSE_TEXT,
         },
         lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
         emphasis: { focus: "adjacency" },
@@ -159,14 +172,14 @@ export function chartAufwandart(agg) {
     Sachaufwand: INK.orange,
     Transfers: INK.red,
     Finanz: INK.soft,
-    Sonstige: "#b7ad99",
+    Sonstige: INK.soft,
   }
   return {
     textStyle: baseText(),
     tooltip: { trigger: "item" },
     legend: {
       bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
     },
     series: [
       {
@@ -176,7 +189,7 @@ export function chartAufwandart(agg) {
         padAngle: 2,
         itemStyle: { borderRadius: 3 },
         label: {
-          fontFamily: "Inter, sans-serif",
+          fontFamily: CHART_FONT,
           fontSize: 11,
           // ECharts deutet '\n' im Formatter selbst als Zeilenumbruch — der
           // String enthaelt daher Backslash + n als zwei Zeichen.
@@ -218,14 +231,14 @@ export function chartTreemap(agg) {
         levels: [
           {
             itemStyle: {
-              borderColor: "#F4EFE6",
+              borderColor: INK.paper,
               borderWidth: 3,
               gapWidth: 3,
             },
           },
           {
             itemStyle: {
-              borderColor: "#F4EFE6",
+              borderColor: INK.paper,
               borderWidth: 1,
               gapWidth: 1,
             },
@@ -233,11 +246,11 @@ export function chartTreemap(agg) {
           },
         ],
         color: [INK.orange, INK.blue, INK.green, INK.red, INK.soft],
-        label: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+        label: { fontFamily: CHART_FONT, fontSize: 11 },
         upperLabel: {
           show: true,
           height: 20,
-          fontFamily: "Inter, sans-serif",
+          fontFamily: CHART_FONT,
           fontSize: 11,
         },
       },
@@ -287,7 +300,7 @@ export function chartWasserfall(agg, jahr) {
         label: {
           show: true,
           position: "top",
-          fontFamily: "Inter, sans-serif",
+          fontFamily: CHART_FONT,
           fontSize: 10,
           formatter: "(p)=>(p.value/1000).toLocaleString('de')+'k'",
         },
@@ -306,7 +319,7 @@ export function chartKorridor(agg) {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
     legend: {
       bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
     },
     grid: { left: 8, right: 18, top: 12, bottom: 48, containLabel: true },
     xAxis: catAxis(cats, 9, 38),
@@ -341,7 +354,7 @@ export function chartTrendEckwerte(trend) {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
     legend: {
       bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
     },
     grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
     xAxis: catAxis(namen),
@@ -391,7 +404,7 @@ export function chartTrendKomm(trend) {
         label: {
           show: true,
           position: "top",
-          fontFamily: "Inter, sans-serif",
+          fontFamily: CHART_FONT,
           fontSize: 10,
           formatter: "(p)=>(p.value/1e6).toLocaleString('de')+' Mio'",
         },
@@ -414,7 +427,7 @@ export function chartTrendAufwand(trend) {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
     legend: {
       bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
     },
     grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
     xAxis: catAxis(namen),
@@ -436,7 +449,7 @@ function mehrjahrBasis(jahre) {
     legend: {
       type: "scroll",
       bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
     },
     grid: { left: 8, right: 22, top: 16, bottom: 56, containLabel: true },
     xAxis: catAxis(jahre, 11),
@@ -445,18 +458,22 @@ function mehrjahrBasis(jahre) {
   }
 }
 
-// Reihenfolge der Tinten fuer die Linien des Mehrjahres-Vergleichs.
+// 10-stufige kategoriale Palette fuer den Mehrjahres-Vergleich, aus den
+// Gruene-AT-Markenfarben abgeleitet (je Markenfarbe ein Tint und/oder Shade,
+// HSL-Lightness ca. +/-12-18 %). Reihenfolge so, dass aufeinanderfolgende
+// Serien in Helligkeit oder Farbton deutlich kontrastieren; Gelb wird nicht
+// als Serienfarbe verwendet.
 const MEHRJAHR_PALETTE = [
-  INK.blue,
-  INK.orange,
-  INK.green,
-  INK.red,
-  INK.soft,
-  "#b7ad99",
-  "#3d6f8e",
-  "#bf6a3a",
-  "#4a8068",
-  "#a85852",
+  "#257639", // dunkelgruen
+  "#e6007e", // magenta
+  "#56af31", // hellgruen
+  "#1d1d1b", // anthrazit
+  "#3f9457", // dunkelgruen-Tint
+  "#a8005c", // magenta-Shade
+  "#3c8a22", // hellgruen-Shade
+  "#5a5a57", // anthrazit-Tint (neutral-grau)
+  "#f25aa8", // magenta-Tint
+  "#18532a", // dunkelgruen-Shade
 ]
 
 // Vorberechnete ECharts-Optionen je Dokument plus Zeitreihen.
