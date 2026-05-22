@@ -1,7 +1,7 @@
 ---
 id: oh4sz
 title: Lokale Browser-Test-Infrastruktur fuer die Web-App
-status: open
+status: done
 priority: high
 labels:
 - testing
