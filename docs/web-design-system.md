@@ -532,3 +532,22 @@ Visuelle Pruefung mit Playwright/Chromium (1440px, Fixture-PDF
 (`emulateMedia({ media: 'print' })`) zeigt eine saubere Schwarz-auf-Weiss-
 Auswertung ohne Bedienelemente. **Tests gruen** (`npm run test:js`,
 `npm run test:e2e`).
+
+### Iteration 12 — Grossbildschirm-Breite (in Arbeit)
+
+Befund: `.page` wurde in Iteration 1 auf 1200px zentriert — auf einem
+4K-Monitor ein schmaler Streifen mit riesigen Leerraendern. Das alte Design
+nutzte `min(2400px, 95vw)`, also fast die volle Breite. Korrektur:
+
+- `.page`-`max-width` deutlich anheben (Richtwert `min(~2040px, 94vw)`),
+  mittig — nutzt grosse Schirme, behaelt auf Ultra-Wide etwas Rand.
+- **Fliesstext bleibt schmal:** Intro, `.lead`, Tab-Einleitungen, Callout
+  weiter auf ~70rem begrenzt — Lesbarkeit vor Breite.
+- Diagramme nutzen die Breite (wie im alten Design), duerfen aber nicht
+  pathologisch flach werden: Hoehen der grossflaechigen Einzel-Diagramme
+  bei grosser Breite anheben oder Panels sinnvoll deckeln.
+- 2-spaltige `.dash-grid` und 4-spaltiges Metric-Raster pruefen, dass sie
+  bei grosser Breite gut sitzen.
+- Gegenpruefen bei 390 / 1440 / 2560px — schmale Schirme nicht brechen.
+
+_wird nach visueller Pruefung fortgeschrieben._
