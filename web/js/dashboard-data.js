@@ -11,7 +11,6 @@ const ORDER =
   "CASE typ WHEN 'RA' THEN 0 WHEN 'NVA' THEN 1 WHEN 'VA' THEN 2 ELSE 3 END"
 
 const KOMM = "833000"
-const AUSFALL = 800000.0
 
 function rows(db, sql) {
   return db.abfrage(sql).map((r) => Object.values(r))
@@ -241,7 +240,6 @@ function aggregateDok(db, did) {
       komm_anteil: ertraege
         ? roundHalfEven((100 * komm) / ertraege, 1)
         : 0.0,
-      netto_nach_ausfall: round(netto - AUSFALL),
     },
     einnahmen: einnahmen.map(([b, v]) => [b, round(v)]),
     aufwand_art: aufwandArt.map(([a, v]) => [a, round(v)]),
@@ -316,7 +314,6 @@ export function collect(db) {
       dok_anzahl: dok.length,
       posten_anzahl: post.length,
       default_dok: defaultDok,
-      ausfall: AUSFALL,
     },
     dokumente: dok,
     posten: post,

@@ -47,38 +47,50 @@
 
   <div id="toast-box"></div>
 
-  <!-- Dokumentverwaltung — immer sichtbar, oberhalb des Dashboards. -->
-  <section>
-    <h2>PDFs hinzufuegen</h2>
-    <div class="dropzone" id="dropzone">
-      <p class="dropzone-title">PDF-Dateien hierher ziehen</p>
-      <p class="dropzone-hint">VRV-2015-Voranschlag, Nachtragsvoranschlag
-        oder Rechnungsabschluss — mehrere Dateien auf einmal moeglich.</p>
-      <button class="dropzone-btn" id="pick-btn" type="button">
-        Dateien auswaehlen</button>
-      <input type="file" id="file-input" accept="application/pdf,.pdf"
-        multiple>
-    </div>
-    <ul class="progress-list" id="progress-list"></ul>
-  </section>
+  <!-- Dokumentverwaltung — einklappbar, oberhalb des Dashboards. Ohne
+       geladene Dokumente offen (Upload-Aufforderung sichtbar), mit
+       geladenen Dokumenten zugeklappt, damit das Dashboard im Fokus
+       steht. app.js steuert den Offen-/Zu-Zustand ueber die Dokumentzahl. -->
+  <details class="doc-manager" id="doc-manager" open>
+    <summary class="doc-manager-summary">
+      <span class="doc-manager-title">Dokumente verwalten</span>
+      <span class="doc-manager-count" id="doc-manager-count"></span>
+    </summary>
+    <div class="doc-manager-body">
+      <section>
+        <h2>PDFs hinzufuegen</h2>
+        <div class="dropzone" id="dropzone">
+          <p class="dropzone-title">PDF-Dateien hierher ziehen</p>
+          <p class="dropzone-hint">VRV-2015-Voranschlag, Nachtragsvoranschlag
+            oder Rechnungsabschluss — mehrere Dateien auf einmal moeglich.</p>
+          <button class="dropzone-btn" id="pick-btn" type="button">
+            Dateien auswaehlen</button>
+          <input type="file" id="file-input" accept="application/pdf,.pdf"
+            multiple>
+        </div>
+        <ul class="progress-list" id="progress-list"></ul>
+      </section>
 
-  <section>
-    <h2>Geladene Dokumente</h2>
-    <p class="persist-note" id="persist-note">wird geladen ...</p>
-    <p class="doc-empty" id="doc-empty" hidden>Noch keine Dokumente geladen.</p>
-    <table class="doc-table">
-      <thead>
-        <tr>
-          <th>Dokument</th>
-          <th>Quelldatei</th>
-          <th class="num">Detailposten</th>
-          <th>Pruefstatus</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="doc-tbody"></tbody>
-    </table>
-  </section>
+      <section>
+        <h2>Geladene Dokumente</h2>
+        <p class="persist-note" id="persist-note">wird geladen ...</p>
+        <p class="doc-empty" id="doc-empty" hidden>Noch keine Dokumente
+          geladen.</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Dokument</th>
+              <th>Quelldatei</th>
+              <th class="num">Detailposten</th>
+              <th>Pruefstatus</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="doc-tbody"></tbody>
+        </table>
+      </section>
+    </div>
+  </details>
 
   <!-- Empty-State-Hinweis: sichtbar, solange kein Dokument geladen ist. -->
   <div class="dashboard-leer" id="dashboard-leer" hidden>
@@ -97,7 +109,7 @@
         <button class="tab-btn" data-tab="ausgaben">Ausgaben</button>
         <button class="tab-btn" data-tab="investitionen">Investitionen</button>
         <button class="tab-btn" data-tab="transfers">Transfers &amp; Umlagen</button>
-        <button class="tab-btn" data-tab="achthundert">800k-Analyse</button>
+        <button class="tab-btn" data-tab="sparpotenzial">Sparpotenzial</button>
         <button class="tab-btn" data-tab="suche">Suche &amp; Daten</button>
       </div>
     </div>
@@ -105,10 +117,10 @@
     <section class="tab-panel" data-panel="ueberblick">
       <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
       <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
-        <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Die
-        Kommunalsteuer traegt einen erheblichen Teil aller Ertraege — ein
-        dauerhafter Ausfall von 800.000&nbsp;Euro wuerde das Ergebnis ins
-        Minus drehen.</p>
+        <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Der
+        Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
+        Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
+        Ausgaben und Spielraeume weiter auf.</p>
       <div class="stats">
         <div class="stat"><div class="stat-num" id="st-ertraege"></div>
           <div class="stat-label">Ertraege</div></div>
@@ -202,14 +214,16 @@
       <div id="c_trend_auf" class="dash-chart" style="height:340px"></div>
     </section>
 
-    <section class="tab-panel" data-panel="achthundert">
-      <h2>Die 800.000-Euro-Frage</h2>
-      <p>Der Wasserfall zeigt, was ein dauerhafter Kommunalsteuer-Ausfall
-        bedeutet: aus einem knappen Plus wird ein Abgang.</p>
+    <section class="tab-panel" data-panel="sparpotenzial">
+      <h2>Sparpotenzial</h2>
+      <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
+        Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
+        zusammen welche Betraege ausmachen.</p>
       <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
-      <h3>Wo liesse sich gegensteuern?</h3>
-      <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, kumuliert.
-        Die rote Linie markiert die 800.000-Euro-Schwelle.</p>
+      <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
+      <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, nach
+        Betrag sortiert und kumuliert. Die Linie zeigt, wie viele Posten
+        zusammen welche Summe ergeben.</p>
       <div id="c_korridor" class="dash-chart" style="height:400px"></div>
       <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
       <div id="c_treiber" class="dash-chart" style="height:360px"></div>
@@ -217,7 +231,7 @@
         <p class="callout-label">Wichtige Einordnung</p>
         <p>Diese Auswertung ist eine
           <strong>Suchhilfe, keine Empfehlung</strong>. Sie zeigt, wo im
-          Budget Betraege dieser Groessenordnung ueberhaupt liegen. Ob ein
+          Budget Betraege welcher Groessenordnung ueberhaupt liegen. Ob ein
           Posten kuerzbar ist, ist eine fachliche und politische
           Entscheidung — jede Zeile braucht eine eigene Bewertung.</p>
       </div>

@@ -31,7 +31,7 @@ TABS: list[tuple[str, str]] = [
     ("ausgaben", "Ausgaben"),
     ("investitionen", "Investitionen"),
     ("transfers", "Transfers & Umlagen"),
-    ("achthundert", "800k-Analyse"),
+    ("sparpotenzial", "Sparpotenzial"),
     ("suche", "Suche & Daten"),
 ]
 
@@ -74,10 +74,10 @@ def _panel_ueberblick() -> str:
 <section class="tab-panel" data-panel="ueberblick">
   <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
   <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
-    <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Die
-    Kommunalsteuer traegt einen erheblichen Teil aller Ertraege — ein
-    dauerhafter Ausfall von 800.000&nbsp;Euro wuerde das Ergebnis ins Minus
-    drehen.</p>
+    <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Der
+    Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem Ergebnis
+    zusammensetzen; die uebrigen Tabs schluesseln Einnahmen, Ausgaben und
+    Spielraeume weiter auf.</p>
   <div class="stats">
     <div class="stat"><div class="stat-num" id="st-ertraege"></div>
       <div class="stat-label">Ertraege</div></div>
@@ -177,23 +177,25 @@ def _panel_transfers() -> str:
 </section>"""
 
 
-def _panel_achthundert() -> str:
+def _panel_sparpotenzial() -> str:
     return f"""
-<section class="tab-panel" data-panel="achthundert">
-  <h2>Die 800.000-Euro-Frage</h2>
-  <p>Der Wasserfall zeigt, was ein dauerhafter Kommunalsteuer-Ausfall
-    bedeutet: aus einem knappen Plus wird ein Abgang.</p>
+<section class="tab-panel" data-panel="sparpotenzial">
+  <h2>Sparpotenzial</h2>
+  <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
+    Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten zusammen
+    welche Betraege ausmachen.</p>
   {_chart_div('c_wasserfall', 340)}
-  <h3>Wo liesse sich gegensteuern?</h3>
-  <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, kumuliert.
-    Die rote Linie markiert die 800.000-Euro-Schwelle.</p>
+  <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
+  <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, nach Betrag
+    sortiert und kumuliert. Die Linie zeigt, wie viele Posten zusammen
+    welche Summe ergeben.</p>
   {_chart_div('c_korridor', 400)}
   <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
   {_chart_div('c_treiber', 360)}
   <div class="callout is-risk" style="margin-top:1rem;">
     <p class="callout-label">Wichtige Einordnung</p>
     <p>Diese Auswertung ist eine <strong>Suchhilfe, keine Empfehlung</strong>.
-    Sie zeigt, wo im Budget Betraege dieser Groessenordnung ueberhaupt
+    Sie zeigt, wo im Budget Betraege welcher Groessenordnung ueberhaupt
     liegen. Ob ein Posten kuerzbar ist, ist eine fachliche und politische
     Entscheidung — jede Zeile braucht eine eigene Bewertung.</p>
   </div>
@@ -302,7 +304,7 @@ def _build_html(daten: dict, cfg: dict) -> str:
 
     panels = "".join([
         _panel_ueberblick(), _panel_einnahmen(), _panel_ausgaben(),
-        _panel_investitionen(), _panel_transfers(), _panel_achthundert(),
+        _panel_investitionen(), _panel_transfers(), _panel_sparpotenzial(),
         _panel_suche(dokumente, gruppen),
     ])
 

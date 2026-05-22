@@ -251,19 +251,16 @@ export function chartWasserfall(agg, jahr) {
     ["Ertraege", e.ertraege, INK.green],
     ["Aufwendungen", -e.aufwand, INK.red],
     [`Nettoergebnis ${jahr}`, e.netto, INK.blue],
-    ["Kommunalsteuer-Ausfall", -800000, INK.red],
-    ["Ergebnis nach Ausfall", e.netto_nach_ausfall, INK.orange],
   ]
   const namen = schritte.map((s) => s[0])
   const sockel = []
   const sichtbar = []
   for (const [name, wert, farbe] of schritte) {
-    if (name.includes("Nettoergebnis") || name.includes("Ergebnis") || wert >= 0) {
+    if (name.includes("Nettoergebnis") || wert >= 0) {
       sockel.push(0)
       sichtbar.push({ value: round(wert), itemStyle: { color: farbe } })
     } else {
-      const laufend = name.includes("Aufwend") ? e.ertraege : e.netto
-      sockel.push(round(laufend + wert))
+      sockel.push(round(e.ertraege + wert))
       sichtbar.push({ value: round(-wert), itemStyle: { color: farbe } })
     }
   }
@@ -330,13 +327,6 @@ export function chartKorridor(agg) {
         symbolSize: 5,
         itemStyle: { color: INK.red },
         lineStyle: { color: INK.red },
-        markLine: {
-          silent: true,
-          symbol: "none",
-          label: { formatter: "800.000 EUR", fontSize: 10 },
-          lineStyle: { color: INK.red, type: "dashed" },
-          data: [{ yAxis: 800000 }],
-        },
       },
     ],
   }

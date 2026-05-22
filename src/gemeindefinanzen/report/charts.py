@@ -172,20 +172,17 @@ def chart_wasserfall(agg: dict, jahr: int) -> dict:
         ("Ertraege", e["ertraege"], INK["green"]),
         ("Aufwendungen", -e["aufwand"], INK["red"]),
         (f"Nettoergebnis {jahr}", e["netto"], INK["blue"]),
-        ("Kommunalsteuer-Ausfall", -800000, INK["red"]),
-        ("Ergebnis nach Ausfall", e["netto_nach_ausfall"], INK["orange"]),
     ]
     namen = [s[0] for s in schritte]
     sockel: list[float] = []
     sichtbar: list[dict] = []
     for name, wert, farbe in schritte:
-        if any(t in name for t in ("Nettoergebnis", "Ergebnis")) or wert >= 0:
+        if "Nettoergebnis" in name or wert >= 0:
             sockel.append(0)
             sichtbar.append({"value": round(wert),
                              "itemStyle": {"color": farbe}})
         else:
-            laufend = e["ertraege"] if "Aufwend" in name else e["netto"]
-            sockel.append(round(laufend + wert))
+            sockel.append(round(e["ertraege"] + wert))
             sichtbar.append({"value": round(-wert),
                              "itemStyle": {"color": farbe}})
     return {
@@ -231,13 +228,7 @@ def chart_korridor(agg: dict) -> dict:
             {"name": "kumuliert", "type": "line", "data": kumuliert,
              "smooth": True, "symbolSize": 5,
              "itemStyle": {"color": INK["red"]},
-             "lineStyle": {"color": INK["red"]},
-             "markLine": {"silent": True, "symbol": "none",
-                          "label": {"formatter": "800.000 EUR",
-                                    "fontSize": 10},
-                          "lineStyle": {"color": INK["red"],
-                                        "type": "dashed"},
-                          "data": [{"yAxis": 800000}]}},
+             "lineStyle": {"color": INK["red"]}},
         ],
     }
 

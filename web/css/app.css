@@ -21,6 +21,51 @@
   max-width: 70rem;
 }
 
+/* --- Einklappbare Dokumentverwaltung ------------------------------------- */
+.doc-manager {
+  border: 1px solid var(--hair);
+  border-radius: 5px;
+  background: var(--raised);
+  margin: 1.4rem 0;
+}
+.doc-manager-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  user-select: none;
+}
+/* Den nativen Aufklapp-Pfeil ersetzen — eigener, dem Design System folgend. */
+.doc-manager-summary::-webkit-details-marker {
+  display: none;
+}
+.doc-manager-summary::before {
+  content: "\25B8"; /* rechts zeigendes Dreieck */
+  color: var(--soft);
+  font-size: 0.85rem;
+  transition: transform 0.15s;
+}
+.doc-manager[open] > .doc-manager-summary::before {
+  transform: rotate(90deg);
+}
+.doc-manager-summary:hover {
+  background: #f1ebdf;
+}
+.doc-manager-title {
+  font-weight: 600;
+}
+.doc-manager-count {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.doc-manager-body {
+  padding: 0 1rem 0.4rem;
+  border-top: 1px solid var(--hair);
+}
+
 /* --- Drag-&-Drop-Zone ---------------------------------------------------- */
 .dropzone {
   border: 2px dashed var(--hair);

@@ -72,6 +72,7 @@ function zeichneDokumentliste() {
   const rows = dokumente(db)
   tbody.innerHTML = ""
   leer.hidden = rows.length > 0
+  aktualisiereDokVerwaltung(rows.length)
 
   for (const d of rows) {
     const tr = document.createElement("tr")
@@ -96,6 +97,20 @@ function zeichneDokumentliste() {
       location.reload()
     })
   }
+}
+
+// Einklappbare Dokumentverwaltung: Offen-/Zu-Zustand und Summenzeile.
+// Ohne geladene Dokumente offen (Upload-Aufforderung sichtbar), mit
+// geladenen Dokumenten zugeklappt — das Dashboard bekommt den Platz.
+function aktualisiereDokVerwaltung(anzahl) {
+  const manager = document.getElementById("doc-manager")
+  const count = document.getElementById("doc-manager-count")
+  if (count) {
+    count.textContent = anzahl > 0
+      ? `— ${anzahl} geladen`
+      : "— noch keine geladen"
+  }
+  if (manager) manager.open = anzahl === 0
 }
 
 // Pruefstatus eines Dokuments aus der DB rekonstruieren (SU-21/22/33/34).

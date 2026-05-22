@@ -234,3 +234,78 @@ einer In-Memory-DB, und die Dashboard-Seite oeffnete leer.
 - **Result:** PASSED
 
 **Completed:** 2026-05-22
+
+---
+
+# T10 — Einklappbare Dokumentverwaltung & Generalisierung (weg von "800k")
+
+**Datum:** 2026-05-22
+**Status:** complete
+
+## Aenderung A — Dokumentverwaltung einklappbar
+
+- `web/index.html`: Dropzone, Upload-Fortschritt und die Tabelle der
+  geladenen Dokumente in ein natives `<details class="doc-manager">`
+  zusammengefasst. `<summary>` zeigt „Dokumente verwalten" plus eine
+  kompakte Zaehlzeile.
+- `web/js/app.js`: neue Funktion `aktualisiereDokVerwaltung(anzahl)`,
+  aufgerufen aus `zeichneDokumentliste()`. Ohne geladene Dokumente offen
+  (Upload-Aufforderung sichtbar), mit geladenen Dokumenten zugeklappt — das
+  Dashboard bekommt den Platz. Upload und Entfernen unveraendert
+  funktionsfaehig.
+- `web/css/app.css`: Stil fuer `.doc-manager`/`.doc-manager-summary` im
+  Design-System-Stil (Haarlinien, Papier-Optik, eigener Aufklapp-Pfeil
+  statt nativem Marker).
+- Browser-App-only, keine Python-Aenderung.
+
+## Aenderung B — Generalisierung weg vom "800k"-Spezialfall
+
+- **Tab umbenannt:** „800k-Analyse" -> „Sparpotenzial". Panel-/Tab-Schluessel
+  `achthundert` -> `sparpotenzial` in `web/index.html` und
+  `src/gemeindefinanzen/report/html.py` (`TABS`, `_panel_sparpotenzial`).
+  Tab-Umschaltung laeuft rein ueber `data-tab`/`data-panel` — kein
+  hartcodierter Schluessel in der JS-Logik.
+- **Wasserfall** (`chart_wasserfall` in `charts.py` + JS-Port): die zwei
+  Szenario-Schritte „Kommunalsteuer-Ausfall" (-800000) und „Ergebnis nach
+  Ausfall" entfernt. Bleibt eine generische Ergebnisbruecke
+  Ertraege -> Aufwendungen -> Nettoergebnis.
+- **Korridor** (`chart_korridor` + JS-Port): die fixe 800.000-`markLine`
+  entfernt. Chart bleibt (kumulierter Sachaufwand mit Ermessensspielraum),
+  neutral beschriftet.
+- **Datenmodell:** `_AUSFALL`/`AUSFALL`, `netto_nach_ausfall` und
+  `meta.ausfall` aus `data.py` und `dashboard-data.js` entfernt.
+- **Texte:** Ueberblick-Lead, Sparpotenzial-Panel-Texte und der
+  „Suchhilfe"-Callout neutral umformuliert — kein „800.000", kein
+  „Kommunalsteuer-Ausfall", keine „800.000-Euro-Frage/-Schwelle" mehr.
+
+## Entscheidungen
+
+- **`web/sql/` nicht angefasst.** `web/sql/05-luecke-800k.sql` und
+  `web/sql/11-kommunalsteuer-szenario.sql` sind per `make web-sync` eine
+  Kopie von `sql/` (Wurzelverzeichnis), das laut Aufgabe ausdruecklich
+  ausserhalb des Scopes liegt. Diese Standalone-Abfragen werden vom
+  Dashboard nicht genutzt (nur `01-eckwerte.sql` durch die JS-Tests).
+- **JS-Referenzwerte:** `tests/js/referenz-data.json` existiert nicht, der
+  optionale Byte-Abgleich DATA-gegen-Python wird uebersprungen. Die
+  strukturellen JS-Tests (4 Dokumente, 5415 Posten, dok_charts) bleiben
+  durch die Aenderung unberuehrt.
+
+## Verifikation
+
+- `npm run test:js` — 29 bestanden, 0 fehlgeschlagen
+- `PYTHONPATH=src python -m pytest -q` — 28 passed
+- `ruff check src tests` — All checks passed
+- `mypy src` — Success, no issues (13 files)
+- `node --check` auf allen geaenderten JS-Dateien — fehlerfrei
+- Asset-Check: `web/` ueber `scripts/serve.mjs` ausgeliefert, `index.html`
+  und alle referenzierten Assets HTTP 200
+- Python-Dashboard `reports/dashboard.html` neu erzeugt — baut fehlerfrei,
+  enthaelt `data-tab="sparpotenzial"`/`data-panel="sparpotenzial"`, keine
+  800k-Texte mehr
+
+## Self-Check
+
+- [x] Alle geaenderten Dateien vorhanden
+- [x] Volle Pruefung gruen (JS 29, Python 28, ruff/mypy sauber)
+- [x] Keine Stubs/TODOs/Platzhalter, kein Debug-Code
+- **Result:** PASSED

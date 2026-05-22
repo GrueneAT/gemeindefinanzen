@@ -22,9 +22,8 @@ import sqlite3
 # Chronologische Sortierung: innerhalb eines Jahres Ist vor Plan.
 _ORDER = "CASE typ WHEN 'RA' THEN 0 WHEN 'NVA' THEN 1 WHEN 'VA' THEN 2 ELSE 3 END"
 
-# Kommunalsteuer-Konto — der Posten, um den es im 800k-Szenario geht.
+# Kommunalsteuer-Konto — eine der groessten Ertragsquellen einer Gemeinde.
 _KOMM = "833000"
-_AUSFALL = 800_000.0
 
 
 def _rows(conn: sqlite3.Connection, sql: str, *args: object) -> list[tuple]:
@@ -177,8 +176,7 @@ def _aggregate_dok(conn: sqlite3.Connection, did: int) -> dict:
         "eckwerte": {"ertraege": round(ertraege), "aufwand": round(aufwand),
                      "netto": round(netto), "komm": round(komm),
                      "komm_anteil": round(100 * komm / ertraege, 1)
-                     if ertraege else 0.0,
-                     "netto_nach_ausfall": round(netto - _AUSFALL)},
+                     if ertraege else 0.0},
         "einnahmen": [[b, round(v)] for b, v in einnahmen],
         "aufwand_art": [[a, round(v)] for a, v in aufwand_art],
         "treemap": [[g or "ohne Gruppe", a or "ohne Ansatz", round(v)]
@@ -246,7 +244,6 @@ def collect(db_path: str) -> dict:
             "dok_anzahl": len(dokumente),
             "posten_anzahl": len(posten),
             "default_dok": default,
-            "ausfall": _AUSFALL,
         },
         "dokumente": dokumente,
         "posten": posten,
