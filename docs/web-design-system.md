@@ -533,21 +533,49 @@ Visuelle Pruefung mit Playwright/Chromium (1440px, Fixture-PDF
 Auswertung ohne Bedienelemente. **Tests gruen** (`npm run test:js`,
 `npm run test:e2e`).
 
-### Iteration 12 — Grossbildschirm-Breite (in Arbeit)
+### Iteration 12 — Grossbildschirm-Breite (erledigt)
 
 Befund: `.page` wurde in Iteration 1 auf 1200px zentriert — auf einem
 4K-Monitor ein schmaler Streifen mit riesigen Leerraendern. Das alte Design
 nutzte `min(2400px, 95vw)`, also fast die volle Breite. Korrektur:
 
-- `.page`-`max-width` deutlich anheben (Richtwert `min(~2040px, 94vw)`),
-  mittig — nutzt grosse Schirme, behaelt auf Ultra-Wide etwas Rand.
-- **Fliesstext bleibt schmal:** Intro, `.lead`, Tab-Einleitungen, Callout
-  weiter auf ~70rem begrenzt — Lesbarkeit vor Breite.
-- Diagramme nutzen die Breite (wie im alten Design), duerfen aber nicht
-  pathologisch flach werden: Hoehen der grossflaechigen Einzel-Diagramme
-  bei grosser Breite anheben oder Panels sinnvoll deckeln.
-- 2-spaltige `.dash-grid` und 4-spaltiges Metric-Raster pruefen, dass sie
-  bei grosser Breite gut sitzen.
-- Gegenpruefen bei 390 / 1440 / 2560px — schmale Schirme nicht brechen.
+- **`.page` deutlich verbreitert.** Neuer gemeinsamer Token
+  `--web-page-max: min(2040px, 94vw)` in `app.css`; sowohl `.page` als auch
+  `.gat-header__inner` lesen ihn — eine Quelle, Header und Body teilen sich
+  weiter den linken Rand. Der frueher in `dashboard.css` doppelt vermutete
+  `.page`-Block existiert dort nicht; `dashboard.css` cappt nur Fliesstext.
+  `.page` bleibt mittig (`margin-inline: auto`) mit der `clamp()`-
+  Seitenpolsterung. Bei 2560px nutzt der Inhalt jetzt 2040px Lese-/
+  Inhaltsbreite (plus 2×40px Polster = 2120px Box), bei Ultra-Wide bleibt
+  ueber `94vw` ein kleiner Rand.
+- **Fliesstext bleibt schmal.** Intro (`.app-intro`/`.web-hero__intro`),
+  `.lead`, die Tab-Einleitungen (`.tab-panel > p`, `.web-section-head p`),
+  `.web-panel__note` und `.callout` bleiben explizit auf ~70rem begrenzt —
+  die Caps haengen nicht mehr am (jetzt breiten) Container, sondern stehen
+  je Komponente. Saetze laufen nicht ueber 2000px.
+- **Grossflaechige Einzel-Diagramme gedeckelt.** Neue Modifier-Klasse
+  `.web-panel--breit`: ab `min-width: 75rem` werden die Einzel-Chart-Panels
+  (Wasserfall `c_wasserfall`/`c_wasserfall_sp`, `c_korridor`, `c_treiber`,
+  `c_investitionen`, `c_trend_eck`, `c_trend_auf`) auf 1180px gedeckelt und
+  mittig gesetzt — sonst wuerde ein 340px-Chart in 2040px-Breite zum
+  flachen Streifen. Ihre Inline-Hoehen wurden einheitlich auf 380px
+  angehoben (zuvor 340/360). Der Sankey `c_sankey` behaelt volle Breite und
+  520px Hoehe — er profitiert von der Breite. Die 2-spaltigen `.dash-grid`-
+  Panels (Einnahmen/Ausgaben) bekommen je ~halbe Breite und bleiben
+  unveraendert.
+- **Metric-Raster & `.dash-grid` gepruyft.** Das 4-spaltige `.metric-card`-
+  Raster und die 2-spaltige `.dash-grid` sitzen bei 2040px Breite gut
+  proportioniert — keine duenn gezogenen Karten, Gaps unveraendert.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung mit Playwright/Chromium (Fixture-PDF `VA-2026-Auflage.pdf`),
+Ueberblick/Einnahmen/Suche je bei 2560/1440/390px: bei 2560 nutzt der Inhalt
+die volle Breite wie ein echtes Dashboard (kein zentrierter Streifen mehr),
+die Wasserfall-/Trend-Diagramme sitzen ruhig in 1180px-Breite statt flach
+ueber den ganzen Schirm, das 2-Spalten-Einnahmen-Raster und die breiten
+Tabellen fuellen die Flaeche sinnvoll, Fliesstextzeilen bleiben kurz. Bei
+1440 und 390 keine Regression, kein horizontaler Seiten-Ueberlauf.
+
+Gewaehlte `.page`-`max-width`: **`min(2040px, 94vw)`** (Token
+`--web-page-max`).
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
