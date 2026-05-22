@@ -4,9 +4,11 @@
 //
 // Drei Ebenen: Einnahmequellen -> "Gemeindehaushalt" -> Aufgabengruppen.
 // Ein Klick auf einen Quellen-Knoten klappt diesen in seine Konten auf, ein
-// Klick auf einen Aufgabengruppen-Knoten in seine Ansaetze. Es bleibt je Seite
-// hoechstens ein Knoten ausgeklappt; lange Listen werden auf TOP_N gekappt und
-// der Rest in einen "Sonstige"-Knoten gebuendelt.
+// Klick auf einen Aufgabengruppen-Knoten in seine Ansaetze. Der Drill-down
+// zeigt dann nur noch den gewaehlten Zweig (Mittelknoten plus dessen Kinder) —
+// die uebrigen Knoten der obersten Ebene werden ausgeblendet, damit die
+// Grafik uebersichtlich bleibt. Lange Kinderlisten werden auf TOP_N gekappt
+// und der Rest in einen "Sonstige"-Knoten gebuendelt.
 //
 // Reine Funktionen ohne ECharts-/DOM-Abhaengigkeit, damit in Node testbar.
 
@@ -171,53 +173,59 @@ export function buildSankeyOption(posten, dokId, expand) {
 
   node(MITTE, INK.soft, { seite: "mitte", key: "", expandbar: false })
 
-  // Einnahmeseite.
-  const quellenListe = quellen(einnahmen)
-  quellenListe.forEach(([name, betrag]) => {
-    if (expand && expand.seite === "quelle" && expand.key === name) {
-      // Diese Quelle ausgeklappt: ein Knoten je Konto.
-      const konten = kontenDerQuelle(einnahmen, name)
-      konten.forEach(([kLabel, kBetrag]) => {
-        node(kLabel, quelleFarbe(name), {
+  // Einnahmeseite. Im Drill-down nur den aufgeklappten Zweig zeigen — die
+  // uebrigen Knoten der obersten Ebene wuerden die Grafik ueberladen. Bei
+  // einem Drill-down in eine Gruppe entfaellt die Einnahmeseite ganz.
+  if (!expand || expand.seite === "quelle") {
+    quellen(einnahmen).forEach(([name, betrag]) => {
+      if (expand && expand.key === name) {
+        // Diese Quelle ausgeklappt: ein Knoten je Konto.
+        kontenDerQuelle(einnahmen, name).forEach(([kLabel, kBetrag]) => {
+          node(kLabel, quelleFarbe(name), {
+            seite: "quelle",
+            key: name,
+            expandbar: false,
+          })
+          links.push({ source: kLabel, target: MITTE, value: kBetrag })
+        })
+      } else if (!expand) {
+        // Uebersicht: jede Quelle als eingeklappter, aufklappbarer Knoten.
+        node(name, quelleFarbe(name), {
           seite: "quelle",
           key: name,
-          expandbar: false,
+          expandbar: true,
         })
-        links.push({ source: kLabel, target: MITTE, value: kBetrag })
-      })
-    } else {
-      node(name, quelleFarbe(name), {
-        seite: "quelle",
-        key: name,
-        expandbar: true,
-      })
-      links.push({ source: name, target: MITTE, value: betrag })
-    }
-  })
+        links.push({ source: name, target: MITTE, value: betrag })
+      }
+      // Im Drill-down einer anderen Quelle: dieser Knoten bleibt ausgeblendet.
+    })
+  }
 
-  // Ausgabeseite.
-  const gruppenListe = gruppen(ausgaben)
-  gruppenListe.forEach(([code, text, betrag]) => {
-    if (expand && expand.seite === "gruppe" && expand.key === code) {
-      // Diese Gruppe ausgeklappt: ein Knoten je Ansatz.
-      const ansaetze = ansaetzeDerGruppe(ausgaben, code)
-      ansaetze.forEach(([aLabel, aBetrag]) => {
-        node(aLabel, INK.orange, {
+  // Ausgabeseite. Im Drill-down nur den aufgeklappten Zweig zeigen; bei einem
+  // Drill-down in eine Quelle entfaellt die Ausgabeseite ganz.
+  if (!expand || expand.seite === "gruppe") {
+    gruppen(ausgaben).forEach(([code, text, betrag]) => {
+      if (expand && expand.key === code) {
+        // Diese Gruppe ausgeklappt: ein Knoten je Ansatz.
+        ansaetzeDerGruppe(ausgaben, code).forEach(([aLabel, aBetrag]) => {
+          node(aLabel, INK.orange, {
+            seite: "gruppe",
+            key: code,
+            expandbar: false,
+          })
+          links.push({ source: MITTE, target: aLabel, value: aBetrag })
+        })
+      } else if (!expand) {
+        node(text, INK.orange, {
           seite: "gruppe",
           key: code,
-          expandbar: false,
+          expandbar: true,
         })
-        links.push({ source: MITTE, target: aLabel, value: aBetrag })
-      })
-    } else {
-      node(text, INK.orange, {
-        seite: "gruppe",
-        key: code,
-        expandbar: true,
-      })
-      links.push({ source: MITTE, target: text, value: betrag })
-    }
-  })
+        links.push({ source: MITTE, target: text, value: betrag })
+      }
+      // Im Drill-down einer anderen Gruppe: dieser Knoten bleibt ausgeblendet.
+    })
+  }
 
   return {
     textStyle: { fontFamily: "Inter, sans-serif", color: "#2b2825" },
