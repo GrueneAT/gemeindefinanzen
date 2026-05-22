@@ -154,6 +154,24 @@ async function idbSchreiben(bytes) {
   }
 }
 
+// Den gesamten gesicherten Stand aus IndexedDB entfernen. Nach einem Reload
+// oeffnet oeffneDb damit eine leere Datenbank. Ohne IndexedDB folgenlos.
+export async function persistenzLeeren() {
+  if (!idbVerfuegbar()) return
+  const idb = await idbOeffnen()
+  try {
+    await new Promise((aufloesen, ablehnen) => {
+      const tx = idb.transaction(IDB_STORE, "readwrite")
+      tx.objectStore(IDB_STORE).delete(IDB_KEY)
+      tx.oncomplete = () => aufloesen()
+      tx.onerror = () => ablehnen(tx.error)
+      tx.onabort = () => ablehnen(tx.error)
+    })
+  } finally {
+    idb.close()
+  }
+}
+
 // Eine In-Memory-DB aus einem Byte-Array wiederherstellen.
 function deserialisieren(sqlite3, bytes) {
   const handle = new sqlite3.oo1.DB(`/${DB_NAME}`, "c")

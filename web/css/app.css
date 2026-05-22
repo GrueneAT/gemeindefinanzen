@@ -212,6 +212,27 @@
   color: var(--soft);
   font-style: italic;
 }
+.doc-clear-zeile {
+  margin-top: 0.9rem;
+}
+.doc-clear-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid var(--ink-red);
+  background: var(--raised);
+  color: var(--ink-red);
+  border-radius: 3px;
+  padding: 0.32rem 0.8rem;
+}
+.doc-clear-btn:hover {
+  background: var(--ink-red);
+  color: var(--paper, #f4efe6);
+}
+.doc-clear-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
 .persist-note {
   font-size: 0.8rem;

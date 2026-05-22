@@ -8,7 +8,9 @@
 
 import * as mupdf from "../vendor/mupdf/mupdf.js"
 import sqlite3InitModule from "../vendor/sqlite-wasm/sqlite3.mjs"
-import { oeffneDb, dokumente, dokumentEntfernen } from "./db.js"
+import {
+  oeffneDb, dokumente, dokumentEntfernen, persistenzLeeren,
+} from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
 import { baueDashboard } from "./dashboard-app.js"
 
@@ -73,6 +75,8 @@ function zeichneDokumentliste() {
   tbody.innerHTML = ""
   leer.hidden = rows.length > 0
   aktualisiereDokVerwaltung(rows.length)
+  const clearBtn = document.getElementById("doc-clear-all")
+  if (clearBtn) clearBtn.hidden = rows.length === 0
 
   for (const d of rows) {
     const tr = document.createElement("tr")
@@ -170,6 +174,19 @@ function verdrahteUpload() {
   input.addEventListener("change", () => {
     verarbeiteDateien([...input.files])
     input.value = ""
+  })
+
+  // Alle geladenen Dokumente verwerfen: Persistenz leeren, dann die Seite
+  // frisch aufbauen — oeffneDb oeffnet danach eine leere Datenbank.
+  const clearBtn = document.getElementById("doc-clear-all")
+  clearBtn.addEventListener("click", async () => {
+    if (!confirm("Wirklich alle geladenen Dokumente entfernen? " +
+                 "Dieser Schritt kann nicht rueckgaengig gemacht werden.")) {
+      return
+    }
+    clearBtn.disabled = true
+    await persistenzLeeren()
+    location.reload()
   })
 
   for (const ev of ["dragenter", "dragover"]) {
