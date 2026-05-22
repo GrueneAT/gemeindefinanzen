@@ -151,17 +151,25 @@ input, select { font-family: var(--gat-font-copy); }
    3. LAYOUT & CONTAINER
    =========================================================================== */
 
-/* Zentrierter Lese-Container: begrenzte Breite, grosszuegige Raender, ein
-   gemeinsamer linker Rand mit dem Header. Die breite 15-Spalten-Suchtabelle
-   scrollt intern ueber .table-scroll und braucht den Container nicht zu
-   sprengen. */
+/* Zentrierter, breiter Inhalts-Container: nutzt auf grossen Schirmen
+   (4K) wirklich die Bildschirmbreite wie ein Dashboard, behaelt auf
+   Ultra-Wide aber etwas Rand. Iteration 1 hatte ihn auf 1200px verengt —
+   auf einem 4K-Monitor ein schmaler Streifen. Die Lesebreite des
+   Fliesstextes wird separat pro Komponente gedeckelt (~70rem), nicht
+   ueber den Container. Die breite 15-Spalten-Suchtabelle scrollt intern
+   ueber .table-scroll und braucht den Container nicht zu sprengen.
+   --web-page-max ist die gemeinsame Quelle fuer .page und den Header. */
+:root {
+  --web-page-max: min(2040px, 94vw);
+}
 .page {
-  max-width: 1200px;
+  max-width: var(--web-page-max);
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 2.5rem);
 }
 
-/* Fliesstext-Spalten auf eine angenehme Leseweite begrenzen. */
+/* Fliesstext-Spalten auf eine angenehme Leseweite begrenzen — unabhaengig
+   von der jetzt breiten .page; sonst liefen Saetze ueber 2000px. */
 .app-intro,
 .lead {
   max-width: 70rem;
@@ -233,7 +241,7 @@ input, select { font-family: var(--gat-font-copy); }
    Header und Body einen gemeinsamen linken Rand teilen. Schmaler
    Block-Innenabstand statt des wuchtigen DS-Werts. */
 .gat-header__inner {
-  max-width: 1200px;
+  max-width: var(--web-page-max);
   padding-inline: clamp(1rem, 4vw, 2.5rem);
   padding-block: 1.15rem;
   gap: var(--gat-space-3);
@@ -411,6 +419,21 @@ input, select { font-family: var(--gat-font-copy); }
    Schatten. Behaelt id und Inline-Hoehe fuer die Dashboard-JS. */
 .dash-chart {
   margin: 0;
+}
+
+/* --- Diagramm-Breite auf grossen Schirmen ---------------------------------
+   Die .page nutzt jetzt fast die volle 4K-Breite (bis 2040px). Ein einzelnes
+   Diagramm mit ~340px Hoehe wuerde damit zu einem extrem flachen Streifen.
+   Die grossflaechigen Einzel-Diagramm-Panels werden daher ab grosser Breite
+   in der Lesebreite gedeckelt und mittig gesetzt — so bleibt das
+   Seitenverhaeltnis ruhig, waehrend Metric-Raster, .dash-grid und der
+   intrinsisch hohe Sankey die volle Breite behalten. ECharts resized von
+   selbst, sobald sich der Container aendert. */
+@media (min-width: 75rem) {
+  .web-panel--breit {
+    max-width: 1180px;
+    margin-inline: auto;
+  }
 }
 
 /* --- .web-section-head — Abschnittskopf -----------------------------------
