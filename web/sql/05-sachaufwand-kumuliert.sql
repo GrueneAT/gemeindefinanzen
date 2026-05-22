@@ -1,9 +1,10 @@
--- 800.000-Euro-Luecke: zahlungswirksamer Sachaufwand, kumuliert
+-- Zahlungswirksamer Sachaufwand mit Ermessensspielraum, kumuliert
 -- Basis ist der Finanzierungshaushalt (tatsaechliche Auszahlungen) — damit
 -- fallen nicht zahlungswirksame Posten wie Abschreibungen automatisch heraus;
 -- interne Verrechnungsruecklagen werden zusaetzlich ausgeschlossen.
--- Die Spalte 'kumuliert' zeigt, wie viele Posten zusammen 800.000 EUR ergeben.
--- KEINE Empfehlung — eine Suchhilfe: jeder Posten ist einzeln zu bewerten.
+-- Die Spalte 'kumuliert' zeigt, wie viele Posten zusammen welchen Betrag
+-- ergeben. KEINE Empfehlung — eine Suchhilfe: jeder Posten ist einzeln zu
+-- bewerten.
 WITH sach AS (
     SELECT konto, bezeichnung, gruppe_text, fh_wert
     FROM v_detail
@@ -21,10 +22,7 @@ SELECT
     gruppe_text,
     ROUND(fh_wert, 0)                                        AS auszahlung,
     ROUND(SUM(fh_wert) OVER (ORDER BY fh_wert DESC,
-                             konto ROWS UNBOUNDED PRECEDING), 0) AS kumuliert,
-    CASE WHEN SUM(fh_wert) OVER (ORDER BY fh_wert DESC,
-                                 konto ROWS UNBOUNDED PRECEDING) <= 800000
-         THEN 'in 800k-Korridor' ELSE '' END                 AS markierung
+                             konto ROWS UNBOUNDED PRECEDING), 0) AS kumuliert
 FROM sach
 ORDER BY fh_wert DESC
 LIMIT 40;

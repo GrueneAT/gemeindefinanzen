@@ -27,7 +27,7 @@ Ein Eintrag je eingelesene PDF.
 | Spalte | Bedeutung |
 |--------|-----------|
 | `dokument_id` | Primärschlüssel |
-| `gemeinde` | z. B. „Stadtgemeinde Herzogenburg“ |
+| `gemeinde` | Name der Gemeinde, aus dem PDF-Kopf (z. B. „Stadtgemeinde …“) |
 | `typ` | `VA` / `NVA` / `RA` |
 | `finanzjahr` | Hauptjahr des Dokuments |
 | `spalte_wert`, `spalte_vergleich`, `spalte_dritte` | Klartext-Bedeutung der drei Betragsspalten |

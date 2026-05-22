@@ -1,6 +1,7 @@
--- Kommunalsteuer im Kontext und Szenario "minus 800.000 EUR"
--- Stellt die Kommunalsteuer des aktuellen Voranschlags neben das Nettoergebnis
--- und rechnet vor, wie ein dauerhafter Einnahmenausfall von 800.000 EUR wirkt.
+-- Kommunalsteuer im Kontext der Ertraege
+-- Stellt die Kommunalsteuer des aktuellen Voranschlags neben die Gesamt-
+-- ertraege und das Nettoergebnis — zeigt, wie stark das Budget von dieser
+-- einen eigenen Abgabe abhaengt.
 WITH va AS (SELECT dokument_id FROM dokument
             WHERE typ='VA' ORDER BY finanzjahr DESC LIMIT 1),
 kennzahl AS (
@@ -14,5 +15,4 @@ kennzahl AS (
 )
 SELECT 'Kommunalsteuer Voranschlag'      AS kennzahl, ROUND(komm, 0)  AS euro FROM kennzahl
 UNION ALL SELECT 'Anteil an allen Ertraegen %', ROUND(100.0*komm/ertraege, 1) FROM kennzahl
-UNION ALL SELECT 'Nettoergebnis Voranschlag',   ROUND(netto, 0)               FROM kennzahl
-UNION ALL SELECT 'Nettoergebnis nach -800.000', ROUND(netto - 800000, 0)      FROM kennzahl;
+UNION ALL SELECT 'Nettoergebnis Voranschlag',   ROUND(netto, 0)               FROM kennzahl;
