@@ -185,10 +185,14 @@
           </div>
         </section>
       </div>
-      <h3>Tabelle der groessten Ertragsposten</h3>
-      <table class="dtable" id="t-einnahmen">
-        <thead><tr><th>Posten</th><th class="num">Betrag</th></tr></thead>
-        <tbody id="tbl-einnahmen"></tbody></table>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Tabelle der groessten Ertragsposten</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-einnahmen">
+            <thead><tr><th>Posten</th><th class="num">Betrag</th></tr></thead>
+            <tbody id="tbl-einnahmen"></tbody></table>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="ausgaben">
@@ -212,22 +216,32 @@
           </div>
         </section>
       </div>
-      <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
-      <p>Klick auf eine Zeile blendet die naechste Ebene auf; ueber die
-        Brotkrumen geht es wieder zurueck. Die Schaltflaeche
-        &bdquo;ueber die Jahre&ldquo; je Gruppe oder Ansatz zeigt deren
-        Entwicklung ueber alle Dokumente als Liniendiagramm.
-        Drill-down und &bdquo;ueber die Jahre&ldquo; zeigen die
-        <strong>operativen Ausgaben</strong> des Ergebnishaushalts
-        (laufender Betrieb) — investive Vorhaben stehen im Tab
-        &bdquo;Investitionen&ldquo;.</p>
-      <div class="crumbs" id="drill-crumbs"></div>
-      <p class="result-meta" id="drill-sum"></p>
-      <ul class="drill-list" id="drill-list"></ul>
-      <h3>Groesste Aufwandssteigerungen</h3>
-      <table class="dtable" id="t-ausgaben">
-        <thead><tr><th>Posten</th><th class="num">Steigerung</th></tr></thead>
-        <tbody id="tbl-ausgaben"></tbody></table>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
+          <p class="web-panel__note">Klick auf eine Zeile blendet die naechste
+            Ebene auf; ueber die Brotkrumen geht es wieder zurueck. Die
+            Schaltflaeche &bdquo;ueber die Jahre&ldquo; je Gruppe oder Ansatz
+            zeigt deren Entwicklung ueber alle Dokumente als Liniendiagramm.
+            Drill-down und &bdquo;ueber die Jahre&ldquo; zeigen die
+            <strong>operativen Ausgaben</strong> des Ergebnishaushalts
+            (laufender Betrieb) — investive Vorhaben stehen im Tab
+            &bdquo;Investitionen&ldquo;.</p>
+        </div>
+        <div class="web-panel__body">
+          <div class="crumbs" id="drill-crumbs"></div>
+          <p class="result-meta" id="drill-sum"></p>
+          <ul class="drill-list" id="drill-list"></ul>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Groesste Aufwandssteigerungen</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-ausgaben">
+            <thead><tr><th>Posten</th><th class="num">Steigerung</th></tr></thead>
+            <tbody id="tbl-ausgaben"></tbody></table>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="investitionen">
@@ -242,11 +256,15 @@
           <div id="c_investitionen" class="dash-chart" style="height:380px"></div>
         </div>
       </section>
-      <h3>Tabelle der groessten Investitionen</h3>
-      <table class="dtable" id="t-investitionen">
-        <thead><tr><th>Posten</th><th>Ansatz</th>
-          <th class="num">Betrag</th></tr></thead>
-        <tbody id="tbl-investitionen"></tbody></table>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Tabelle der groessten Investitionen</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-investitionen">
+            <thead><tr><th>Posten</th><th>Ansatz</th>
+              <th class="num">Betrag</th></tr></thead>
+            <tbody id="tbl-investitionen"></tbody></table>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="transfers">
@@ -256,11 +274,15 @@
           gesetzlich gebundene <span class="mark-risiko">Pflichtumlage</span>
           oder um freiwillige bzw. sonstige Transfers handelt.</p>
       </div>
-      <h3>Transferaufwand im Detail</h3>
-      <table class="dtable" id="t-transfers">
-        <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
-          <th class="num">Vergleich</th></tr></thead>
-        <tbody id="tbl-transfers"></tbody></table>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Transferaufwand im Detail</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-transfers">
+            <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
+              <th class="num">Vergleich</th></tr></thead>
+            <tbody id="tbl-transfers"></tbody></table>
+        </div>
+      </section>
       <section class="web-panel">
         <div class="web-panel__head">
           <h3>Aufwand nach Art im Zeitverlauf</h3>
@@ -324,6 +346,9 @@
           Posten oder die gesamte gefilterte Menge lassen sich ueber die Jahre
           als Liniendiagramm vergleichen.</p>
       </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Filter</h3></div>
+        <div class="web-panel__body">
       <div class="filterbar">
         <label>Volltextsuche
           <input type="search" class="search" id="f-such"
@@ -357,6 +382,11 @@
           Gefilterte Menge als Gruppe</button>
         <span class="mj-count" id="mj-count">keine Zeile gewaehlt</span>
       </div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Detailposten</h3></div>
+        <div class="web-panel__body">
       <div class="table-scroll">
         <table class="dtable">
           <thead><tr>
@@ -395,6 +425,8 @@
         </table>
       </div>
       <p class="table-hint" id="such-hint"></p>
+        </div>
+      </section>
     </section>
   </div>
 
