@@ -843,9 +843,52 @@ Ring-Punkt, Legende „Ist (RA)" / „Plan (VA/NVA)" sichtbar.
 Tests mussten angepasst werden — kein Test kodierte das alte
 `treiber`-Verhalten oder eine feste Chart-Form.
 
-### Iteration 18 — Vergroessern/Vollbild je Diagramm (in Arbeit)
+### Iteration 18 — Vergroessern/Vollbild je Diagramm (erledigt)
 
-- Pro Diagramm-Panel ein „Vergroessern"-Button -> Panel im Vollbild
-  (Fullscreen-API), Diagramm fuellt den Schirm, Esc/Button zurueck.
+Rueckmeldung: viele aeltere Nutzer:innen — ein grosser, gut lesbarer
+Vollbild-Blick auf ein einzelnes Diagramm ist echter Mehrwert, gerade fuer
+die interaktiven Diagramme (Sankey-Drill-down, Treemap).
 
-_wird nach visueller Pruefung fortgeschrieben._
+- **„Vergroessern"-Knopf je Diagramm-Panel.** Jedes Panel mit einem echten
+  Diagramm (`.dash-chart`) bekommt im Panel-Kopf einen ruhigen, kleinen
+  Knopf. Er wird in `app.js` (`verdrahteVollbild()`) nach dem
+  Dashboard-Aufbau eingehaengt — die Panels werden ueber
+  `.web-panel:has(.dash-chart)` ermittelt, statt zwoelf Panels in
+  `index.html` von Hand zu pflegen. Tabellen-Panels bleiben bewusst ohne
+  Knopf. Der Panel-Kopf traegt dafuer eine neue Titelzeile
+  (`.web-panel__head-row`), die Titel links und Knopf rechts haelt — Notiz
+  und Sankey-Leiste bleiben darunter. Der Knopf ist eine zurueckhaltende
+  Sekundaerflaeche (heller Grund, Haarlinie, gruene Schrift) mit
+  `:focus-visible`-Ring wie alle uebrigen Bedienelemente.
+- **Vollbild ueber die native Fullscreen-API.** Ein Klick legt das ganze
+  Panel per `element.requestFullscreen()` auf den Schirm; Esc und ein
+  erneuter Klick fuehren zurueck. Der Knopf wechselt das Label zwischen
+  „Vergroessern" und „Verkleinern" (samt `aria-label`). Ist die
+  Fullscreen-API nicht verfuegbar (`document.fullscreenEnabled === false`),
+  wird gar kein Knopf eingehaengt — die App bleibt voll funktionsfaehig.
+- **Diagramm fuellt im Vollbild den Schirm.** Neuer CSS-Block
+  `.web-panel:fullscreen`: weisse Flaeche ohne Rahmen, der Panel-Kopf
+  (Titel) bleibt oben sichtbar, der `.web-panel__body` waechst als
+  Flex-Spalte; der `.dash-chart`-Div verliert im Vollbild seine feste
+  Inline-Hoehe (`height: auto !important`, `flex: 1 1 auto`) und fuellt die
+  verbleibende Hoehe. Auf `fullscreenchange` loest `app.js` ein
+  `window`-`resize`-Event aus — `dashboard.js` hoert darauf bereits
+  (`window.addEventListener("resize", resizeVisibleCharts)`) und vermisst
+  alle sichtbaren Diagramme neu, sodass ECharts die volle Vollbildflaeche
+  fuellt. `dashboard.js` bleibt unangetastet. Zusaetzlich zum sofortigen
+  Stoss ein verzoegerter (120 ms) fuer Browser, die die Vollbild-Geometrie
+  erst spaet melden.
+- **Interaktion bleibt erhalten.** Es werden keine Event-Handler geloest —
+  Sankey-Drill-down und Treemap-Drill funktionieren im Vollbild
+  unveraendert.
+
+Visuelle Pruefung mit Playwright/Chromium (Fixture `VA-2026-Auflage.pdf`,
+1440x900): Vollbild fuer den Sankey und den Wasserfall geprueft — das
+Diagramm-Canvas fuellt den Viewport (Sankey 1408x757, Wasserfall 1408x814),
+der Panel-Kopf mit Titel bleibt oben, der Knopf zeigt „Verkleinern". Der
+Sankey-Drill-down (`__sankeyDrill`) klappt im Vollbild korrekt eine
+Aufgabengruppe auf. Verlassen ueber den Knopf stellt Rahmen, Radius und die
+Panel-Chart-Breite exakt wieder her; Vollbild auf einem Diagramm verlassen
+und dann ein anderes oeffnen funktioniert sauber.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
