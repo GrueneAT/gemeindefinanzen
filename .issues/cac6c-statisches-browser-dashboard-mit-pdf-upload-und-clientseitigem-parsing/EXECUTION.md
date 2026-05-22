@@ -309,3 +309,85 @@ einer In-Memory-DB, und die Dashboard-Seite oeffnete leer.
 - [x] Volle Pruefung gruen (JS 29, Python 28, ruff/mypy sauber)
 - [x] Keine Stubs/TODOs/Platzhalter, kein Debug-Code
 - **Result:** PASSED
+
+---
+
+# T11 — Parser-Fix: aufgeteilte Betragsfragmente zusammenfuehren
+
+**Status:** abgeschlossen
+
+## Problem
+
+Manche Gemeinde-PDFs rendern tausendergetrennte Betraege als mehrere
+Textfragmente statt als ein Wort. Beispiel Wildschoenau (Tirol),
+Voranschlag 2026: `47.800,00` kommt als zwei Woerter `47` (x0~430) und
+`800,00` (x1~463.7) aus dem PDF. Der Parser erkannte nur das Fragment,
+das der Ganzzahl-Regex entsprach (`800,00`), und liess das fuehrende
+Fragment `47` fallen — der Wert wurde `800,00` statt `47.800,00`.
+Herzogenburg und Eichgraben rendern Zahlen als ein Wort und waren nicht
+betroffen.
+
+## Fix
+
+1. **Vor-Aufbereitung `_merge_number_fragments` / `mergeNumberFragments`:**
+   laeuft je Zeile auf den nach x0 sortierten Woertern und fuehrt
+   benachbarte Zahlfragmente zu einem synthetischen Wort zusammen. Zwei
+   Woerter gehoeren zur selben Zahl, wenn der horizontale Abstand klein
+   ist (`FRAG_GAP_MAX = 6.0` pt) und beide Zahlfragmente sind. Gemessen:
+   zahlinterne Luecken ~2.1 pt, Luecken zwischen Betragsspalten >= 17.7 pt
+   — die 6-pt-Schwelle trennt beide Faelle sicher. Die Fragmenttexte
+   werden direkt verkettet (`47` + `800,00` -> `47800,00`); das
+   synthetische Wort behaelt x0 des ersten und x1 des letzten Fragments,
+   sodass die rechtskantige Spaltenzuordnung unveraendert weiterlaeuft.
+2. **`NUMBER_RE` relaxiert:** akzeptiert zusaetzlich die zusammengezogene
+   Form `^-?\d+,\d{2}$` neben der gepunkteten Form.
+3. Identische Logik in `parser.py` und `parser.js` — Verhalten gleich.
+
+## Abweichung (Rule 1) — verdichtete Personalkonten
+
+Bei der Verifikation zeigte sich eine **zweite, eigenstaendige Ursache**
+fuer das Wildschoenau-Versagen: 26 Detailzeilen mit dem Schluessel
+`1/<ansatz>-5` ("Personalkonten verdichtet"). Hier ist nicht der Betrag,
+sondern das Konto verkuerzt (eine Ziffer statt sechs). Der
+`DETAIL_RE`-Regex verlangte exakt `\d{6}` und verwarf diese Zeilen
+komplett — ein echter Datenverlust-Bug. `DETAIL_RE` akzeptiert nun ein
+1-6-stelliges Konto (`\d{1,6}`). Herzogenburg und Eichgraben enthalten
+keine verdichteten Zeilen (0 Vorkommen), daher kein Einfluss auf sie.
+Ohne diese Korrektur erreichte Wildschoenau nur 4/5.
+
+## Test-Fixture-Pinning
+
+`tests/js/run.mjs` globte `documents/*.pdf` und hatte "4 Dokumente /
+20/20 / 5415 Posten" fest verdrahtet. Die jetzt in `documents/`
+liegende Eichgraben-PDF haette diese Erwartungen gebrochen. Behoben:
+der Test laeuft jetzt gegen die explizit gepinnte Liste der vier
+Herzogenburg-Fixtures (`FIXTURES`, abgeleitet aus `ERWARTET`).
+`tests/test_parser.py` ebenso: `HERZOGENBURG_PDFS` ersetzt
+`DOCS.glob("*.pdf")` in `test_alle_dokumente_laden_und_validieren` und
+in `docs_vorhanden`.
+
+## Validierung — vorher / nachher
+
+| Gemeinde       | vorher | nachher |
+|----------------|--------|---------|
+| Herzogenburg   | 20/20  | 20/20   |
+| Eichgraben     | 5/5    | 5/5     |
+| Wildschoenau   | 2/5    | 5/5     |
+
+Wildschoenau: gegen `/tmp/wildschoenau-VA2026.pdf` mit
+`PYTHONPATH=src /tmp/pdfvenv/bin/python` geprueft (nicht ins Repo
+eingecheckt). JS-Parser auf derselben PDF ebenfalls 5/5; Python und JS
+melden uebereinstimmend 1403 Detailposten (Paritaet bestaetigt).
+
+## Verifikation
+
+- `PYTHONPATH=src python -m pytest -q` — 28 passed
+- `python -m unittest discover -s tests` — 0 Tests (keine TestCase-Klassen),
+  kein `import pytest`-Leak
+- `ruff check src tests` — All checks passed
+- `mypy src` — Success, no issues
+- `npm run test:js` — 35 bestanden, 0 fehlgeschlagen
+- Neue Einheitstests fuer den Fragment-Merge in `tests/test_parser.py`
+  (6 Tests) und `tests/js/run.mjs` (6 Tests): zwei/drei Fragmente,
+  negatives Fragment, ganzes Zahlwort unveraendert, kleine ungeteilte
+  Zahl unveraendert, Spaltengrenze trennt.
