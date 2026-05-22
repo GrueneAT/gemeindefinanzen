@@ -405,3 +405,18 @@ Tastatur-Fokus, reduzierte Bewegung und eine letzte Defektpruefung.
   Panels — die Politur der Iterationen 1–7 bleibt intakt.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 9 — Review-Findings beheben (in Arbeit)
+
+Aus dem code-reviewer-Durchgang ueber alle 45 Commits:
+- **Wichtig:** `.gat-btn`-`border-radius` in app.css ueberschreibt die
+  Folder-Tab-Ecken von `.tab-btn` (gleiche Spezifitaet, app.css laedt
+  spaeter). Fix: `gat-btn` aus dem `.tab-btn`-Markup nehmen — `.tab-btn`
+  bringt eigene Flaeche/Rahmen/Radius mit und steht per eigenem Namen im
+  Fokus-Block.
+- **Klein:** `chartTrendKomm`-`areaStyle` nutzt noch `rgba(47,97,73,…)`
+  (Vor-Entsaettigungs-Gruen) — auf `rgba(63,125,79,…)` (= `INK.green`).
+- **Klein:** sechs `--web-chart-*`-/`--web-yellow`-Token sind nur
+  Doku (Charts lesen JS-Literale) — als solche kommentieren.
+
+_wird nach visueller Pruefung fortgeschrieben._
