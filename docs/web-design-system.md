@@ -781,3 +781,31 @@ Gewaehlte Diagrammschrift: **15px** (Achsen, Legende, Tooltip, Datenlabels,
 Sankey-Knoten), **14px** fuer die Wertachse.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+## Review der Auswertungen (extern: Claude Opus 4.7 + Codex gpt-5)
+
+Topic-Review unter `.issues/grafische-auswertungen-gemeindebudget-verstaendlichkeit/reviews/`.
+Konsens beider Reviewer:
+- „Geldfluss"-Sankey irrefuehrend benannt (basiert auf `eh_wert`, nicht Cashflow).
+- Plan (VA) und Ist (RA) in Trend-Diagrammen optisch nicht getrennt.
+- Diagrammschrift-Reste auf 10px (Iteration 16 unvollstaendig).
+- Kostentreiber: Bedeutung typabhaengig, nur Anstiege sichtbar.
+Groessere Konsens-Ideen (Kennzahl-Deltas, Pro-Kopf, Schulden-Tab, Soll-Ist-/
+Polster-Diagramme, Aufgabenbereiche als Balken) -> eigenes Backlog-Issue.
+
+### Iteration 17 — Konsens-Korrekturen an den Diagrammen (in Arbeit)
+
+- „Geldfluss" praeziser benennen + Einordnungshinweis (Ergebnishaushalt,
+  kein Cashflow).
+- Trend-Diagramme: VA (Plan) vs. RA (Ist) optisch unterscheiden + Legende.
+- `chartTrendKomm`-Datenlabels von 10px auf `LABEL_SIZE`.
+- Kostentreiber: Einordnungshinweis (Vergleichsspalte je Dokumenttyp) +
+  zweiseitiges Diagramm, das auch Rueckgaenge zeigt.
+- Wasserfall: Nettoergebnis-Saeule nach Vorzeichen einfaerben.
+
+### Iteration 18 — Vergroessern/Vollbild je Diagramm (in Arbeit)
+
+- Pro Diagramm-Panel ein „Vergroessern"-Button -> Panel im Vollbild
+  (Fullscreen-API), Diagramm fuellt den Schirm, Esc/Button zurueck.
+
+_wird nach visueller Pruefung fortgeschrieben._
