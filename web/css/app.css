@@ -229,48 +229,80 @@ input, select { font-family: var(--gat-font-copy); }
    4. KOMPONENTEN
    =========================================================================== */
 
-/* --- Schlanke Markenleiste -------------------------------------------------
-   Der DS-Header ist ein hoher, wuchtiger Dunkelgruen-Block. Hier wird er zu
-   einer schlanken Markenleiste (~66px): Logo-Mark plus Wortmarke auf
-   --web-green-deep, weisse Schrift (Kontrastregel). Die DS-Klassen bleiben
-   am Element und funktionsfaehig, nur die Optik wird ueberschrieben. */
+/* --- Weisse Markenleiste (gruene.at-Muster) --------------------------------
+   Header nach dem Vorbild von gruene.at: weisse Flaeche statt Dunkelgruen-
+   Block. Die gruene Identitaet kommt aus dem prominenten Die-Grünen-Logo,
+   den gruenen Navigationslinks und einer duennen gruenen Akzentlinie am
+   unteren Rand. Ein sehr leichter Schatten hebt den Header ab, die gruene
+   Linie ist der eigentliche Trenner zum gruenstichigen Seitengrund.
+   Die DS-Klassen bleiben am Element und funktionsfaehig. */
 .web-brandbar {
-  background: var(--web-green-deep);
+  background: var(--web-surface);
+  border-bottom: 3px solid var(--web-green);
+  box-shadow: 0 1px 3px rgba(31, 38, 28, .06);
 }
 /* Header-Inhalt auf dieselbe Breite wie der Seiteninhalt bringen, damit
-   Header und Body einen gemeinsamen linken Rand teilen. Schmaler
-   Block-Innenabstand statt des wuchtigen DS-Werts. */
+   Header und Body einen gemeinsamen linken Rand teilen. */
 .gat-header__inner {
   max-width: var(--web-page-max);
   padding-inline: clamp(1rem, 4vw, 2.5rem);
-  padding-block: 1.15rem;
+  padding-block: 0.85rem;
   gap: var(--gat-space-3);
+  flex-wrap: wrap;
 }
-/* Logo-Mark plus Wortmarke als eine zusammenhaengende Markeneinheit. Die
-   DS-Schutzzone (Logo-Padding) entfaellt zugunsten der schlanken Leiste. */
+/* Logo plus Wortmarke als eine zusammenhaengende Markeneinheit. */
 .web-brandbar__brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.85rem;
   padding: 0;
   text-decoration: none;
 }
-.web-brandbar .gat-header__logo-mark {
-  width: 2rem;
+/* Prominentes, klar wiedererkennbares Die-Grünen-Logo (Voll-Farbe,
+   per CDN verlinkt, nicht vendorisiert). Hoehe ~56px -> Header ~80-90px. */
+.web-brandbar__logo {
+  height: 56px;
+  width: auto;
+  display: block;
 }
 .web-brandbar__wordmark {
   font-family: var(--gat-font-headline);
   font-weight: 700;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   line-height: 1;
-  color: var(--gat-color-weiss);
+  color: var(--web-text);
   letter-spacing: 0.01em;
 }
-/* Sekundaerzeile rechts — dezenter Kontext, nicht die wiederholte Wortmarke. */
-.web-brandbar__nav .gat-nav__link {
-  font-size: var(--gat-text-small);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+/* Navigationszone rechts — gruene Links wie bei gruene.at. Als Liste
+   angelegt, damit kuenftige Tool-Links direkt eingehaengt werden koennen. */
+.web-brandbar__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+}
+.web-brandbar__nav-list a,
+.web-brandbar__nav-current {
+  font-family: var(--gat-font-headline);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--web-green-deep);
+  text-decoration: none;
+}
+.web-brandbar__nav-list a:hover {
+  text-decoration: underline;
+}
+/* Aktueller App-Kontext — gruen, leicht hervorgehoben als aktiver Eintrag. */
+.web-brandbar__nav-current {
+  border-bottom: 2px solid var(--web-green);
+  padding-bottom: 2px;
+}
+@media (max-width: 30rem) {
+  .web-brandbar__logo { height: 46px; }
+  .web-brandbar__wordmark { font-size: 1.25rem; }
 }
 
 /* --- .metric-card — Ueberblick-Kennzahlen ---------------------------------
@@ -582,12 +614,13 @@ input.search:focus-visible {
 input.search:focus-visible {
   border-color: var(--web-green-deep);
 }
-/* Marken-Link im Header sitzt auf --web-green-deep — eine gruene Kontur
-   waere unsichtbar. Hier eine helle Kontur plus weicher dunkler Ring. */
+/* Marken-Link im Header sitzt auf weisser Flaeche — der gruene Standard-
+   Fokusring wie bei allen uebrigen interaktiven Elementen. */
 .web-brandbar__brand:focus-visible {
-  outline: 2px solid var(--gat-color-weiss);
+  outline: 2px solid var(--web-green-deep);
   outline-offset: 3px;
   border-radius: 2px;
+  box-shadow: var(--web-focus-ring);
 }
 
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
@@ -918,11 +951,13 @@ input.search:focus-visible {
     display: none !important;
   }
 
-  /* Markenleiste als schlichte Kopfzeile — kein vollflaechiges Dunkelgruen,
-     das den Drucker unnoetig einfaerbt. */
+  /* Markenleiste ist bereits weiss — fuer den Ausdruck nur Schatten und
+     gruene Akzentlinie auf eine schlichte schwarze Linie reduzieren und
+     die Navigationszone ausblenden. Das Logo bleibt als Kopfzeichen. */
   .web-brandbar {
     background: #ffffff;
     border-bottom: 1px solid #000000;
+    box-shadow: none;
   }
   .web-brandbar__wordmark {
     color: #000000;

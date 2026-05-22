@@ -19,11 +19,17 @@
 <header class="gat-header web-brandbar">
   <div class="gat-header__inner">
     <a class="gat-header__logo web-brandbar__brand" href=".">
-      <span class="gat-header__logo-mark"></span>
+      <img class="web-brandbar__logo" src="https://grueneat.github.io/design-system/assets/gruene-logo.svg"
+        alt="Die Gruenen" width="150" height="132">
       <span class="web-brandbar__wordmark">Gemeindefinanzen</span>
     </a>
-    <nav class="gat-nav web-brandbar__nav">
-      <span class="gat-nav__link gat-nav__link--active">VRV-2015-Analyse</span>
+    <!-- Navigationszone: heute nur der App-Kontext. Als <nav>-Liste
+         strukturiert, damit hier spaeter Links zu weiteren Gruene-Tools
+         eingehaengt werden koennen. -->
+    <nav class="gat-nav web-brandbar__nav" aria-label="Werkzeuge">
+      <ul class="web-brandbar__nav-list">
+        <li><span class="web-brandbar__nav-current">VRV-2015-Analyse</span></li>
+      </ul>
     </nav>
   </div>
 </header>
