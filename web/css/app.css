@@ -339,6 +339,40 @@ input, select { font-family: var(--gat-font-copy); }
 .web-panel__body {
   padding: var(--gat-space-3);
 }
+/* Tabellen-Variante: die .dtable bringt eigene Zellpolster mit und soll
+   bis an die Panel-Kante laufen — sonst doppelter Innenabstand. Die
+   sticky Kopfzeile sitzt so buendig unter dem Panel-Kopf. Filter-, Meta-
+   und Hinweiszeilen behalten den ruhigen seitlichen Abstand. */
+.web-panel__body--table {
+  padding: 0;
+}
+.web-panel__body--table .table-scroll {
+  border: none;
+  border-radius: 0;
+}
+/* Bare .dtable (ohne .table-scroll) — Rand-Zellen auf den Panel-Innenrand
+   ausrichten, damit Spalte 1 unter dem Panel-Titel beginnt. */
+.web-panel__body--table > .dtable th:first-child,
+.web-panel__body--table > .dtable td:first-child {
+  padding-left: var(--gat-space-3);
+}
+.web-panel__body--table > .dtable th:last-child,
+.web-panel__body--table > .dtable td:last-child {
+  padding-right: var(--gat-space-3);
+}
+/* Letzte Tabellenzeile im Panel: keine baumelnde Haarlinie an der Kante. */
+.web-panel__body--table > .dtable tbody tr:last-child td {
+  border-bottom: none;
+}
+/* Erstes/letztes Element im Panel-Koerper traegt keinen eigenen Aussen-
+   abstand — der Koerper-Innenabstand liefert den Rahmen (Drill-down-Liste,
+   Filterleiste, Meta-/Hinweiszeilen). */
+.web-panel__body > :first-child {
+  margin-top: 0;
+}
+.web-panel__body > :last-child {
+  margin-bottom: 0;
+}
 /* Die Sankey-Drill-down-Leiste sitzt im Panel-Kopf direkt unter dem Titel. */
 .web-panel__head .sankey-bar {
   margin: var(--gat-space-2) 0 0;
@@ -412,9 +446,21 @@ input, select { font-family: var(--gat-font-copy); }
 .boot-banner strong {
   color: var(--gat-color-weiss);
 }
+/* Empty-State unter der Dokumentverwaltung: ruhiger, bewusst gesetzter
+   Hinweis statt eines lose schwebenden Absatzes. */
 .dashboard-leer {
-  margin: var(--gat-space-5) 0;
-  color: var(--app-soft);
+  margin: var(--gat-space-4) 0 var(--gat-space-5);
+  padding: var(--gat-space-4);
+  border: 1px dashed var(--web-hairline);
+  border-radius: var(--web-radius-card);
+  background: var(--web-surface-sunk);
+  color: var(--web-text-soft);
+  text-align: center;
+}
+.dashboard-leer p {
+  margin: 0;
+  max-width: 44rem;
+  margin-inline: auto;
 }
 
 
@@ -523,8 +569,16 @@ input.search:focus-visible {
   color: var(--app-soft);
   font-size: 0.85rem;
 }
+/* Innenraum der Dokumentverwaltung — grosszuegiger, ruhiger Innenabstand,
+   damit die Abschnitts-h2 nicht an der Kante kleben. Beide Abschnitte
+   (Hinzufuegen / Geladene Dokumente) durch einen klaren Abstand getrennt. */
 .doc-manager-body {
-  padding: 0 1rem 0.4rem;
+  padding: var(--gat-space-3) var(--gat-space-4) var(--gat-space-4);
+  border-top: 1px solid var(--app-hair);
+}
+.doc-manager-body section + section {
+  margin-top: var(--gat-space-4);
+  padding-top: var(--gat-space-4);
   border-top: 1px solid var(--app-hair);
 }
 
@@ -615,7 +669,7 @@ input.search:focus-visible {
    Wrapper scrollt dann horizontal, statt die Seite zu sprengen. */
 .doc-table-scroll {
   overflow-x: auto;
-  margin: 0.6rem 0 1.4rem;
+  margin: 0.6rem 0 0;
 }
 .doc-table {
   width: 100%;

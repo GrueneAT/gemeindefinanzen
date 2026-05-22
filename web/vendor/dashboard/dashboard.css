@@ -168,9 +168,11 @@ input.search:focus-visible {
 .crumbs .sep { color: var(--web-text-mute, #8b8f82); margin: 0 .3rem; }
 
 /* Drill-down-Liste — klickbare Zeilen mit sanftem Hover. */
-.drill-list { list-style: none; padding: 0; margin: .3rem 0; }
+.drill-list { list-style: none; padding: 0; margin: .3rem 0 0; }
 .drill-row { display: flex; justify-content: space-between; gap: 1rem;
   padding: .4rem .55rem; border-bottom: 1px solid var(--hair); }
+/* Im .web-panel sitzt die Liste am Koerper-Ende — keine baumelnde Linie. */
+.drill-list .drill-row:last-child { border-bottom: none; }
 .drill-row.is-clickable { cursor: pointer; }
 .drill-row.is-clickable:hover { background: color-mix(in srgb, var(--web-green, #4a8a52) 8%, transparent); }
 .drill-row .label { flex: 1; }
