@@ -652,3 +652,40 @@ Reiter bleibt sichtbar markiert, und die Dokument-Schalter samt „DOKUMENT"-
 Label sind klar lesbar.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+## gruene.at — Referenzanalyse (Iteration 15)
+
+Visuelle + Code-Analyse von https://gruene.at/ als Vorbild fuer einen
+konsistenten, wiedererkennbaren Gruene-Header:
+
+- **Weisser Header** (`#ffffff`), nicht dunkelgruen. Die gruene Identitaet
+  kommt aus Logo, Linkfarbe und Akzentlinie — nicht aus einer Farbflaeche.
+- **Navigationslinks gruen** (`rgb(37,118,57)` = `#257639`), ~19px, leicht.
+- **Prominentes, rundes Die-Grünen-Logo** (~80–88px) — klar wiedererkennbar.
+- **Pill-CTA**: vollrund, gruen gefuellt, weisse Schrift, grosszuegig
+  gepolstert.
+- Duenne **gruene Akzentlinie** unter dem Header.
+- gruene.at nutzt Gotham (proprietaer) in leichtem Schnitt — wir bleiben
+  bei Barlow Semi Condensed des DS; uebernommen werden Header-Aufbau,
+  Weiss-Grund und Linkfarbe, nicht die Schrift.
+
+### Iteration 15 — Weisser Gruene-Header (in Arbeit)
+
+Header der Gemeindefinanzen-App nach dem gruene.at-Muster neu aufsetzen,
+als **konsistenter, wiederverwendbarer Header** (spaeter Links zu weiteren
+Gruene-Tools):
+
+- Hintergrund **weiss**; darunter eine duenne gruene Akzentlinie.
+- **Logo deutlich groesser** und klar als Die-Grünen-Logo erkennbar —
+  bestes verfuegbares Asset aus dem DS/gruene.at verwenden (kein Vendoring,
+  per Link). Heute ist es ein winziger einfarbiger Mask-Punkt.
+- Wortmarke „Gemeindefinanzen" in `--web-text`, Navigation/Toolname als
+  **gruene Links** (`--web-green-deep`).
+- Eine Navigationszone, die kuenftig Links zu weiteren Tools aufnehmen
+  kann (heute nur der App-Kontext).
+- Kontrastregel anpassen: weisse Schrift auf Dunkelgruen war an die alte
+  gruene Header-Flaeche gebunden — entfaellt fuer den Header; gilt weiter
+  fuer Primaerbuttons.
+- Gegenpruefen 390 / 1440 / 2560px; Tests gruen.
+
+_wird nach visueller Pruefung fortgeschrieben._
