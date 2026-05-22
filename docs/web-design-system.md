@@ -793,15 +793,55 @@ Konsens beider Reviewer:
 Groessere Konsens-Ideen (Kennzahl-Deltas, Pro-Kopf, Schulden-Tab, Soll-Ist-/
 Polster-Diagramme, Aufgabenbereiche als Balken) -> eigenes Backlog-Issue.
 
-### Iteration 17 — Konsens-Korrekturen an den Diagrammen (in Arbeit)
+### Iteration 17 — Konsens-Korrekturen an den Diagrammen (erledigt)
 
-- „Geldfluss" praeziser benennen + Einordnungshinweis (Ergebnishaushalt,
-  kein Cashflow).
-- Trend-Diagramme: VA (Plan) vs. RA (Ist) optisch unterscheiden + Legende.
-- `chartTrendKomm`-Datenlabels von 10px auf `LABEL_SIZE`.
-- Kostentreiber: Einordnungshinweis (Vergleichsspalte je Dokumenttyp) +
-  zweiseitiges Diagramm, das auch Rueckgaenge zeigt.
-- Wasserfall: Nettoergebnis-Saeule nach Vorzeichen einfaerben.
+Fuenf von beiden externen Reviewern (Claude Opus 4.7 + Codex gpt-5)
+gemeinsam markierte Korrektheitsmaengel an den Diagrammen behoben.
+Bewusst eng auf die editierbaren Dateien in `web/js/` und `web/index.html`
+begrenzt — `web/vendor/dashboard/dashboard.js` blieb unangetastet, alle
+Chart-Div-`#id`s erhalten.
+
+- **„Geldfluss" praeziser benannt.** Der Sankey-Panel-Titel heisst jetzt
+  „Mittelherkunft und -verwendung" statt „Geldfluss". Ein neuer
+  `.web-panel__note` ordnet ein: gezeigt werden die operativen Ertraege
+  und Aufwendungen des Ergebnishaushalts — keine Cashflow-Darstellung,
+  kein Finanzierungshaushalt. Chart-Id `c_sankey` und die
+  `.sankey-bar`-Bedienung unveraendert.
+- **Plan (VA) vs. Ist (RA) optisch getrennt.** Der Dokumenttyp wird je
+  Datenpunkt aus `daten.dokumente` durch `trend()` in `dashboard-data.js`
+  gefuehrt (`eckwerte`/`komm`/`aufwand` je Zeile um `typ` ergaenzt). In
+  `dashboard-charts.js` tragen VA/NVA-Balken eine leichte Decal-Schraffur
+  (`VA_DECAL`), RA-Balken bleiben solide; in den Linien sind Ist-Punkte
+  gefuellte Kreise, Plan-Punkte Ringe. Zwei datenlose Hilfsserien
+  (`planIstLegende()`) liefern die Legende „Ist (RA)" / „Plan (VA/NVA)".
+  Betrifft `chartTrendEckwerte`, `chartTrendKomm`, `chartTrendAufwand`.
+- **`chartTrendKomm`-Datenlabels auf `LABEL_SIZE`.** Das in Iteration 16
+  uebersehene `fontSize: 10` der Kommunalsteuer-Punktlabels ist auf
+  `LABEL_SIZE` (15px) angehoben — konsistent mit allen anderen Buildern.
+- **Kostentreiber: Einordnung + zweiseitig.** Panel-Titel jetzt „Groesste
+  Veraenderungen gegenueber dem Vergleichswert" mit `.web-panel__note`,
+  der klarstellt, dass die Vergleichsspalte vom Dokumenttyp abhaengt
+  (VA → Vorjahresplan, RA → Soll laut Voranschlag). Die `treiber`-Abfrage
+  holt nun die acht groessten Anstiege UND die acht groessten Rueckgaenge
+  (`eh_delta>0` bzw. `eh_delta<0`); `chartTreiber` rendert ein
+  zweiseitiges (diverging) Balkendiagramm — Anstiege in Clay, Rueckgaenge
+  in Gruen. Chart-Id `c_treiber` unveraendert.
+- **Wasserfall: Nettoergebnis nach Vorzeichen.** Die Nettoergebnis-Saeule
+  in `chartWasserfall` ist nicht mehr fest blau, sondern gruen bei
+  Ueberschuss und Clay bei Defizit — konsistent mit der Kennzahlen-Karte.
+
+Visuelle Pruefung mit Playwright/Chromium (Fixture `VA-2026-Auflage.pdf`,
+1440px): Ueberblick zeigt den umbenannten Sankey samt Hinweis und den
+gruenen Nettoergebnis-Balken; Sparpotenzial zeigt den zweiseitigen
+Kostentreiber mit zentrierter Nulllinie und Hinweis; Einnahmen zeigt das
+15px-Datenlabel der Kommunalsteuer-Linie. Eine Zusatzpruefung mit allen
+vier Dokumenten (2× RA, 1× NVA, 1× VA) bestaetigt die Plan/Ist-Trennung:
+RA-Balken solide mit gefuelltem Netto-Punkt, VA/NVA-Balken schraffiert mit
+Ring-Punkt, Legende „Ist (RA)" / „Plan (VA/NVA)" sichtbar.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7). Keine
+Tests mussten angepasst werden — kein Test kodierte das alte
+`treiber`-Verhalten oder eine feste Chart-Form.
 
 ### Iteration 18 — Vergroessern/Vollbild je Diagramm (in Arbeit)
 
