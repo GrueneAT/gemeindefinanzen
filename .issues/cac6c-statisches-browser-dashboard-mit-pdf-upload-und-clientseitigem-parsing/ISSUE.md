@@ -1,7 +1,7 @@
 ---
 id: cac6c
 title: Statisches Browser-Dashboard mit PDF-Upload und clientseitigem Parsing
-status: open
+status: done
 priority: high
 labels:
 - dashboard
