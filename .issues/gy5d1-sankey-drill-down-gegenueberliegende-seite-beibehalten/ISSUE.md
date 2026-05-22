@@ -1,7 +1,7 @@
 ---
 id: gy5d1
 title: 'Sankey-Drill-down: gegenueberliegende Seite beibehalten'
-status: open
+status: done
 priority: high
 labels:
 - sankey
