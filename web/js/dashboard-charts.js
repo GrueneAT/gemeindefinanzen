@@ -30,6 +30,15 @@ const ACHSE_TEXT_SOFT = "#5e6358"
 const ACHSE_LINIE = "#cdd2c8"
 const ACHSE_SPLIT = "#e7eae2"
 
+// Gemeinsame Diagramm-Schriftgroessen (Iteration 16). Die App hat viele
+// aeltere Nutzer:innen — die fruehere Skala (~10-12px) war zu klein. Ein
+// Wert je Textrolle, damit Achsen, Legenden, Tooltips und Datenlabels in
+// allen Buildern konsistent gross sind.
+// LABEL_SIZE = Achsenlabels, Legende, Tooltip, Datenlabels, Sankey-Knoten.
+// AXIS_SIZE  = Wertachse (etwas kleiner, bleibt klar lesbar).
+const LABEL_SIZE = 15
+const AXIS_SIZE = 14
+
 function baseText() {
   return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
 }
@@ -66,7 +75,7 @@ function tip(extra = {}) {
     textStyle: {
       fontFamily: CHART_FONT,
       color: ACHSE_TEXT,
-      fontSize: 12,
+      fontSize: LABEL_SIZE,
     },
     ...extra,
   }
@@ -76,16 +85,17 @@ function tip(extra = {}) {
 function legende(extra = {}) {
   return {
     bottom: 0,
+    itemGap: 14,
     textStyle: {
       fontFamily: CHART_FONT,
-      fontSize: 11,
+      fontSize: LABEL_SIZE,
       color: ACHSE_TEXT_SOFT,
     },
     ...extra,
   }
 }
 
-function catAxis(data, fontsize = 11, rotate = 0) {
+function catAxis(data, fontsize = LABEL_SIZE, rotate = 0) {
   return {
     type: "category",
     data,
@@ -105,7 +115,7 @@ function valAxis(formatter = "(v)=>(v/1000).toLocaleString('de')+'k'") {
     type: "value",
     axisLabel: {
       fontFamily: CHART_FONT,
-      fontSize: 10,
+      fontSize: AXIS_SIZE,
       color: ACHSE_TEXT_SOFT,
       formatter,
     },
@@ -178,14 +188,14 @@ export function chartSankey(agg) {
       {
         type: "sankey",
         left: 8,
-        right: 170,
-        top: 14,
-        bottom: 14,
-        nodeGap: 11,
+        right: 300,
+        top: 16,
+        bottom: 16,
+        nodeGap: 13,
         nodeWidth: 26,
         label: {
           fontFamily: CHART_FONT,
-          fontSize: 11,
+          fontSize: LABEL_SIZE,
           color: ACHSE_TEXT,
         },
         lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
@@ -244,7 +254,7 @@ export function chartAufwandart(agg) {
         itemStyle: { borderRadius: 3 },
         label: {
           fontFamily: CHART_FONT,
-          fontSize: 11,
+          fontSize: LABEL_SIZE,
           // ECharts deutet '\n' im Formatter selbst als Zeilenumbruch — der
           // String enthaelt daher Backslash + n als zwei Zeichen.
           formatter: "{b}\\n{d}%",
@@ -300,12 +310,12 @@ export function chartTreemap(agg) {
           },
         ],
         color: [INK.orange, INK.blue, INK.green, INK.red, INK.soft],
-        label: { fontFamily: CHART_FONT, fontSize: 11 },
+        label: { fontFamily: CHART_FONT, fontSize: LABEL_SIZE },
         upperLabel: {
           show: true,
-          height: 20,
+          height: 24,
           fontFamily: CHART_FONT,
-          fontSize: 11,
+          fontSize: LABEL_SIZE,
         },
       },
     ],
@@ -334,8 +344,8 @@ export function chartWasserfall(agg, jahr) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    grid: grid({ top: 18 }),
-    xAxis: catAxis(namen, 10),
+    grid: grid({ top: 28 }),
+    xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: [
       {
@@ -377,7 +387,7 @@ export function chartWasserfall(agg, jahr) {
           show: true,
           position: "top",
           fontFamily: CHART_FONT,
-          fontSize: 10,
+          fontSize: LABEL_SIZE,
           formatter: "(p)=>(p.value/1000).toLocaleString('de')+'k'",
         },
       },
@@ -394,8 +404,8 @@ export function chartKorridor(agg) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: grid({ bottom: 48 }),
-    xAxis: catAxis(cats, 9, 38),
+    grid: grid({ bottom: 96, top: 18 }),
+    xAxis: catAxis(cats, LABEL_SIZE, 38),
     yAxis: valAxis(),
     series: [
       {
@@ -427,7 +437,7 @@ export function chartTrendEckwerte(trend) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: grid({ bottom: 40 }),
+    grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: [
@@ -462,7 +472,7 @@ export function chartTrendKomm(trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis" }),
-    grid: grid({ top: 18 }),
+    grid: grid({ top: 30 }),
     xAxis: catAxis(reihe.map((r) => r[0])),
     yAxis: valAxis(),
     series: [
@@ -499,7 +509,7 @@ export function chartTrendAufwand(trend) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: grid({ bottom: 40 }),
+    grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: reihen.map(([name, idx, col]) => ({
@@ -518,8 +528,8 @@ function mehrjahrBasis(jahre) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
     legend: legende({ type: "scroll" }),
-    grid: grid({ top: 18, bottom: 56 }),
-    xAxis: catAxis(jahre, 11),
+    grid: grid({ top: 30, bottom: 64 }),
+    xAxis: catAxis(jahre),
     yAxis: valAxis(),
     series: [],
   }
