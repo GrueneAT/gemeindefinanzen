@@ -91,13 +91,22 @@ bleiben zusaetzlich am Element stehen.
   Innenabstand; ersetzt `.dash-chart`-Optik.
 - **`.web-callout`** — Hinweis-Panel: `--web-green-tint`, gruener Randstreifen
   links, kein vollflaechiges Knallgruen.
+- **Markenleiste** (`.web-brandbar`) — Header nach dem gruene.at-Muster:
+  weisse Flaeche (`--web-surface`), darunter eine 3px-Akzentlinie in
+  `--web-green` als Trenner, dazu ein sehr leichter Schatten. Links das
+  prominente, vollfarbige Die-Grünen-Logo (`<img>`, ~56px hoch, per CDN
+  verlinkt) plus die Wortmarke „Gemeindefinanzen" in `--web-text`. Rechts
+  eine `<nav>`-Liste mit gruenen Links (`--web-green-deep`) — heute nur der
+  App-Kontext, strukturell offen fuer kuenftige Tool-Links.
 - **Tableiste** — ruhige Reiter; aktiver Reiter klar gruen unterlegt/markiert.
 - **Buttons** — Primaer: `--web-green-deep`, weisse Schrift. Sekundaer:
   Umriss auf heller Flaeche.
 
 ## Kontrast & Lesbarkeit
 
-- Weisse Schrift nur auf `--web-green-deep`.
+- Weisse Schrift nur auf `--web-green-deep` (z. B. Primaerbutton). Der
+  Header ist seit Iteration 15 weiss — er traegt dunklen Text und gruene
+  Links, keine weisse Schrift mehr.
 - Auf `--web-green` / `--web-yellow` immer dunkler Text (`--web-text`).
 - Grossflaechen tragen nie eine vollgesaettigte Markenfarbe.
 - Fliesstext-Spalten auf ~70rem begrenzen.
@@ -669,23 +678,42 @@ konsistenten, wiedererkennbaren Gruene-Header:
   bei Barlow Semi Condensed des DS; uebernommen werden Header-Aufbau,
   Weiss-Grund und Linkfarbe, nicht die Schrift.
 
-### Iteration 15 — Weisser Gruene-Header (in Arbeit)
+### Iteration 15 — Weisser Gruene-Header (erledigt)
 
-Header der Gemeindefinanzen-App nach dem gruene.at-Muster neu aufsetzen,
-als **konsistenter, wiederverwendbarer Header** (spaeter Links zu weiteren
-Gruene-Tools):
+Der Header war bis hierher das Gegenteil von gruene.at: ein dunkelgruener
+Block mit winzigem einfarbigem Mask-Logo. Er wurde nach dem
+gruene.at-Muster neu aufgesetzt, als konsistenter, wiederverwendbarer
+Header:
 
-- Hintergrund **weiss**; darunter eine duenne gruene Akzentlinie.
-- **Logo deutlich groesser** und klar als Die-Grünen-Logo erkennbar —
-  bestes verfuegbares Asset aus dem DS/gruene.at verwenden (kein Vendoring,
-  per Link). Heute ist es ein winziger einfarbiger Mask-Punkt.
-- Wortmarke „Gemeindefinanzen" in `--web-text`, Navigation/Toolname als
-  **gruene Links** (`--web-green-deep`).
-- Eine Navigationszone, die kuenftig Links zu weiteren Tools aufnehmen
-  kann (heute nur der App-Kontext).
-- Kontrastregel anpassen: weisse Schrift auf Dunkelgruen war an die alte
-  gruene Header-Flaeche gebunden — entfaellt fuer den Header; gilt weiter
-  fuer Primaerbuttons.
-- Gegenpruefen 390 / 1440 / 2560px; Tests gruen.
+- **Weisse Flaeche.** `.web-brandbar` traegt jetzt `--web-surface` statt
+  `--web-green-deep`. Trenner zum gruenstichigen Seitengrund ist eine
+  3px-Akzentlinie in `--web-green` (`border-bottom`) plus ein sehr
+  leichter Schatten — die gruene Linie ist der eigentliche Separator.
+- **Prominentes, wiedererkennbares Logo.** Der CSS-`mask`-Punkt
+  (`.gat-header__logo-mark`) ist durch das echte, vollfarbige
+  Die-Grünen-Logo als `<img>` ersetzt — per CDN verlinkt
+  (`https://grueneat.github.io/design-system/assets/gruene-logo.svg`,
+  „Grüne Logo Bund dunkelgrün RGB", intrinsisch 150×132), nicht
+  vendorisiert, mit `alt="Die Gruenen"`. Gerendert ~56px hoch (46px bei
+  schmalem Viewport), Header dadurch ~86px (76px bei 390px).
+- **Wortmarke + gruene Navigation.** „Gemeindefinanzen" in `--web-text`
+  (dunkel, lesbar auf Weiss). Rechts eine echte `<nav>` mit einer
+  `<ul>`-Liste; die Links/der App-Kontext sind gruen (`--web-green-deep`).
+  Heute steht dort nur der aktuelle Kontext „VRV-2015-Analyse" (mit
+  gruener Unterstreichung als aktiver Eintrag); ein HTML-Kommentar haelt
+  fest, dass die Liste fuer kuenftige Gruene-Tool-Links offen ist.
+- **Abhaengiges Styling nachgezogen.** Der `:focus-visible`-Ring des
+  Marken-Links war hell (fuer den alten dunklen Header) — jetzt der
+  gruene Standardring wie bei allen uebrigen Bedienelementen. Der
+  `@media print`-Block reduziert Schatten und gruene Linie auf eine
+  schlichte schwarze Unterlinie und blendet die Navigationszone aus; das
+  Logo bleibt als Kopfzeichen. `theme-color` bleibt `#2c6e40` (Marke).
+  Die Funktionsklassen `.gat-header`/`.gat-nav` bleiben am Element.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung mit Playwright/Chromium (Fixture-PDF
+`VA-2026-Auflage.pdf`), Header bei 2560/1440/390px: weisse Flaeche, das
+echte Die-Grünen-Logo klar erkennbar, gruene Navigationslinks, die gruene
+Akzentlinie am unteren Rand, keine Kontrastprobleme; bei 390px passt der
+Header in eine Zeile ohne horizontalen Ueberlauf.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
