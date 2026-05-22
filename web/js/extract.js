@@ -76,6 +76,55 @@ export function sectionRanges(doc) {
   return ranges
 }
 
+// Laengsten zusammenhaengenden Lauf aus einer aufsteigenden Indexliste.
+// Eine vereinzelte Erwaehnung (Inhaltsverzeichnis, Vorbericht) bildet keinen
+// Lauf und faellt so heraus. Ergebnis: [erste, letzte] oder null.
+export function laengsterLauf(seiten) {
+  if (seiten.length === 0) return null
+  let bestStart = seiten[0]
+  let bestEnd = seiten[0]
+  let curStart = seiten[0]
+  let curEnd = seiten[0]
+  for (let i = 1; i < seiten.length; i++) {
+    if (seiten[i] === curEnd + 1) {
+      curEnd = seiten[i]
+    } else {
+      curStart = seiten[i]
+      curEnd = seiten[i]
+    }
+    if (curEnd - curStart > bestEnd - bestStart) {
+      bestStart = curStart
+      bestEnd = curEnd
+    }
+  }
+  return [bestStart, bestEnd]
+}
+
+// Ist `nadel` im Volltext einer Seite enthalten? Billiger Test ohne Wort-
+// und Zeilenrekonstruktion — fuer den Abschnitts-Fallback gedacht.
+function pageEnthaelt(doc, pageIndex, nadel) {
+  let buf = ""
+  doc.loadPage(pageIndex).toStructuredText().walk({
+    onChar(c) {
+      buf += c
+    },
+  })
+  return buf.includes(nadel)
+}
+
+// Fallback, wenn ein PDF keine Lesezeichen hat: den Detailnachweis-Abschnitt
+// ueber die laufende Seitenkopfzeile finden. Jede Seite des Abschnitts traegt
+// im Kopf den Text "Detailnachweis". Ergebnis: [erste, letzte] (0-basiert)
+// oder null, wenn keine solche Seite existiert.
+export function detailnachweisRangeByText(doc) {
+  const treffer = []
+  const n = doc.countPages()
+  for (let p = 0; p < n; p++) {
+    if (pageEnthaelt(doc, p, "Detailnachweis")) treffer.push(p)
+  }
+  return laengsterLauf(treffer)
+}
+
 // Zeichen einer Seite einsammeln und zu Woertern rekonstruieren.
 //
 // mupdf strukturiert den Text als Baum Block -> Zeile -> Zeichen. Die

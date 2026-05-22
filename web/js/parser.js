@@ -10,7 +10,13 @@
 // rechte Kante der richtigen Spalte zugeordnet — unabhaengig davon, wie viele
 // Spalten in einer Zeile befuellt sind.
 
-import { openDocument, sectionRanges, pageLines, Word } from "./extract.js"
+import {
+  openDocument,
+  sectionRanges,
+  detailnachweisRangeByText,
+  pageLines,
+  Word,
+} from "./extract.js"
 
 // --- Geometrie (aus VA-2026-Auflage.pdf vermessen, A4 quer) -----------------
 // Rechte Kante (x1) der sechs Betragsspalten: EH VA / EH VA-VJ / EH RA-VJ |
@@ -225,8 +231,15 @@ export function parseDocument(doc) {
     }
   }
   if (detailSection === null) {
+    // Manche Gemeinden exportieren das PDF ohne Lesezeichen — dann liefert
+    // sectionRanges nichts. Den Abschnitt ersatzweise ueber die laufende
+    // Seitenkopfzeile suchen.
+    detailSection = detailnachweisRangeByText(doc)
+  }
+  if (detailSection === null) {
     throw new Error(
-      "Kein Abschnitt 'Detailnachweis' im PDF-Inhaltsverzeichnis gefunden.",
+      "Kein Detailnachweis-Abschnitt gefunden — weder in den " +
+        "PDF-Lesezeichen noch ueber die Seitenkopfzeilen.",
     )
   }
   const [start, end] = detailSection

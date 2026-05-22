@@ -134,6 +134,19 @@ def test_spalten_nachtragsvoranschlag() -> None:
     assert _spalten("NVA", 2025) == ("VA 2025 inkl. NVA", "VA 2025", "1. NVA")
 
 
+# --- Einheitstests: laengsterLauf (Abschnitts-Fallback ohne Lesezeichen) ---
+@pytest.mark.parametrize("seiten,erwartet", [
+    ([], None),
+    ([5], (5, 5)),
+    ([3, 4, 5], (3, 5)),
+    ([1, 5, 6, 7, 8, 20], (5, 8)),       # vereinzelte Erwaehnungen fallen heraus
+    ([10, 11, 13, 14, 15], (13, 15)),    # der laengere Lauf gewinnt
+    ([1, 2, 4, 5], (1, 2)),              # bei Gleichstand gewinnt der erste
+])
+def test_laengster_lauf(seiten: list[int], erwartet: tuple[int, int] | None) -> None:
+    assert extract._laengster_lauf(seiten) == erwartet
+
+
 # --- Integrationstests: echte PDF -----------------------------------------
 @pytest.fixture(scope="module")
 def ergebnis() -> parser.ParseResult:

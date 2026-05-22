@@ -13,7 +13,12 @@ import { readFileSync, existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
 
-import { openDocument, documentMeta, sectionRanges } from "../../web/js/extract.js"
+import {
+  openDocument,
+  documentMeta,
+  sectionRanges,
+  laengsterLauf,
+} from "../../web/js/extract.js"
 import { parseDocumentBytes, mergeNumberFragments } from "../../web/js/parser.js"
 import { validate, pruefStatus } from "../../web/js/validate.js"
 import { spalten } from "../../web/js/loader.js"
@@ -122,11 +127,35 @@ function testeFragmentMerge() {
   )
 }
 
+// Einheitstests fuer laengsterLauf — Grundlage des Abschnitts-Fallbacks fuer
+// PDFs ohne Lesezeichen.
+function testeLaengsterLauf() {
+  const faelle = [
+    [[], null, "leere Liste -> null"],
+    [[5], [5, 5], "einzelne Seite"],
+    [[3, 4, 5], [3, 5], "ein zusammenhaengender Lauf"],
+    [[1, 5, 6, 7, 8, 20], [5, 8], "vereinzelte Erwaehnungen fallen heraus"],
+    [[10, 11, 13, 14, 15], [13, 15], "der laengere Lauf gewinnt"],
+    [[1, 2, 4, 5], [1, 2], "bei Gleichstand gewinnt der erste Lauf"],
+  ]
+  for (const [eingabe, erwartet, name] of faelle) {
+    const ist = laengsterLauf(eingabe)
+    pruefe(
+      name,
+      JSON.stringify(ist) === JSON.stringify(erwartet),
+      `erwartet ${JSON.stringify(erwartet)}, ist ${JSON.stringify(ist)}`,
+    )
+  }
+}
+
 async function teste() {
   const pdfs = FIXTURES
 
   console.log("parser.mergeNumberFragments — aufgeteilte Betraege zusammenfuehren")
   testeFragmentMerge()
+
+  console.log("\nextract.laengsterLauf — laengsten zusammenhaengenden Seitenlauf")
+  testeLaengsterLauf()
 
   console.log("\nloader.spalten — Spaltenbedeutung je Dokumenttyp")
   pruefe(

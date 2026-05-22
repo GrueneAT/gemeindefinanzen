@@ -238,10 +238,29 @@ async function verarbeiteDateien(dateien) {
     if (await verarbeiteEine(datei)) erfolg++
   }
   zeichneDokumentliste()
-  if (erfolg > 0) {
-    // Erfolgreich verarbeitete Dokumente sichern und die Seite neu
-    // aufbauen — das Dashboard arbeitet danach mit dem aktuellen Stand.
-    await db.sichern()
+  const gescheitert = pdfs.length - erfolg
+  if (erfolg > 0) await db.sichern()
+
+  if (gescheitert > 0) {
+    // Mindestens eine PDF ist gescheitert. NICHT neu laden — der Reload
+    // wuerde die Fehlermeldungen in der Fortschrittsliste loeschen, bevor
+    // sie gelesen werden koennen. Die Dokumentverwaltung offen halten,
+    // damit die Liste mit den Meldungen sichtbar bleibt.
+    const manager = document.getElementById("doc-manager")
+    if (manager) manager.open = true
+    toast(
+      erfolg > 0
+        ? `${gescheitert} Dokument(e) konnten nicht geladen werden — ` +
+          `Grund siehe unten in der Liste. Die ${erfolg} erfolgreich ` +
+          `geladenen erscheinen im Dashboard nach dem Neuladen der Seite.`
+        : `${gescheitert} Dokument(e) konnten nicht geladen werden — ` +
+          `Grund siehe unten in der Liste.`,
+      "fehl",
+    )
+  } else if (erfolg > 0) {
+    // Alle PDFs erfolgreich verarbeitet — die Seite frisch aufbauen, damit
+    // das Dashboard mit dem aktuellen Stand arbeitet (dashboard.js laeuft
+    // nur einmal je Seitenaufbau).
     location.reload()
   }
 }
