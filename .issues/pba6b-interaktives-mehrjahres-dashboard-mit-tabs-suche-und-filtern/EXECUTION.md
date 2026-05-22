@@ -108,3 +108,79 @@ Keine ausserhalb des Auftragsumfangs.
 
 **Completed:** 2026-05-22T06:05:00Z
 **Commits:** 4 (3 Arbeit + dieser Zusammenfassungs-Commit)
+
+---
+
+## T8 — Mehrjahres-Vergleich von Posten und Gruppen (Folge-Feature)
+
+**Started:** 2026-05-22
+**Status:** complete
+
+Folge-Anforderung des Auftraggebers: einzelne Posten oder Gruppen von Posten
+ueber mehrere Jahre hinweg betrachten — auch grafisch.
+
+### Was gebaut wurde
+
+- **`charts.py`** — neue `mehrjahr_basis(jahre)` liefert die leere ECharts-
+  Linienchart-Huelle im Stil der uebrigen Zeitreihen (Inter, vier Tinten,
+  Haarlinien). `MEHRJAHR_PALETTE` (10 Farben) fuer bis zu zehn Linien.
+  `alle_charts` ergaenzt einen `mehrjahr`-Block (`basis`, `palette`,
+  `dok_reihenfolge`).
+- **`assets.py` (JS)** — neues Mehrjahres-Modul: `postenWert` (eh_wert,
+  ersatzweise fh_wert), `reiheUeberJahre` (Summe je Dokument in
+  chronologischer Reihenfolge), `postenLinien` (eine Linie je Posten,
+  gematcht ueber `ansatz`+`konto`), `gruppenLinie` (eine aggregierte Linie),
+  `openMehrjahr`/`closeMehrjahr`/`setupMehrjahr` (Overlay-Dialog). Fehlende
+  Jahre werden als `null` gefuehrt (`connectNulls: false`).
+- **`assets.py` (Suchtabelle)** — Checkbox-Spalte je Zeile plus Kopf-Box
+  (alle sichtbaren waehlen), Aktionsleiste mit „Ausgewaehlte Posten ueber die
+  Jahre“ und „Gefilterte Menge als Gruppe“; Auswahl bleibt ueber Sortierung
+  und Filterwechsel erhalten (Schluessel `ansatz|konto`). Obergrenze 10
+  Linien, darueber Hinweis und Kappung.
+- **`assets.py` (Drill-down)** — je Gruppen- und Ansatz-Zeile eine
+  Schaltflaeche „ueber die Jahre“, die deren Ausgaben-Summe ueber alle
+  Dokumente als Linie zeigt. Button hat Vorrang vor der Drill-Navigation.
+- **`assets.py` (CSS)** — Stile fuer Aktionsleiste, Checkbox-Spalte, Drill-
+  Button und Overlay-Dialog im Design-System-Stil.
+- **`html.py`** — Checkbox-Kopfspalte und Aktionsleiste in `_panel_suche`,
+  neuer `_overlay_mehrjahr()`-Dialog, in den Seitenkoerper eingehaengt;
+  ergaenzte Erlaeuterungstexte in Suche- und Ausgaben-Tab.
+- **Tests** — `tests/test_report.py` um `test_mehrjahr_konfiguration` und
+  `test_html_enthaelt_mehrjahres_vergleich` erweitert.
+- **Doku** — `README.md` und `docs/ANALYSE-LEITFADEN.md` Dashboard-Abschnitte
+  um den Mehrjahres-Vergleich ergaenzt.
+
+### Verifikation
+
+- `ruff check src tests scripts` — All checks passed.
+- `mypy src` — Success: no issues found in 13 source files.
+- `pytest -q` — 28 passed (vorher 26, +2 neue Tests).
+- `scripts/check_dashboard_js.py` — Syntax- und Ausfuehrungspruefung OK fuer
+  `reports/dashboard.html` und `site/index.html`.
+- Mehrjahres-Matching gegen die echte DB geprueft: 1.288 Posten erscheinen in
+  drei oder mehr Dokumenten; `ansatz`+`konto` identifiziert dieselbe Stelle
+  dokumentuebergreifend.
+
+### Artefakte
+
+- `reports/dashboard.html` — via `gemfin report`.
+- `site/index.html` — via `make pages PYTHON=/tmp/pdfvenv/bin/python`.
+
+### Entscheidungen / Abweichungen
+
+- **Chart clientseitig gefuellt.** Die Auswahl ist dynamisch, daher liefert
+  `charts.py` nur die leere, gestylte Chart-Huelle; die `series` baut das JS
+  aus der jeweiligen Auswahl. Konsistenter Stil ohne vorberechnete Kombinatorik.
+- **Escape-Handler an `window` statt `document`.** Der node-Pruefharness
+  stubbt `document` ohne `addEventListener`; `window.addEventListener`
+  funktioniert im Browser identisch und haelt den Harness unveraendert.
+- **`make pages` mit Venv-Python.** Das `pages`-Ziel nutzt `python3`; ohne
+  `fitz` im System-Python schlaegt die DB-Prerequisite fehl. Mit
+  `make pages PYTHON=/tmp/pdfvenv/bin/python` laeuft es sauber durch — wie
+  die uebrige Pipeline. Keine Makefile-Aenderung noetig (`PYTHON` ist bereits
+  ueberschreibbar).
+
+### Commits
+
+- `9d13230` pba6b: feat(report): Posten und Gruppen ueber die Jahre vergleichen
+- (dieser Commit) pba6b: docs(issues): T8-Ausfuehrungsprotokoll
