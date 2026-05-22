@@ -4,6 +4,7 @@
 /data/*.parquet
 /data/*.xlsx
 /reports/*.html
+/site/
 /build/
 
 # Python
