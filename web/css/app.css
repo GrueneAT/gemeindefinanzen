@@ -882,3 +882,90 @@ input.search:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===========================================================================
+   7. DRUCK-STYLESHEET
+   ===========================================================================
+   Beim Ausdruck einer Auswertung zaehlt der Inhalt, nicht die Bedienung.
+   Ausgeblendet werden Upload/Dokumentverwaltung, der Dokument-Umschalter,
+   die Tableiste und das Mehrjahres-Overlay. Der aktive Tab (nur
+   .tab-panel.is-active ist sichtbar) wird ruhig in Schwarz auf Weiss
+   gesetzt; Panels und Tabellenzeilen brechen sinnvoll ueber Seiten um.
+   Die Markenleiste bleibt als schlichte Kopfzeile erhalten. */
+@media print {
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  /* Bedien- und Verwaltungsflaechen, die im Ausdruck keinen Zweck haben. */
+  .doc-manager,
+  .dashboard-leer,
+  .dash-controls,
+  #toast-box,
+  .mj-overlay,
+  .sankey-bar,
+  .mj-actions,
+  .footer {
+    display: none !important;
+  }
+
+  /* Markenleiste als schlichte Kopfzeile — kein vollflaechiges Dunkelgruen,
+     das den Drucker unnoetig einfaerbt. */
+  .web-brandbar {
+    background: #ffffff;
+    border-bottom: 1px solid #000000;
+  }
+  .web-brandbar__wordmark {
+    color: #000000;
+  }
+  .web-brandbar__nav {
+    display: none;
+  }
+  .gat-header__inner {
+    padding-block: 0.5rem;
+  }
+
+  /* Voller Lesebereich statt zentrierter Bildschirmbreite. */
+  .page {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  /* Ruhiges Schwarz-auf-Weiss: Karten/Panels ohne Schatten, mit einer
+     duennen Linie zur Abgrenzung. */
+  .web-panel,
+  .metric-card {
+    box-shadow: none;
+    border: 1px solid #999999;
+    break-inside: avoid;
+  }
+  .metric-card--hero {
+    background: #ffffff;
+  }
+  .metric-card::before {
+    display: none;
+  }
+
+  /* Panels und Tabellenzeilen brechen sauber ueber Seiten um. */
+  .web-section-head,
+  .web-panel__head {
+    break-inside: avoid;
+    break-after: avoid;
+  }
+  table { break-inside: auto; }
+  tr,
+  .drill-row { break-inside: avoid; }
+  thead { display: table-header-group; }
+  h1, h2, h3 { break-after: avoid; }
+
+  /* Diagramme behalten ihre Inline-Hoehe, damit ECharts den Canvas
+     ausdruckt; nur die sehr hohe Sankey-Flaeche wird etwas gekuerzt. */
+  #c_sankey { height: 420px !important; }
+
+  /* Der Inhalt soll voll deckend drucken. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
