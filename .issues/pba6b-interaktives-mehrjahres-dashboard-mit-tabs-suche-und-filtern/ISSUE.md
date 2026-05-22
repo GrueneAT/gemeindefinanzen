@@ -1,7 +1,7 @@
 ---
 id: pba6b
 title: Interaktives Mehrjahres-Dashboard mit Tabs, Suche und Filtern
-status: open
+status: done
 priority: high
 labels:
 - dashboard
