@@ -351,12 +351,23 @@ async function teste() {
   )
   pruefe(
     "buildSankeyOption: Drill-down einer Gruppe zeigt nur den gewaehlten Zweig",
-    // Nur der Mittelknoten und die Kinder der gewaehlten Gruppe — keine
-    // anderen Gruppen, keine Einnahmeseite.
+    // Auf der gedrillten Seite (gruppe) keine ANDEREN Gruppen-Knoten — nur
+    // die Kinder der gewaehlten Gruppe. Die Einnahmeseite bleibt erhalten.
     gSerie.data.length >= 2 &&
-      gSerie.data.every(
-        (n) => n.drillSeite === "mitte" || n.drillKey === eineGruppe.drillKey,
-      ),
+      gSerie.data
+        .filter((n) => n.drillSeite === "gruppe")
+        .every((n) => n.drillKey === eineGruppe.drillKey),
+  )
+  // Die Gegenseite (Einnahmen) bleibt im Gruppen-Drill-down in
+  // Uebersichtsform erhalten — gleiche Knoten wie ohne Drill-down.
+  const gEinnahmeseite = gSerie.data.filter((n) => n.drillSeite === "quelle")
+  pruefe(
+    "buildSankeyOption: Gruppen-Drill-down erhaelt die Einnahmeseite in Uebersichtsform",
+    gEinnahmeseite.length === quelleKnoten.length &&
+      gEinnahmeseite.every((n) => n.drillExpandbar) &&
+      gEinnahmeseite.every((n) =>
+        quelleKnoten.some((q) => q.name === n.name)),
+    gEinnahmeseite.length + " vs " + quelleKnoten.length,
   )
   // Betragstreue: die Kinder-Links summieren sich zum Betrag der Gruppe.
   function gruppenSumme(serie) {
@@ -396,12 +407,23 @@ async function teste() {
   )
   pruefe(
     "buildSankeyOption: Drill-down einer Quelle zeigt nur den gewaehlten Zweig",
-    // Nur der Mittelknoten und die Kinder der gewaehlten Quelle — keine
-    // anderen Quellen, keine Ausgabeseite.
+    // Auf der gedrillten Seite (quelle) keine ANDEREN Quellen-Knoten — nur
+    // die Kinder der gewaehlten Quelle. Die Ausgabeseite bleibt erhalten.
     qSerie.data.length >= 2 &&
-      qSerie.data.every(
-        (n) => n.drillSeite === "mitte" || n.drillKey === eineQuelle.drillKey,
-      ),
+      qSerie.data
+        .filter((n) => n.drillSeite === "quelle")
+        .every((n) => n.drillKey === eineQuelle.drillKey),
+  )
+  // Die Gegenseite (Ausgaben) bleibt im Quellen-Drill-down in
+  // Uebersichtsform erhalten — gleiche Knoten wie ohne Drill-down.
+  const qAusgabeseite = qSerie.data.filter((n) => n.drillSeite === "gruppe")
+  pruefe(
+    "buildSankeyOption: Quellen-Drill-down erhaelt die Ausgabeseite in Uebersichtsform",
+    qAusgabeseite.length === gruppeKnoten.length &&
+      qAusgabeseite.every((n) => n.drillExpandbar) &&
+      qAusgabeseite.every((n) =>
+        gruppeKnoten.some((g) => g.name === n.name)),
+    qAusgabeseite.length + " vs " + gruppeKnoten.length,
   )
   const quelleBetrag = sSerie.links.find(
     (l) => l.target === "Gemeindehaushalt" && l.source === eineQuelle.name,
