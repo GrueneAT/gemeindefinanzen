@@ -109,12 +109,14 @@
     </div>
 
     <section class="tab-panel" data-panel="ueberblick">
-      <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
-      <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
-        <span class="mark-neutral" id="kennzahl-netto"></span> aus. Der
-        Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
-        Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
-        Ausgaben und Spielraeume weiter auf.</p>
+      <div class="web-section-head">
+        <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
+        <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
+          <span class="mark-neutral" id="kennzahl-netto"></span> aus. Der
+          Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
+          Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
+          Ausgaben und Spielraeume weiter auf.</p>
+      </div>
       <div class="stats">
         <div class="stat metric-card metric-card--ertrag">
           <div class="stat-label">Ertraege</div>
@@ -129,31 +131,57 @@
           <div class="stat-label">Kommunalsteuer-Anteil</div>
           <div class="stat-num" id="st-komm-anteil"></div></div>
       </div>
-      <h3>Ergebnis als Wasserfall</h3>
-      <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
-      <h3>Geldfluss</h3>
-      <div class="sankey-bar">
-        <p class="sankey-hint" id="sankey-hinweis"></p>
-        <button type="button" class="gat-btn gat-btn--secondary sankey-reset" id="sankey-reset">Übersicht</button>
-      </div>
-      <div id="c_sankey" class="dash-chart" style="height:520px"></div>
-      <h3>Entwicklung ueber alle Dokumente</h3>
-      <p>Ertraege, Aufwendungen und Nettoergebnis je eingelesenem Dokument —
-        dieser Vergleich ist dokumentuebergreifend und aendert sich nicht mit
-        dem Umschalter.</p>
-      <div id="c_trend_eck" class="dash-chart" style="height:320px"></div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
+        <div class="web-panel__body">
+          <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Geldfluss</h3>
+          <div class="sankey-bar">
+            <p class="sankey-hint" id="sankey-hinweis"></p>
+            <button type="button" class="gat-btn gat-btn--secondary sankey-reset" id="sankey-reset">Übersicht</button>
+          </div>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_sankey" class="dash-chart" style="height:520px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Entwicklung ueber alle Dokumente</h3>
+          <p class="web-panel__note">Ertraege, Aufwendungen und Nettoergebnis
+            je eingelesenem Dokument — dieser Vergleich ist
+            dokumentuebergreifend und aendert sich nicht mit dem Umschalter.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_trend_eck" class="dash-chart" style="height:320px"></div>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="einnahmen">
-      <h2>Einnahmestruktur</h2>
-      <p>Die groessten Ertragsposten des gewaehlten Dokuments. Die
-        <span class="mark-positiv">Kommunalsteuer</span> ist nach den
-        Bundes-Ertragsanteilen die zweitgroesste Quelle.</p>
+      <div class="web-section-head">
+        <h2>Einnahmestruktur</h2>
+        <p>Die groessten Ertragsposten des gewaehlten Dokuments. Die
+          <span class="mark-positiv">Kommunalsteuer</span> ist nach den
+          Bundes-Ertragsanteilen die zweitgroesste Quelle.</p>
+      </div>
       <div class="dash-grid">
-        <div><h3>Groesste Ertragsposten</h3>
-          <div id="c_einnahmen" class="dash-chart" style="height:360px"></div></div>
-        <div><h3>Kommunalsteuer im Zeitverlauf</h3>
-          <div id="c_trend_komm" class="dash-chart" style="height:360px"></div></div>
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Groesste Ertragsposten</h3></div>
+          <div class="web-panel__body">
+            <div id="c_einnahmen" class="dash-chart" style="height:360px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Kommunalsteuer im Zeitverlauf</h3></div>
+          <div class="web-panel__body">
+            <div id="c_trend_komm" class="dash-chart" style="height:360px"></div>
+          </div>
+        </section>
       </div>
       <h3>Tabelle der groessten Ertragsposten</h3>
       <table class="dtable" id="t-einnahmen">
@@ -162,15 +190,25 @@
     </section>
 
     <section class="tab-panel" data-panel="ausgaben">
-      <h2>Wofuer das Geld ausgegeben wird</h2>
-      <p>Der Aufwand nach Art (Ring) und nach Aufgabenbereich (Treemap).
-        Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
-        Ermessensspielraum steckt im Sachaufwand.</p>
+      <div class="web-section-head">
+        <h2>Wofuer das Geld ausgegeben wird</h2>
+        <p>Der Aufwand nach Art (Ring) und nach Aufgabenbereich (Treemap).
+          Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
+          Ermessensspielraum steckt im Sachaufwand.</p>
+      </div>
       <div class="dash-grid">
-        <div><h3>Aufwand nach Art</h3>
-          <div id="c_aufwandart" class="dash-chart" style="height:340px"></div></div>
-        <div><h3>Aufwand nach Aufgabenbereich</h3>
-          <div id="c_treemap" class="dash-chart" style="height:340px"></div></div>
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Aufwand nach Art</h3></div>
+          <div class="web-panel__body">
+            <div id="c_aufwandart" class="dash-chart" style="height:340px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Aufwand nach Aufgabenbereich</h3></div>
+          <div class="web-panel__body">
+            <div id="c_treemap" class="dash-chart" style="height:340px"></div>
+          </div>
+        </section>
       </div>
       <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
       <p>Klick auf eine Zeile blendet die naechste Ebene auf; ueber die
@@ -191,10 +229,17 @@
     </section>
 
     <section class="tab-panel" data-panel="investitionen">
-      <h2>Investive Vorhaben</h2>
-      <p>Die groessten investiven Auszahlungen des gewaehlten Dokuments —
-        Vorhaben ausserhalb des laufenden Betriebs.</p>
-      <div id="c_investitionen" class="dash-chart" style="height:380px"></div>
+      <div class="web-section-head">
+        <h2>Investive Vorhaben</h2>
+        <p>Die groessten investiven Auszahlungen des gewaehlten Dokuments —
+          Vorhaben ausserhalb des laufenden Betriebs.</p>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Groesste investive Auszahlungen</h3></div>
+        <div class="web-panel__body">
+          <div id="c_investitionen" class="dash-chart" style="height:380px"></div>
+        </div>
+      </section>
       <h3>Tabelle der groessten Investitionen</h3>
       <table class="dtable" id="t-investitionen">
         <thead><tr><th>Posten</th><th>Ansatz</th>
@@ -203,34 +248,62 @@
     </section>
 
     <section class="tab-panel" data-panel="transfers">
-      <h2>Transfers &amp; Umlagen</h2>
-      <p>Der Transferaufwand mit Kennzeichnung, ob es sich um eine weitgehend
-        gesetzlich gebundene <span class="mark-risiko">Pflichtumlage</span>
-        oder um freiwillige bzw. sonstige Transfers handelt.</p>
+      <div class="web-section-head">
+        <h2>Transfers &amp; Umlagen</h2>
+        <p>Der Transferaufwand mit Kennzeichnung, ob es sich um eine weitgehend
+          gesetzlich gebundene <span class="mark-risiko">Pflichtumlage</span>
+          oder um freiwillige bzw. sonstige Transfers handelt.</p>
+      </div>
       <h3>Transferaufwand im Detail</h3>
       <table class="dtable" id="t-transfers">
         <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
           <th class="num">Vergleich</th></tr></thead>
         <tbody id="tbl-transfers"></tbody></table>
-      <h3>Aufwand nach Art im Zeitverlauf</h3>
-      <p>Der <span class="mark-risiko">Transferaufwand</span> waechst
-        strukturell am staerksten — dokumentuebergreifend.</p>
-      <div id="c_trend_auf" class="dash-chart" style="height:340px"></div>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Aufwand nach Art im Zeitverlauf</h3>
+          <p class="web-panel__note">Der
+            <span class="mark-risiko">Transferaufwand</span> waechst
+            strukturell am staerksten — dokumentuebergreifend.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_trend_auf" class="dash-chart" style="height:340px"></div>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="sparpotenzial">
-      <h2>Sparpotenzial</h2>
-      <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
-        Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
-        zusammen welche Betraege ausmachen.</p>
-      <div id="c_wasserfall_sp" class="dash-chart" style="height:340px"></div>
-      <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
-      <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, nach
-        Betrag sortiert und kumuliert. Die Linie zeigt, wie viele Posten
-        zusammen welche Summe ergeben.</p>
-      <div id="c_korridor" class="dash-chart" style="height:400px"></div>
-      <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
-      <div id="c_treiber" class="dash-chart" style="height:360px"></div>
+      <div class="web-section-head">
+        <h2>Sparpotenzial</h2>
+        <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
+          Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
+          zusammen welche Betraege ausmachen.</p>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
+        <div class="web-panel__body">
+          <div id="c_wasserfall_sp" class="dash-chart" style="height:340px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
+          <p class="web-panel__note">Der zahlungswirksame Sachaufwand mit
+            Ermessensspielraum, nach Betrag sortiert und kumuliert. Die Linie
+            zeigt, wie viele Posten zusammen welche Summe ergeben.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_korridor" class="dash-chart" style="height:400px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_treiber" class="dash-chart" style="height:360px"></div>
+        </div>
+      </section>
       <div class="callout gat-card gat-card--primary">
         <div class="callout-label gat-card__title">Wichtige Einordnung</div>
         <p class="gat-card__body">Diese Auswertung ist eine
@@ -242,11 +315,13 @@
     </section>
 
     <section class="tab-panel" data-panel="suche" id="such-box">
-      <h2>Suche &amp; Daten</h2>
-      <p>Alle Detailposten aller Dokumente — durchsuchbar, filterbar,
-        sortierbar. Suche und Filter laufen vollstaendig im Browser. Einzelne
-        Posten oder die gesamte gefilterte Menge lassen sich ueber die Jahre
-        als Liniendiagramm vergleichen.</p>
+      <div class="web-section-head">
+        <h2>Suche &amp; Daten</h2>
+        <p>Alle Detailposten aller Dokumente — durchsuchbar, filterbar,
+          sortierbar. Suche und Filter laufen vollstaendig im Browser. Einzelne
+          Posten oder die gesamte gefilterte Menge lassen sich ueber die Jahre
+          als Liniendiagramm vergleichen.</p>
+      </div>
       <div class="filterbar">
         <label>Volltextsuche
           <input type="search" class="search" id="f-such"

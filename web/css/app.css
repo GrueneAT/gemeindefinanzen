@@ -98,12 +98,13 @@ h3 {
 }
 /* Erste Ueberschrift in einem Tab-Panel braucht keinen Extra-Oberabstand —
    die Steuerleiste darueber liefert ihn bereits. */
+.tab-panel > .web-section-head:first-child h2,
 .tab-panel > h2:first-child {
   margin-top: var(--gat-space-3);
 }
-/* h3 als erstes Element eines Containers (Diagramm-Rasterzelle,
-   Dokument-Sektion) titelt direkt seinen Inhalt — kein Abschnittsabstand. */
-.dash-grid > div > h3:first-child,
+/* h3 als erstes Element eines Containers (Dokument-Sektion) titelt direkt
+   seinen Inhalt — kein Abschnittsabstand. Panel-Koepfe regeln ihren
+   eigenen Abstand selbst. */
 .doc-manager-body section > h2:first-child {
   margin-top: 0;
 }
@@ -294,13 +295,69 @@ input, select { font-family: var(--gat-font-copy); }
   margin: var(--gat-space-5) 0;
   color: var(--app-soft);
 }
+/* Reiner Diagramm-Container — sitzt jetzt im .web-panel__body und traegt
+   daher keinen eigenen Rahmen, Hintergrund oder Schatten mehr (sonst
+   Karte-in-Karte). Behaelt id und Inline-Hoehe fuer die Dashboard-JS. */
 .dash-chart {
-  margin: var(--gat-space-2) 0;
+  margin: 0;
+}
+
+/* --- .web-panel — Diagramm-/Inhaltsrahmen (Iteration 3) -------------------
+   Jedes Diagramm sitzt mit seiner h3-Ueberschrift in einer Karte: weisse
+   Flaeche, Haarlinie, weicher Schatten, abgerundet. Ersetzt die fruehere
+   .dash-chart-Optik der frei schwebenden Ueberschriften. */
+.web-panel {
+  display: block;
+  background: var(--web-surface);
   border: 1px solid var(--web-hairline);
   border-radius: var(--gat-radius-sm);
-  background: var(--web-surface);
   box-shadow: var(--web-shadow);
-  padding: 6px;
+  margin: var(--gat-space-4) 0;
+  overflow: hidden;
+}
+/* Panels in der 2-spaltigen .dash-grid fuellen ihre Rasterzelle ganz aus. */
+.dash-grid > .web-panel {
+  margin: 0;
+  height: 100%;
+}
+/* Kopf: traegt die h3 (und ggf. Kurzbeschreibung / Sankey-Leiste), mit
+   subtiler Haarlinie zum Diagrammkoerper. */
+.web-panel__head {
+  padding: var(--gat-space-3) var(--gat-space-3) var(--gat-space-2);
+  border-bottom: 1px solid var(--web-hairline);
+}
+.web-panel__head h3 {
+  margin: 0;
+}
+/* Kurzbeschreibung im Panel-Kopf — eng an den Titel gebunden. */
+.web-panel__note {
+  margin: var(--gat-space-1) 0 0;
+  font-size: var(--gat-text-small);
+  color: var(--web-text-soft);
+  max-width: 70rem;
+}
+/* Koerper: haelt das Diagramm, ruhiger Innenabstand. */
+.web-panel__body {
+  padding: var(--gat-space-3);
+}
+/* Die Sankey-Drill-down-Leiste sitzt im Panel-Kopf direkt unter dem Titel. */
+.web-panel__head .sankey-bar {
+  margin: var(--gat-space-2) 0 0;
+}
+
+/* --- .web-section-head — Abschnittskopf (Iteration 3) --------------------
+   Titel (h2) und einleitender Absatz als eine ruhige Einheit; klare
+   Trennung von der Steuerleiste und vom Abschnittsinhalt. */
+.web-section-head {
+  margin-bottom: var(--gat-space-4);
+}
+.web-section-head h2 {
+  margin-bottom: var(--gat-space-2);
+}
+.web-section-head p {
+  margin: 0;
+  max-width: 70rem;
+  color: var(--web-text-soft);
 }
 
 /* --- Inline-Hervorhebungen ------------------------------------------------
