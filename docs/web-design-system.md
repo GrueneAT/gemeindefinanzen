@@ -197,22 +197,34 @@ abgegrenzte Karten, keine Karte-in-Karte-Optik, differenzierte
 Metric-Akzente, gruppierte Sektionskoepfe. **Tests gruen**
 (`npm run test:js`, `npm run test:e2e`).
 
-### Iteration 4 — Bedienelemente & Sekundaerflaechen (in Arbeit)
+### Iteration 4 — Bedienelemente & Sekundaerflaechen (erledigt)
 
 Ziel: alle interaktiven Elemente auf eine konsistente, ruhige Komponenten-
 sprache bringen — gleiche Radien, gedaempfte Palette, klare aktive/Hover/
 Fokus-Zustaende.
 
-- **Tableiste** (`.tabs`/`.tab-btn`) — ruhige Reiter, aktiver Reiter klar
-  gruen markiert, deutlicher Fokusring fuer Tastatur.
-- **Dokument-Umschalter** (`.switcher`/`.switch-btn`) — als ruhige Segmente.
-- **Tabellen** (`.dtable`) — leichte Kopfzeile, weiche Zebra-/Hover-Toene,
-  gute Lesbarkeit bei vielen Zeilen.
-- **Filterleiste** (`.filterbar` Inputs/Selects) und **Suchfeld** —
-  einheitliche Feldoptik mit Fokuszustand.
-- **Mehrjahres-Overlay** (`.mj-overlay`/`.mj-dialog`) — Dialog auf
-  Komponentensprache, ruhiger Schatten.
-- **Dropzone & Dokumentverwaltung** — konsistente Flaechen/Radien.
-- **Buttons** — Primaer/Sekundaer einheitlich, sichtbarer Fokuszustand.
+- **Tableiste** (`.tabs`/`.tab-btn`) — flache, ruhige Reiter; aktiver Reiter
+  klar gruen markiert (weisse Flaeche, gruene Unterkante als `inset`-Schatten,
+  Gewicht 700, `--web-green-deep`-Schrift). Tastatur-Fokus als sichtbarer
+  Ring.
+- **Dokument-Umschalter** (`.switcher`/`.switch-btn`) — ruhige Segmente auf
+  heller Flaeche, aktives Segment gruen gefuellt, Hover als gruener Tint.
+- **Tabellen** (`.dtable`) — leichte, sticky Kopfzeile mit Grossbuchstaben-
+  Label und kraeftigerer Unterlinie; sanfter Zeilen-Hover; `.sortable` mit
+  Fokuszustand.
+- **Filterleiste & Suche** (`.filterbar` Inputs/Selects, `input.search`) —
+  einheitliche Feldoptik, Kontrollradius, Hover- und Fokusring
+  (`--web-focus-ring`).
+- **Mehrjahres-Overlay** (`.mj-overlay`/`.mj-dialog`/`.mj-chart`/`.mj-close`)
+  — Dialog als Karte (`--web-radius-card`), ruhig abgedunkelter Hintergrund,
+  weicher Schatten; Schliessen-Knopf mit Hover- und Fokuszustand.
+- **Buttons** (`.mj-btn`, `.mj-drill`) — Sekundaer als Umriss auf heller
+  Flaeche, Primaer gruen gefuellt; einheitliche Radien, deaktivierte
+  Zustaende und sichtbarer Fokus.
+- **Breadcrumbs & Drill-Liste** (`.crumbs`/`.drill-row`) — auf die
+  `--web-*`-Tokenschicht umgestellt; Breadcrumb-Knoepfe mit Fokusring.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Alle Bedienelemente von den `--gat-*`-Tokens auf die `--web-*`-Schicht
+umgestellt, Funktionsklassen/-IDs unveraendert, `dashboard.js` nicht
+angefasst. **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e`
+7/7).
