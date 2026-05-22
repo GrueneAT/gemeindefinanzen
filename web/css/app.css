@@ -30,13 +30,24 @@
   --web-shadow: 0 1px 2px rgba(31,38,28,.05), 0 4px 14px rgba(31,38,28,.05);
   --web-text: #23271f;
   --web-text-soft: #5e6358;
-  --web-text-mute: #8b8f82;
+  /* --web-text-mute auf AA-Kontrast nachgezogen (Iteration 8): 8b8f82 lag
+     mit 3.0-3.3 unter dem 4.5er-Schwellwert fuer Fliesstext; 6b6f63 erreicht
+     auf --web-bg / --web-surface / --web-surface-sunk 4.7-5.2 und bleibt
+     dabei ein ruhiger, entsaettigter Grauton. */
+  --web-text-mute: #6b6f63;
 
   /* Gruene Identitaet (entsaettigt) */
   --web-green-deep: #2c6e40;
   --web-green: #4a8a52;
   --web-green-tint: #e7efe3;
   --web-yellow: #ecd64a;
+
+  /* Risiko-/Fehler-Ton fuer Text und gefuellte Flaechen. --web-chart-clay
+     (#b9744f) ist als Diagrammfuellung gut, als Textfarbe auf hellem Grund
+     aber zu hell (AA-Kontrast nur ~3.2-3.7). --web-clay-text ist die
+     abgedunkelte Variante fuer Text/Rahmen: ~4.7 auf der Fehl-Tint-Flaeche,
+     ~5.3 auf Weiss, weiss darauf ~5.5. */
+  --web-clay-text: #9c5a38;
 
   /* Diagramm-Palette (kategorial, niedrige Saettigung) */
   --web-chart-green: #3f7d4f;
@@ -659,7 +670,7 @@ input.search:focus-visible {
   background: var(--web-green-deep);
 }
 .progress-error {
-  color: var(--app-risiko);
+  color: var(--web-clay-text);
   font-size: 0.82rem;
   margin: 0.35rem 0 0;
 }
@@ -710,7 +721,7 @@ input.search:focus-visible {
   background: var(--web-green-tint);
 }
 .doc-status.fehl {
-  color: var(--web-chart-clay);
+  color: var(--web-clay-text);
   border-color: color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
   background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
 }
@@ -721,7 +732,7 @@ input.search:focus-visible {
   cursor: pointer;
   border: 1px solid var(--web-hairline);
   background: var(--web-surface);
-  color: var(--web-chart-clay);
+  color: var(--web-clay-text);
   border-radius: var(--web-radius-control);
   padding: 0.2rem 0.6rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -741,12 +752,12 @@ input.search:focus-visible {
    Risiko-Toenung statt der gruenen Sekundaerfarbe und die Feingroesse. */
 .doc-clear-btn {
   font-size: 0.85rem;
-  border-color: var(--web-chart-clay);
-  color: var(--web-chart-clay);
+  border-color: var(--web-clay-text);
+  color: var(--web-clay-text);
 }
 .doc-clear-btn:hover {
-  background: var(--web-chart-clay);
-  border-color: var(--web-chart-clay);
+  background: var(--web-clay-text);
+  border-color: var(--web-clay-text);
   color: var(--gat-color-weiss);
 }
 .persist-note {
@@ -769,7 +780,7 @@ input.search:focus-visible {
 .toast.fehl {
   background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
   border: 1px solid color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
-  color: var(--web-chart-clay);
+  color: var(--web-clay-text);
 }
 
 /* --- Geldfluss-Sankey: Drill-down-Leiste --------------------------------- */
