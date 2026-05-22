@@ -1,7 +1,7 @@
 ---
 id: ye9ih
 title: UI-Rebuild auf das Gruene-AT-Design-System
-status: open
+status: done
 priority: high
 labels:
 - ui
