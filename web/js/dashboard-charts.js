@@ -330,10 +330,13 @@ export function chartTreemap(agg) {
 
 export function chartWasserfall(agg, jahr) {
   const e = agg.eckwerte
+  // Nettoergebnis nach Vorzeichen einfaerben: Ueberschuss gruen, Defizit
+  // in der Risiko-Farbe (Clay) — konsistent mit der Kennzahlen-Karte.
+  const nettoFarbe = e.netto >= 0 ? INK.green : INK.red
   const schritte = [
     ["Ertraege", e.ertraege, INK.green],
     ["Aufwendungen", -e.aufwand, INK.red],
-    [`Nettoergebnis ${jahr}`, e.netto, INK.blue],
+    [`Nettoergebnis ${jahr}`, e.netto, nettoFarbe],
   ]
   const namen = schritte.map((s) => s[0])
   const sockel = []
