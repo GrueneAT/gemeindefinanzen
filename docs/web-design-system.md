@@ -301,3 +301,18 @@ Umfang: `app.css` 718 -> 744 Zeilen, `dashboard.css` 215 -> 252 Zeilen
 entfernt). Pixel-Diff der gerenderten Seite (Landing + Ueberblick mit
 Fixture-PDF, 1440px) = 0. **Tests gruen** (`npm run test:js` 61/61,
 `npm run test:e2e` 7/7).
+
+### Iteration 7 — Feinschliff (in Arbeit)
+
+- **Datentabellen in `.web-panel`.** Bisher sitzen nur Diagramme in Panels,
+  Tabellen frei. Tabellen-Bloecke (`.dtable` mit ihrer `h3`) ebenfalls in
+  `.web-panel` fassen — volle Karten-Konsistenz ueber alle Tabs.
+- **Diagramm-Innenleben.** ECharts-Tooltips, Legenden und Achsen auf die
+  Komponentensprache: Tooltip als helle Karte mit Haarlinie/Schatten,
+  Legende in `--web-text-soft`, Achsbeschriftung ruhig. Schrift durchgehend
+  Barlow Semi Condensed.
+- **Landing/Empty-State.** Abstaende im Dokumentmanager (h2 dicht am Rand),
+  ruhiger Auftakt ohne Dokumente.
+- Abschliessender Abstands-/Rhythmus-Durchgang.
+
+_wird nach visueller Pruefung fortgeschrieben._
