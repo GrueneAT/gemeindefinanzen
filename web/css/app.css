@@ -1,0 +1,193 @@
+/* Browser-App — Stil der Upload-Oberflaeche und Dokumentverwaltung.
+   Erweitert das flomotlik Design System (Papier-Optik, Haarlinien, vier
+   Tinten) um Drag-&-Drop-Zone, Fortschrittsanzeige und Dokumentliste. */
+
+:root {
+  --hair: var(--rule-hair, #cdc4b4);
+  --raised: var(--paper-raised, #faf6ee);
+  --ink-blue: #1f4a6d;
+  --ink-red: #8e2f2a;
+  --ink-green: #2f6149;
+  --ink-orange: #9a4a1c;
+  --soft: #5b5650;
+}
+
+.page {
+  max-width: min(2400px, 95vw);
+}
+.masthead-sub,
+.lead,
+.app-intro {
+  max-width: 70rem;
+}
+
+/* --- Drag-&-Drop-Zone ---------------------------------------------------- */
+.dropzone {
+  border: 2px dashed var(--hair);
+  border-radius: 6px;
+  background: var(--raised);
+  padding: 2.4rem 1.4rem;
+  text-align: center;
+  margin: 1.2rem 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dropzone.is-over {
+  border-color: var(--ink-blue);
+  background: #eef2f6;
+}
+.dropzone-title {
+  font-size: 1.05rem;
+  margin: 0 0 0.3rem;
+}
+.dropzone-hint {
+  color: var(--soft);
+  font-size: 0.85rem;
+  margin: 0 0 0.9rem;
+}
+.dropzone-btn {
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--ink-blue);
+  background: var(--ink-blue);
+  color: #fff;
+  border-radius: 3px;
+}
+.dropzone-btn:hover {
+  background: #173a57;
+}
+.dropzone input[type="file"] {
+  display: none;
+}
+
+/* --- Fortschrittsliste --------------------------------------------------- */
+.progress-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+.progress-item {
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  background: var(--raised);
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.5rem;
+}
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.88rem;
+}
+.progress-name {
+  font-weight: 600;
+}
+.progress-stage {
+  color: var(--soft);
+}
+.progress-bar {
+  height: 5px;
+  background: #e6dfd0;
+  border-radius: 3px;
+  margin-top: 0.45rem;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--ink-blue);
+  transition: width 0.2s;
+}
+.progress-item.is-error .progress-fill {
+  background: var(--ink-red);
+}
+.progress-item.is-done .progress-fill {
+  background: var(--ink-green);
+}
+.progress-error {
+  color: var(--ink-red);
+  font-size: 0.82rem;
+  margin: 0.35rem 0 0;
+}
+
+/* --- Dokumentliste ------------------------------------------------------- */
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin: 0.6rem 0 1.4rem;
+}
+.doc-table th,
+.doc-table td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--hair);
+}
+.doc-table th {
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+.doc-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.doc-status {
+  font-size: 0.78rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid;
+}
+.doc-status.ok {
+  color: var(--ink-green);
+  border-color: var(--ink-green);
+  background: #eef3ef;
+}
+.doc-status.fehl {
+  color: var(--ink-red);
+  border-color: var(--ink-red);
+  background: #f6eeed;
+}
+.doc-remove {
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 1px solid var(--hair);
+  background: var(--raised);
+  color: var(--ink-red);
+  border-radius: 3px;
+  padding: 0.2rem 0.6rem;
+}
+.doc-remove:hover {
+  border-color: var(--ink-red);
+}
+.doc-empty {
+  color: var(--soft);
+  font-style: italic;
+}
+
+.persist-note {
+  font-size: 0.8rem;
+  color: var(--soft);
+}
+.toast {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 4px;
+  margin: 0.6rem 0;
+}
+.toast.ok {
+  background: #eef3ef;
+  border: 1px solid var(--ink-green);
+  color: var(--ink-green);
+}
+.toast.fehl {
+  background: #f6eeed;
+  border: 1px solid var(--ink-red);
+  color: var(--ink-red);
+}
+[hidden] {
+  display: none !important;
+}

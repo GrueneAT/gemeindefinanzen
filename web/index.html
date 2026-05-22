@@ -3,11 +3,72 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gemeindefinanzen — Browser-Dashboard</title>
+<title>Gemeindefinanzen — VRV-2015-PDFs im Browser auswerten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+<link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
-<h1>Gemeindefinanzen — Browser-Dashboard</h1>
-<p>Platzhalter. Die Upload-Oberflaeche und das Dashboard entstehen in den
-folgenden Tasks.</p>
+<div class="page">
+
+  <header class="row">
+    <div class="margin">
+      <p class="kicker"><span class="kicker-num">00</span>Browser-App</p>
+      <p class="margin-note">Extraktion, Parsing und Auswertung laufen
+        vollstaendig im Browser. Kein Server, kein Upload ins Netz.</p>
+    </div>
+    <div class="body">
+      <h1 class="masthead-title">Gemeindefinanzen</h1>
+      <p class="masthead-sub app-intro">VRV-2015-Voranschlaege,
+        Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen —
+        der Detailnachweis wird clientseitig geparst, geprueft und in einer
+        lokalen Datenbank gespeichert.</p>
+    </div>
+  </header>
+
+  <div id="toast-box"></div>
+
+  <section>
+    <h2>PDFs hinzufuegen</h2>
+    <div class="dropzone" id="dropzone">
+      <p class="dropzone-title">PDF-Dateien hierher ziehen</p>
+      <p class="dropzone-hint">VRV-2015-Voranschlag, Nachtragsvoranschlag
+        oder Rechnungsabschluss — mehrere Dateien auf einmal moeglich.</p>
+      <button class="dropzone-btn" id="pick-btn" type="button">
+        Dateien auswaehlen</button>
+      <input type="file" id="file-input" accept="application/pdf,.pdf"
+        multiple>
+    </div>
+    <ul class="progress-list" id="progress-list"></ul>
+  </section>
+
+  <section>
+    <h2>Geladene Dokumente</h2>
+    <p class="persist-note" id="persist-note">wird geladen ...</p>
+    <p class="doc-empty" id="doc-empty" hidden>Noch keine Dokumente geladen.</p>
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Dokument</th>
+          <th>Quelldatei</th>
+          <th class="num">Detailposten</th>
+          <th>Pruefstatus</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="doc-tbody"></tbody>
+    </table>
+    <p><a id="dashboard-link" href="./dashboard.html" hidden>
+      Zum Finanz-Dashboard &rsaquo;</a></p>
+  </section>
+
+  <footer class="footer">
+    <span>VRV 2015 — Detailnachweis</span>
+    <span>Verarbeitung clientseitig, Daten lokal im Browser</span>
+  </footer>
+
+</div>
+<script type="module" src="./js/app.js"></script>
 </body>
 </html>
