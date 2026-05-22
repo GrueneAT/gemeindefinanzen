@@ -5,22 +5,52 @@
    nicht mitliefert. */
 
 :root {
-  /* Adapterschicht: aus den --gat-*-Tokens abgeleitete App-Variablen. Das DS
-     kennt keine neutrale Grauskala — Linien-, Flaechen- und Dimmtoene werden
-     hier per color-mix aus Anthrazit gemischt. */
-  --app-hair: color-mix(in srgb, var(--gat-color-anthrazit) 18%, white);
-  --app-raised: color-mix(in srgb, var(--gat-color-anthrazit) 4%, white);
-  --app-soft: color-mix(in srgb, var(--gat-color-anthrazit) 55%, white);
+  /* --- Web-Design-System-Token (--web-*) --------------------------------
+     Bewusst unabhaengig von den --gat-*-Marken-Tokens, damit die
+     Entsaettigung an einer Stelle steuerbar ist. Quelle und Begruendung:
+     docs/web-design-system.md. */
 
-  /* App-Akzentfarben auf die Gruene-AT-Markenfarben gemappt. Akzent und
-     Positiv sind bewusst beide dunkelgruen (org-Primaerfarbe) — die
-     Unterscheidung erfolgt im Kontext (Buttons vs. Statusfarben). */
-  --app-akzent-primaer: var(--gat-color-dunkelgruen);
-  --app-positiv: var(--gat-color-dunkelgruen);
-  --app-risiko: var(--gat-color-magenta);
-  --app-sachaufwand: color-mix(in srgb, var(--gat-color-magenta) 70%,
-                               var(--gat-color-gelb));
+  /* Flaeche & Text */
+  --web-bg: #f3f5f0;
+  --web-surface: #ffffff;
+  --web-surface-sunk: #f7f9f4;
+  --web-hairline: #e1e4db;
+  --web-shadow: 0 1px 2px rgba(31,38,28,.05), 0 4px 14px rgba(31,38,28,.05);
+  --web-text: #23271f;
+  --web-text-soft: #5e6358;
+  --web-text-mute: #8b8f82;
 
+  /* Gruene Identitaet (entsaettigt) */
+  --web-green-deep: #2c6e40;
+  --web-green: #4a8a52;
+  --web-green-tint: #e7efe3;
+  --web-yellow: #ecd64a;
+
+  /* Diagramm-Palette (kategorial, niedrige Saettigung) */
+  --web-chart-green: #3f7d4f;
+  --web-chart-leaf: #6ba368;
+  --web-chart-teal: #4f93a0;
+  --web-chart-gold: #c9a24b;
+  --web-chart-clay: #b9744f;
+  --web-chart-plum: #9c5b7d;
+  --web-chart-slate: #5d6b8a;
+  --web-chart-sage: #8a8f7d;
+
+  /* Adapterschicht: bestehende --app-*-Variablen werden auf die neuen
+     --web-*-Token umgeschrieben, damit aelterer Code unveraendert
+     weiterlaeuft. */
+  --app-hair: var(--web-hairline);
+  --app-raised: var(--web-surface-sunk);
+  --app-soft: var(--web-text-soft);
+
+  /* App-Akzentfarben — auf die entsaettigten gruenen Web-Token gemappt.
+     Akzent und Positiv sind bewusst beide dunkelgruen; die Unterscheidung
+     erfolgt im Kontext (Buttons vs. Statusfarben). Risiko/Sachaufwand
+     nutzen die entsaettigten Clay-/Gold-Diagrammtoene statt Magenta. */
+  --app-akzent-primaer: var(--web-green-deep);
+  --app-positiv: var(--web-green-deep);
+  --app-risiko: var(--web-chart-clay);
+  --app-sachaufwand: var(--web-chart-gold);
 }
 
 /* --- Basisstile -----------------------------------------------------------
@@ -29,8 +59,9 @@
    Ueberschriften, Tabellen und Formularfelder direkt aus den DS-Tokens. */
 body {
   font-family: var(--gat-font-copy);
-  color: var(--gat-color-text);
-  background: var(--gat-color-weiss);
+  color: var(--web-text);
+  /* Ruhiger, leicht gruenstichiger Grundton statt hartem Weiss. */
+  background: var(--web-bg);
   line-height: var(--gat-leading-copy);
   margin: 0;
   font-size: var(--gat-text-copy);
@@ -41,7 +72,7 @@ h1, h2, h3 {
   /* Bewusst nicht --gat-leading-headline (0.9) — zu eng fuer mehrzeilige
      Dashboard-Ueberschriften. */
   line-height: 1.15;
-  color: var(--gat-color-text);
+  color: var(--web-text);
 }
 h1 { font-size: var(--gat-text-h1); }
 h2 { font-size: var(--gat-text-h2); }
@@ -49,9 +80,20 @@ h3 { font-size: var(--gat-text-h3); }
 table { border-collapse: collapse; }
 input, select { font-family: var(--gat-font-copy); }
 
+/* Zentrierter Lese-Container: begrenzte Breite, grosszuegige Raender, ein
+   gemeinsamer linker Rand mit dem Header. Die breite 15-Spalten-Suchtabelle
+   scrollt intern ueber .table-scroll und braucht den Container nicht zu
+   sprengen. */
 .page {
-  max-width: min(2400px, 95vw);
-  padding-inline: var(--gat-space-3);
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+}
+/* Header-Inhalt auf dieselbe Breite wie der Seiteninhalt bringen, damit
+   Header und Body einen gemeinsamen linken Rand teilen. */
+.gat-header__inner {
+  max-width: 1200px;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
 }
 .app-intro,
 .lead {
@@ -63,21 +105,56 @@ input, select { font-family: var(--gat-font-copy); }
   margin: var(--gat-space-5) 0 var(--gat-space-2);
 }
 
-/* --- Ueberblick-Kennzahlen als DS-Karten ----------------------------------
-   Die Kennzahlen-Karten nutzen .gat-card/.gat-grid; .stat-num traegt den
-   grossen Wert, .stat-label die Beschriftung. */
+/* --- Ueberblick-Kennzahlen als .metric-card -------------------------------
+   Kennzahlen-Karten: weisse Flaeche, Haarlinie, weicher Schatten, farbiger
+   3px-Akzentbalken oben, grosse tabular-nums-Zahl, kleines
+   Grossbuchstaben-Label. Responsives 4-spaltiges Raster -> 2 -> 1. */
 .stats {
   margin: var(--gat-space-4) 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gat-space-3);
+}
+@media (max-width: 60rem) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 34rem) {
+  .stats { grid-template-columns: 1fr; }
+}
+
+.metric-card {
+  position: relative;
+  background: var(--web-surface);
+  border: 1px solid var(--web-hairline);
+  border-radius: var(--gat-radius-sm);
+  box-shadow: var(--web-shadow);
+  padding: var(--gat-space-3);
+  overflow: hidden;
+}
+/* Farbiger Akzentbalken (3px) am oberen Kartenrand. */
+.metric-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--metric-accent, var(--web-green));
+}
+.metric-card--hero {
+  background: var(--web-green-tint);
+  --metric-accent: var(--web-green-deep);
 }
 .stat-num {
-  font-size: var(--gat-text-h3);
+  font-size: var(--gat-text-h2);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
+  color: var(--web-text);
+  margin-top: 0.2rem;
 }
 .stat-label {
   font-size: var(--gat-text-small);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  color: var(--web-text-soft);
 }
 
 /* --- Callout "Wichtige Einordnung" ----------------------------------------
@@ -134,9 +211,10 @@ input, select { font-family: var(--gat-font-copy); }
 }
 .dash-chart {
   margin: var(--gat-space-2) 0;
-  border: 1px solid var(--app-hair);
+  border: 1px solid var(--web-hairline);
   border-radius: var(--gat-radius-sm);
-  background: var(--app-raised);
+  background: var(--web-surface);
+  box-shadow: var(--web-shadow);
   padding: 6px;
 }
 
@@ -152,16 +230,16 @@ input, select { font-family: var(--gat-font-copy); }
   font-weight: 600;
 }
 .mark-positiv {
-  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 14%, white);
-  border-bottom: 2px solid var(--gat-color-dunkelgruen);
+  background: color-mix(in srgb, var(--web-green-deep) 14%, white);
+  border-bottom: 2px solid var(--web-green-deep);
 }
 .mark-neutral {
-  background: color-mix(in srgb, var(--gat-color-hellgruen) 18%, white);
-  border-bottom: 2px solid var(--gat-color-hellgruen);
+  background: color-mix(in srgb, var(--web-green) 16%, white);
+  border-bottom: 2px solid var(--web-green);
 }
 .mark-risiko {
-  background: color-mix(in srgb, var(--gat-color-magenta) 12%, white);
-  border-bottom: 2px solid var(--gat-color-magenta);
+  background: color-mix(in srgb, var(--web-chart-clay) 14%, white);
+  border-bottom: 2px solid var(--web-chart-clay);
 }
 
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */

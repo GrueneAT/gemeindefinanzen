@@ -1,21 +1,19 @@
 :root {
-  /* Aus den --gat-*-Tokens abgeleitet (gleiche Formeln wie in app.css). Das
-     DS hat keine Neutralskala — Linien- und Flaechentoene aus Anthrazit
-     gemischt. dashboard.css laedt vor app.css, daher nicht auf --app-*
-     referenzieren, sondern eigenstaendig ableiten. */
-  --hair: color-mix(in srgb, var(--gat-color-anthrazit) 18%, white);
-  --raised: color-mix(in srgb, var(--gat-color-anthrazit) 4%, white);
+  /* Adapterschicht: dashboard.css laedt vor app.css, kann also nicht auf
+     --app-* referenzieren. --hair/--raised werden hier direkt auf die
+     Web-Design-System-Token gespiegelt (gleiche Werte wie in app.css). */
+  --hair: var(--web-hairline, #e1e4db);
+  --raised: var(--web-surface-sunk, #f7f9f4);
 }
 
-/* Das Design System begrenzt .page auf Notebook-Lesebreite (72rem) — fuer ein
-   Dashboard mit breiten Tabellen und Diagrammen zu schmal. Hier auf die volle
-   Bildschirmbreite oeffnen (mit etwas Rand auf sehr breiten Displays). */
-.page { max-width: min(2400px, 95vw); }
-/* Fliesstext-Bloecke bleiben gut lesbar, statt ueber die ganze Breite zu laufen. */
+/* Fliesstext-Bloecke bleiben gut lesbar, statt ueber die ganze Breite zu
+   laufen. Die Breitenbegrenzung von .page selbst liegt in app.css. */
 .lead, .tab-panel > p, .callout { max-width: 70rem; }
 
+/* Sticky Steuerleiste — sitzt auf der weissen Kartenflaeche, durch
+   Haarlinie vom Inhalt getrennt. */
 .dash-controls { position: sticky; top: 0; z-index: 20;
-  background: var(--gat-color-weiss); padding: .6rem 0 .3rem;
+  background: var(--web-bg, #f3f5f0); padding: .6rem 0 .3rem;
   border-bottom: 1px solid var(--hair); margin-bottom: 1.2rem; }
 
 .switcher { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .55rem;
@@ -49,7 +47,7 @@
 .dtable th, .dtable td { padding: .32rem .5rem;
   border-bottom: 1px solid var(--hair); text-align: left; }
 .dtable thead th { border-bottom: 1px solid var(--hair);
-  background: var(--raised); position: sticky; top: 0; }
+  background: var(--web-surface-sunk, #f7f9f4); position: sticky; top: 0; }
 .dtable td.num, .dtable th.num { text-align: right;
   font-variant-numeric: tabular-nums; }
 .dtable tbody tr:hover { background: color-mix(in srgb, var(--gat-color-dunkelgruen) 7%, transparent); }
@@ -64,15 +62,17 @@
   flex-direction: column; gap: .14rem; }
 .filterbar input, .filterbar select { font: inherit; font-size: .84rem;
   padding: .26rem .4rem; border: 1px solid var(--hair);
-  background: #fff; color: var(--gat-color-text); border-radius: 3px; }
+  background: var(--web-surface, #fff); color: var(--web-text, #23271f);
+  border-radius: 3px; }
 .filterbar input.search { min-width: 16rem; }
 .filterbar input.betrag { width: 7rem; }
 
 .result-meta { font-size: .86rem; color: color-mix(in srgb, var(--gat-color-anthrazit) 55%, white); margin: .3rem 0 .5rem; }
 .result-meta strong { color: var(--gat-color-text); }
 .table-scroll { max-height: 70vh; overflow: auto;
-  border: 1px solid var(--hair); border-radius: 3px; }
-.table-hint { font-size: .8rem; color: color-mix(in srgb, var(--gat-color-magenta) 70%, var(--gat-color-gelb)); margin-top: .4rem; }
+  border: 1px solid var(--hair); border-radius: 3px;
+  background: var(--web-surface, #fff); }
+.table-hint { font-size: .8rem; color: var(--web-text-soft, #5e6358); margin-top: .4rem; }
 
 .crumbs { font-size: .85rem; margin: .5rem 0; }
 .crumbs button { font: inherit; font-size: .85rem; cursor: pointer;
@@ -120,10 +120,10 @@ td.pick input, th.pick input { cursor: pointer; }
   background: color-mix(in srgb, var(--gat-color-anthrazit) 55%, transparent); }
 .mj-overlay.is-open { display: flex; align-items: center;
   justify-content: center; }
-.mj-dialog { background: var(--gat-color-weiss); border: 1px solid var(--hair);
+.mj-dialog { background: var(--web-surface, #fff); border: 1px solid var(--hair);
   border-radius: 4px; width: min(880px, 94vw); max-height: 92vh;
   overflow: auto; padding: 1.1rem 1.3rem 1.3rem;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  box-shadow: 0 12px 40px rgba(31,38,28,.24); }
 .mj-dialog-head { display: flex; justify-content: space-between;
   align-items: baseline; gap: 1rem; }
 .mj-dialog-head h3 { margin: 0; }
@@ -133,5 +133,5 @@ td.pick input, th.pick input { cursor: pointer; }
 .mj-sub { font-size: .85rem; color: color-mix(in srgb, var(--gat-color-anthrazit) 55%, white); margin: .3rem 0 .2rem; }
 .mj-chart { height: 420px; margin-top: .4rem;
   border: 1px solid var(--hair); border-radius: 3px;
-  background: var(--raised); padding: 6px; }
-.mj-empty { font-size: .85rem; color: color-mix(in srgb, var(--gat-color-magenta) 70%, var(--gat-color-gelb)); margin: .5rem 0; }
+  background: var(--web-surface, #fff); padding: 6px; }
+.mj-empty { font-size: .85rem; color: var(--web-text-soft, #5e6358); margin: .5rem 0; }
