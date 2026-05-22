@@ -26,6 +26,14 @@
   --web-green-tint: #e7efe3;
   --web-yellow: #ecd64a;
 
+  /* Radien — eine konsistente Skala fuer die ganze App (Iteration 4).
+     --web-radius-control fuer Bedienelemente (Buttons, Felder, Reiter,
+     Segmente), --web-radius-card fuer Karten/Panels/Dialoge. */
+  --web-radius-control: 6px;
+  --web-radius-card: 10px;
+  /* Fokusring — einheitlich fuer alle fokussierbaren Bedienelemente. */
+  --web-focus-ring: 0 0 0 3px color-mix(in srgb, var(--web-green) 38%, transparent);
+
   /* Diagramm-Palette (kategorial, niedrige Saettigung) */
   --web-chart-green: #3f7d4f;
   --web-chart-leaf: #6ba368;
@@ -199,7 +207,7 @@ input, select { font-family: var(--gat-font-copy); }
   position: relative;
   background: var(--web-surface);
   border: 1px solid var(--web-hairline);
-  border-radius: var(--gat-radius-sm);
+  border-radius: var(--web-radius-card);
   box-shadow: var(--web-shadow);
   padding: var(--gat-space-3);
   overflow: hidden;
@@ -310,7 +318,7 @@ input, select { font-family: var(--gat-font-copy); }
   display: block;
   background: var(--web-surface);
   border: 1px solid var(--web-hairline);
-  border-radius: var(--gat-radius-sm);
+  border-radius: var(--web-radius-card);
   box-shadow: var(--web-shadow);
   margin: var(--gat-space-4) 0;
   overflow: hidden;
@@ -384,10 +392,66 @@ input, select { font-family: var(--gat-font-copy); }
   border-bottom: 2px solid var(--web-chart-clay);
 }
 
+/* --- Buttons (Iteration 4) ------------------------------------------------
+   Das DS faerbt .gat-btn--primary/--secondary mit der vollgesaettigten
+   Markenfarbe (--gat-color-primary). Hier auf die entsaettigte --web-*-
+   Palette gebracht, mit einheitlichem Radius und sichtbarem Fokusring.
+   Die DS-Klassen bleiben am Element; nur die Optik wird ueberschrieben. */
+.gat-btn {
+  border-radius: var(--web-radius-control);
+  transition: background 0.15s, border-color 0.15s, color 0.15s,
+    box-shadow 0.15s;
+}
+/* Primaer — gedaempfte gruene Flaeche, weisse Schrift. */
+.gat-btn--primary {
+  background: var(--web-green-deep);
+  border-color: var(--web-green-deep);
+  color: var(--gat-color-weiss);
+}
+.gat-btn--primary:hover {
+  filter: none;
+  background: color-mix(in srgb, var(--web-green-deep) 85%, black);
+  border-color: color-mix(in srgb, var(--web-green-deep) 85%, black);
+}
+/* Sekundaer — Umriss auf heller Flaeche, gruene Schrift. */
+.gat-btn--secondary {
+  background: var(--web-surface);
+  border-color: var(--web-green-deep);
+  color: var(--web-green-deep);
+}
+.gat-btn--secondary:hover {
+  background: var(--web-green-tint);
+  color: var(--web-green-deep);
+}
+/* Einheitlicher Tastatur-Fokus fuer alle Bedienelemente. */
+.gat-btn:focus-visible,
+.dropzone-btn:focus-visible,
+.doc-remove:focus-visible,
+.doc-clear-btn:focus-visible,
+.tab-btn:focus-visible,
+.switch-btn:focus-visible,
+.mj-btn:focus-visible,
+.mj-close:focus-visible,
+.sankey-reset:focus-visible,
+.crumbs button:focus-visible,
+.drill-row .mj-drill:focus-visible,
+.filterbar input:focus-visible,
+.filterbar select:focus-visible,
+input.search:focus-visible {
+  outline: 2px solid var(--web-green-deep);
+  outline-offset: 2px;
+  box-shadow: var(--web-focus-ring);
+}
+.gat-btn:disabled,
+.doc-clear-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
 .doc-manager {
   border: 1px solid var(--app-hair);
-  border-radius: 5px;
+  border-radius: var(--web-radius-card);
   background: var(--app-raised);
   margin: 1.4rem 0;
 }
@@ -415,7 +479,12 @@ input, select { font-family: var(--gat-font-copy); }
   transform: rotate(90deg);
 }
 .doc-manager-summary:hover {
-  background: color-mix(in srgb, var(--gat-color-anthrazit) 8%, white);
+  background: color-mix(in srgb, var(--web-green) 8%, transparent);
+}
+.doc-manager-summary:focus-visible {
+  outline: 2px solid var(--web-green-deep);
+  outline-offset: -2px;
+  border-radius: var(--web-radius-card);
 }
 .doc-manager-title {
   font-weight: 600;
@@ -431,39 +500,31 @@ input, select { font-family: var(--gat-font-copy); }
 
 /* --- Drag-&-Drop-Zone ---------------------------------------------------- */
 .dropzone {
-  border: 2px dashed var(--app-hair);
-  border-radius: 6px;
-  background: var(--app-raised);
+  border: 2px dashed var(--web-hairline);
+  border-radius: var(--web-radius-card);
+  background: var(--web-surface-sunk);
   padding: 2.4rem 1.4rem;
   text-align: center;
   margin: 1.2rem 0;
   transition: border-color 0.15s, background 0.15s;
 }
 .dropzone.is-over {
-  border-color: var(--app-akzent-primaer);
-  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 8%, white);
+  border-color: var(--web-green-deep);
+  background: var(--web-green-tint);
 }
 .dropzone-title {
   font-size: 1.05rem;
   margin: 0 0 0.3rem;
 }
 .dropzone-hint {
-  color: var(--app-soft);
+  color: var(--web-text-soft);
   font-size: 0.85rem;
   margin: 0 0 0.9rem;
 }
+/* .dropzone-btn traegt zusaetzlich .gat-btn--secondary — die Optik kommt
+   aus dem Button-Block oben; hier nur die Feinjustierung der Groesse. */
 .dropzone-btn {
-  font: inherit;
   font-size: 0.88rem;
-  cursor: pointer;
-  padding: 0.4rem 1rem;
-  border: 1px solid var(--app-akzent-primaer);
-  background: var(--app-akzent-primaer);
-  color: var(--gat-color-weiss);
-  border-radius: 3px;
-}
-.dropzone-btn:hover {
-  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 75%, black);
 }
 .dropzone input[type="file"] {
   display: none;
@@ -476,9 +537,9 @@ input, select { font-family: var(--gat-font-copy); }
   margin: 1rem 0;
 }
 .progress-item {
-  border: 1px solid var(--app-hair);
-  border-radius: 4px;
-  background: var(--app-raised);
+  border: 1px solid var(--web-hairline);
+  border-radius: var(--web-radius-control);
+  background: var(--web-surface);
   padding: 0.6rem 0.85rem;
   margin-bottom: 0.5rem;
 }
@@ -496,8 +557,8 @@ input, select { font-family: var(--gat-font-copy); }
 }
 .progress-bar {
   height: 5px;
-  background: var(--app-hair);
-  border-radius: 3px;
+  background: var(--web-hairline);
+  border-radius: 999px;
   margin-top: 0.45rem;
   overflow: hidden;
 }
@@ -529,72 +590,74 @@ input, select { font-family: var(--gat-font-copy); }
 .doc-table th,
 .doc-table td {
   text-align: left;
-  padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid var(--app-hair);
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--web-hairline);
 }
 .doc-table th {
   font-size: 0.72rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--app-soft);
+  color: var(--web-text-soft);
+}
+.doc-table tbody tr:hover {
+  background: color-mix(in srgb, var(--web-green) 7%, transparent);
 }
 .doc-table td.num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .doc-status {
+  display: inline-block;
   font-size: 0.78rem;
+  font-weight: 600;
   padding: 0.12rem 0.5rem;
   border-radius: 999px;
   border: 1px solid;
 }
 .doc-status.ok {
-  color: var(--app-positiv);
-  border-color: var(--app-positiv);
-  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 10%, white);
+  color: var(--web-green-deep);
+  border-color: color-mix(in srgb, var(--web-green) 45%, var(--web-hairline));
+  background: var(--web-green-tint);
 }
 .doc-status.fehl {
-  color: var(--app-risiko);
-  border-color: var(--app-risiko);
-  background: color-mix(in srgb, var(--gat-color-magenta) 8%, white);
+  color: var(--web-chart-clay);
+  border-color: color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
+  background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
 }
+/* .doc-remove — kleiner sekundaerer Button, ruhige Risiko-Toenung. */
 .doc-remove {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  border: 1px solid var(--app-hair);
-  background: var(--app-raised);
-  color: var(--app-risiko);
-  border-radius: 3px;
+  border: 1px solid var(--web-hairline);
+  background: var(--web-surface);
+  color: var(--web-chart-clay);
+  border-radius: var(--web-radius-control);
   padding: 0.2rem 0.6rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .doc-remove:hover {
-  border-color: var(--app-risiko);
+  border-color: var(--web-chart-clay);
+  background: color-mix(in srgb, var(--web-chart-clay) 10%, white);
 }
 .doc-empty {
-  color: var(--app-soft);
+  color: var(--web-text-soft);
   font-style: italic;
 }
 .doc-clear-zeile {
   margin-top: 0.9rem;
 }
+/* .doc-clear-btn traegt zusaetzlich .gat-btn--secondary; hier nur die
+   Risiko-Toenung statt der gruenen Sekundaerfarbe und die Feingroesse. */
 .doc-clear-btn {
-  font: inherit;
   font-size: 0.85rem;
-  cursor: pointer;
-  border: 1px solid var(--app-risiko);
-  background: var(--app-raised);
-  color: var(--app-risiko);
-  border-radius: 3px;
-  padding: 0.32rem 0.8rem;
+  border-color: var(--web-chart-clay);
+  color: var(--web-chart-clay);
 }
 .doc-clear-btn:hover {
-  background: var(--app-risiko);
+  background: var(--web-chart-clay);
+  border-color: var(--web-chart-clay);
   color: var(--gat-color-weiss);
-}
-.doc-clear-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .persist-note {
@@ -604,18 +667,18 @@ input, select { font-family: var(--gat-font-copy); }
 .toast {
   font-size: 0.85rem;
   padding: 0.5rem 0.85rem;
-  border-radius: 4px;
+  border-radius: var(--web-radius-control);
   margin: 0.6rem 0;
 }
 .toast.ok {
-  background: color-mix(in srgb, var(--gat-color-dunkelgruen) 10%, white);
-  border: 1px solid var(--app-positiv);
-  color: var(--app-positiv);
+  background: var(--web-green-tint);
+  border: 1px solid color-mix(in srgb, var(--web-green) 45%, var(--web-hairline));
+  color: var(--web-green-deep);
 }
 .toast.fehl {
-  background: color-mix(in srgb, var(--gat-color-magenta) 8%, white);
-  border: 1px solid var(--app-risiko);
-  color: var(--app-risiko);
+  background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
+  color: var(--web-chart-clay);
 }
 [hidden] {
   display: none !important;
@@ -638,17 +701,10 @@ input, select { font-family: var(--gat-font-copy); }
 .sankey-hint.is-visible {
   color: var(--app-akzent-primaer);
 }
+/* .sankey-reset traegt zusaetzlich .gat-btn--secondary; hier nur die
+   kleinere Groesse fuer die Panel-Kopf-Leiste. */
 .sankey-reset {
   flex: none;
   font-size: 0.8rem;
   padding: 0.25rem 0.7rem;
-  border: 1px solid var(--app-hair);
-  background: var(--app-raised);
-  color: var(--app-soft);
-  border-radius: 4px;
-  cursor: pointer;
-}
-.sankey-reset:hover {
-  border-color: var(--app-akzent-primaer);
-  color: var(--app-akzent-primaer);
 }
