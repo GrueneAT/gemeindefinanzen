@@ -29,6 +29,12 @@ jobs:
       - name: schema.sql und sql/ synchronisieren
         run: make web-sync
 
+      - name: Build-Stempel schreiben
+        run: |
+          cat > web/version.json <<EOF
+          { "commit": "${GITHUB_SHA}", "shortCommit": "${GITHUB_SHA:0:7}", "builtAt": "$(date -u +%FT%TZ)" }
+          EOF
+
       - name: Browser-Tests ausfuehren
         run: npx playwright test
         env:
