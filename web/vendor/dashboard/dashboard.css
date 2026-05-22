@@ -62,9 +62,10 @@
   border-color: var(--hair); color: var(--web-green-deep, #2c6e40);
   font-weight: 700;
   box-shadow: inset 0 -3px 0 var(--web-green-deep, #2c6e40); }
-.tab-btn:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: -2px;
-  border-radius: var(--web-radius-control, 6px); }
+/* Der Reiter sitzt buendig an der Tableisten-Kante — der Fokus-Offset wird
+   negativ gesetzt, damit die Kontur nicht abgeschnitten wird. Die Kontur-
+   und Ring-Optik selbst liefert der gemeinsame Block in app.css. */
+.tab-btn { --web-focus-offset: -2px; }
 
 .tab-panel { display: none; }
 .tab-panel.is-active { display: block; }
@@ -91,8 +92,7 @@
   color: var(--gat-color-weiss, #fff); font-weight: 600; }
 .switch-btn.is-active:hover { background: var(--web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); }
-.switch-btn:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: 2px; }
+/* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 
 
 /* === 4. TABELLEN & FILTER ================================================= */
@@ -112,11 +112,11 @@
   font-variant-numeric: tabular-nums; }
 .dtable tbody tr:hover { background: color-mix(in srgb, var(--web-green, #4a8a52) 8%, transparent); }
 
-.sortable { cursor: pointer; user-select: none; }
+/* Sortierbare Spaltenkoepfe sitzen buendig in der sticky Kopfzeile — der
+   Fokus-Offset wird negativ gesetzt (Optik kommt aus app.css). */
+.sortable { cursor: pointer; user-select: none; --web-focus-offset: -2px; }
 .sortable:hover { color: var(--web-green-deep, #2c6e40); }
-.sortable:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: -2px; }
-.sortable .arrow { color: var(--web-text-mute, #8b8f82); font-size: .75rem; }
+.sortable .arrow { color: var(--web-text-mute, #6b6f63); font-size: .75rem; }
 
 th.pick, td.pick { width: 2rem; text-align: center; }
 td.pick input, th.pick input { cursor: pointer; }
@@ -133,10 +133,8 @@ td.pick input, th.pick input { cursor: pointer; }
   transition: border-color .15s, box-shadow .15s; }
 .filterbar input:hover, .filterbar select:hover {
   border-color: color-mix(in srgb, var(--web-green, #4a8a52) 45%, var(--hair)); }
-.filterbar input:focus-visible, .filterbar select:focus-visible,
-input.search:focus-visible {
-  outline: none; border-color: var(--web-green-deep, #2c6e40);
-  box-shadow: var(--web-focus-ring, 0 0 0 3px rgba(74,138,82,.38)); }
+/* Tastatur-Fokus (Kontur + Rahmenfarbe + Ring) liefert der gemeinsame
+   Block in app.css. */
 .filterbar input.search { min-width: 16rem; }
 .filterbar input.betrag { width: 7rem; }
 
@@ -163,9 +161,9 @@ input.search:focus-visible {
   text-decoration: underline; padding: 0; }
 .crumbs button:disabled { color: var(--web-text-soft, #5e6358);
   text-decoration: none; cursor: default; }
-.crumbs button:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: 2px; border-radius: 2px; }
-.crumbs .sep { color: var(--web-text-mute, #8b8f82); margin: 0 .3rem; }
+/* Fokus-Optik aus app.css; nur der Radius haelt den Ring abgerundet. */
+.crumbs button:focus-visible { border-radius: 2px; }
+.crumbs .sep { color: var(--web-text-mute, #6b6f63); margin: 0 .3rem; }
 
 /* Drill-down-Liste — klickbare Zeilen mit sanftem Hover. */
 .drill-list { list-style: none; padding: 0; margin: .3rem 0 0; }
@@ -176,10 +174,10 @@ input.search:focus-visible {
 .drill-row.is-clickable { cursor: pointer; }
 .drill-row.is-clickable:hover { background: color-mix(in srgb, var(--web-green, #4a8a52) 8%, transparent); }
 .drill-row .label { flex: 1; }
-.drill-row .label .code { color: var(--web-text-mute, #8b8f82); font-size: .8rem;
+.drill-row .label .code { color: var(--web-text-mute, #6b6f63); font-size: .8rem;
   margin-right: .4rem; font-variant-numeric: tabular-nums; }
 .drill-row .betrag { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.drill-row .chev { color: var(--web-text-mute, #8b8f82); margin-left: .5rem; }
+.drill-row .chev { color: var(--web-text-mute, #6b6f63); margin-left: .5rem; }
 .drill-row .mj-drill { font: inherit; font-size: .76rem; cursor: pointer;
   padding: .12rem .5rem; border: 1px solid var(--hair);
   background: var(--web-surface, #fff); color: var(--web-green-deep, #2c6e40);
@@ -188,8 +186,7 @@ input.search:focus-visible {
   transition: background .15s, border-color .15s; }
 .drill-row .mj-drill:hover { border-color: var(--web-green, #4a8a52);
   background: var(--web-green-tint, #e7efe3); }
-.drill-row .mj-drill:focus-visible {
-  outline: 2px solid var(--web-green-deep, #2c6e40); outline-offset: 2px; }
+/* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 
 
 /* === 6. MEHRJAHRES-VERGLEICH ============================================== */
@@ -211,8 +208,7 @@ input.search:focus-visible {
   color: var(--gat-color-weiss, #fff); font-weight: 600; }
 .mj-btn.is-primary:hover { background: var(--web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); }
-.mj-btn:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: 2px; }
+/* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 .mj-btn:disabled { opacity: .5; cursor: default; }
 .mj-btn:disabled:hover { background: var(--web-surface, #fff);
   border-color: var(--hair); }
@@ -244,8 +240,7 @@ input.search:focus-visible {
   transition: background .15s, color .15s; }
 .mj-close:hover { color: var(--web-text, #23271f);
   background: var(--web-surface-sunk, #f7f9f4); }
-.mj-close:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: 2px; }
+/* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 .mj-sub { font-size: .85rem; color: var(--web-text-soft, #5e6358);
   margin: .3rem 0 .2rem; }
 .mj-chart { height: 420px; margin-top: .4rem;

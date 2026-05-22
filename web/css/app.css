@@ -515,11 +515,18 @@ input, select { font-family: var(--gat-font-copy); }
   opacity: 0.5;
   cursor: default;
 }
-/* Einheitlicher Tastatur-Fokus fuer alle Bedienelemente. */
+/* --- Einheitlicher Tastatur-Fokus -----------------------------------------
+   Jedes interaktive Element traegt denselben sichtbaren Fokus: eine
+   2px-Kontur in --web-green-deep plus den weichen --web-focus-ring. Der
+   Ring hebt den Fokus auch dort ab, wo die Kontur knapp am Rand sitzt.
+   --web-focus-offset haelt den Abstand konsistent; Elemente, die an einer
+   Kante sitzen (Reiter, sortierbare Spaltenkoepfe), setzen ihn lokal auf
+   einen negativen Wert, der Ring bleibt aussen sichtbar. */
 .gat-btn:focus-visible,
 .dropzone-btn:focus-visible,
 .doc-remove:focus-visible,
 .doc-clear-btn:focus-visible,
+.doc-manager-summary:focus-visible,
 .tab-btn:focus-visible,
 .switch-btn:focus-visible,
 .mj-btn:focus-visible,
@@ -527,12 +534,28 @@ input, select { font-family: var(--gat-font-copy); }
 .sankey-reset:focus-visible,
 .crumbs button:focus-visible,
 .drill-row .mj-drill:focus-visible,
+.sortable:focus-visible,
+.filterbar input:focus-visible,
+.filterbar select:focus-visible,
+.dtable .pick input:focus-visible,
+input.search:focus-visible {
+  outline: 2px solid var(--web-green-deep);
+  outline-offset: var(--web-focus-offset, 2px);
+  box-shadow: var(--web-focus-ring);
+}
+/* Felder mit eigenem Rahmen: der Fokus ersetzt zusaetzlich die Rahmenfarbe,
+   damit Kontur, Rahmen und Ring eine ruhige Einheit bilden. */
 .filterbar input:focus-visible,
 .filterbar select:focus-visible,
 input.search:focus-visible {
-  outline: 2px solid var(--web-green-deep);
-  outline-offset: 2px;
-  box-shadow: var(--web-focus-ring);
+  border-color: var(--web-green-deep);
+}
+/* Marken-Link im Header sitzt auf --web-green-deep — eine gruene Kontur
+   waere unsichtbar. Hier eine helle Kontur plus weicher dunkler Ring. */
+.web-brandbar__brand:focus-visible {
+  outline: 2px solid var(--gat-color-weiss);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
@@ -568,9 +591,13 @@ input.search:focus-visible {
 .doc-manager-summary:hover {
   background: color-mix(in srgb, var(--web-green) 8%, transparent);
 }
+/* Summary sitzt buendig im Karten-Rahmen — Fokus-Offset negativ; Kontur,
+   Ring und Radius halten den Fokus innerhalb der Karte sichtbar. Die
+   Kontur-/Ring-Optik liefert der gemeinsame Fokus-Block. */
+.doc-manager-summary {
+  --web-focus-offset: -2px;
+}
 .doc-manager-summary:focus-visible {
-  outline: 2px solid var(--web-green-deep);
-  outline-offset: -2px;
   border-radius: var(--web-radius-card);
 }
 .doc-manager-title {
@@ -806,4 +833,26 @@ input.search:focus-visible {
   flex: none;
   font-size: 0.8rem;
   padding: 0.25rem 0.7rem;
+}
+
+
+/* ===========================================================================
+   6. REDUZIERTE BEWEGUNG
+   ===========================================================================
+   Wer im Betriebssystem reduzierte Bewegung verlangt, bekommt keine
+   CSS-Uebergaenge mehr: Hover-/Fokus-Farbwechsel der Bedienelemente, der
+   Fortschrittsbalken, die Dropzone, der Aufklapp-Pfeil der Dokument-
+   verwaltung und die Tableisten-Animation greifen dann ohne Zeitverlauf.
+   Deckt app.css und dashboard.css gemeinsam ab. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
