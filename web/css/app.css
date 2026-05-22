@@ -119,20 +119,62 @@ input, select { font-family: var(--gat-font-copy); }
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 2.5rem);
 }
+/* --- Schlanke Markenleiste (Iteration 2) ----------------------------------
+   Der DS-Header ist ein hoher, wuchtiger Dunkelgruen-Block. Hier wird er zu
+   einer schlanken Markenleiste (~66px): Logo-Mark plus Wortmarke auf
+   --web-green-deep, weisse Schrift (Kontrastregel). Die DS-Klassen bleiben
+   am Element und funktionsfaehig, nur die Optik wird ueberschrieben. */
+.web-brandbar {
+  background: var(--web-green-deep);
+}
 /* Header-Inhalt auf dieselbe Breite wie der Seiteninhalt bringen, damit
-   Header und Body einen gemeinsamen linken Rand teilen. */
+   Header und Body einen gemeinsamen linken Rand teilen. Schmaler
+   Block-Innenabstand statt des wuchtigen DS-Werts. */
 .gat-header__inner {
   max-width: 1200px;
   padding-inline: clamp(1rem, 4vw, 2.5rem);
+  padding-block: 1.15rem;
+  gap: var(--gat-space-3);
+}
+/* Logo-Mark plus Wortmarke als eine zusammenhaengende Markeneinheit. Die
+   DS-Schutzzone (Logo-Padding) entfaellt zugunsten der schlanken Leiste. */
+.web-brandbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0;
+  text-decoration: none;
+}
+.web-brandbar .gat-header__logo-mark {
+  width: 2rem;
+}
+.web-brandbar__wordmark {
+  font-family: var(--gat-font-headline);
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--gat-color-weiss);
+  letter-spacing: 0.01em;
+}
+/* Sekundaerzeile rechts — dezenter Kontext, nicht die wiederholte Wortmarke. */
+.web-brandbar__nav .gat-nav__link {
+  font-size: var(--gat-text-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .app-intro,
 .lead {
   max-width: 70rem;
 }
 
-/* Seitentitel im Inhaltsbereich — Abstand zum Header. */
+/* Seitentitel im Inhaltsbereich — Abstand zum Header. Die DS-Klasse
+   .gat-headline traegt Gewicht 900 und schwarze Schrift; hier auf die
+   ruhigere Iteration-2-Skala (h1 -> 800, --web-text) gebracht. */
 .gat-headline {
   margin: var(--gat-space-5) 0 var(--gat-space-2);
+  font-weight: 800;
+  line-height: 1.18;
+  color: var(--web-text);
 }
 
 /* --- Ueberblick-Kennzahlen als .metric-card -------------------------------
