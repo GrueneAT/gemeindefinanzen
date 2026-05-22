@@ -477,3 +477,21 @@ breit, kein Diagramm dominiert mehr sein Panel, die Wasserfall-Stufen tragen
 sichtbare Verbindungslinien, die Panel-Raender sitzen ruhig und konsistent.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 11 — Komponenten erweitern (in Arbeit)
+
+Mehr echte Web-Komponenten, mehr Web-Tauglichkeit:
+
+- **Badge/Pill `.web-tag`.** Kategoriale Tabellenwerte (Transfer-Art
+  Pflichtumlage/freiwillig, Richtung Einnahme/Ausgabe) als ruhige Pills
+  statt Klartext — nur sofern `dashboard.js` bereits klassifizierbares
+  Markup ausgibt (CSS-only; `dashboard.js` bleibt unangetastet). Falls
+  nicht moeglich: Befund dokumentieren.
+- **Druck-Stylesheet** (`@media print`): Upload/Steuerleiste/Navigation
+  ausblenden, Panels sauber umbrechen, ruhiges Schwarz-auf-Weiss fuer den
+  Ausdruck einer Auswertung.
+- **Hero/Auftakt** straffen: Titel + Intro als ruhige Einheit, Intro
+  knapper gegliedert.
+- Seiten-Metadaten (Favicon, `theme-color`, `meta description`).
+
+_wird nach visueller Pruefung fortgeschrieben._
