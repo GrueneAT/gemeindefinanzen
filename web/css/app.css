@@ -49,7 +49,12 @@
      ~5.3 auf Weiss, weiss darauf ~5.5. */
   --web-clay-text: #9c5a38;
 
-  /* Diagramm-Palette (kategorial, niedrige Saettigung) */
+  /* Diagramm-Palette (kategorial, niedrige Saettigung).
+     Doku-Token: --web-yellow (oben) sowie --web-chart-leaf/-teal/-gold/
+     -plum/-sage werden von keiner CSS-Regel referenziert. Sie halten die
+     Spec-Tabelle fest; die Chart-Module lesen die gleichen Hex-Werte
+     direkt im JS. --web-chart-green/-clay/-slate werden dagegen auch in
+     CSS genutzt (Metric-Card-Akzente, Risiko-Ton). */
   --web-chart-green: #3f7d4f;
   --web-chart-leaf: #6ba368;
   --web-chart-teal: #4f93a0;

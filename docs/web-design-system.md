@@ -406,17 +406,24 @@ Tastatur-Fokus, reduzierte Bewegung und eine letzte Defektpruefung.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 9 — Review-Findings beheben (in Arbeit)
+### Iteration 9 — Review-Findings beheben (erledigt)
 
 Aus dem code-reviewer-Durchgang ueber alle 45 Commits:
-- **Wichtig:** `.gat-btn`-`border-radius` in app.css ueberschreibt die
+- **Wichtig:** `.gat-btn`-`border-radius` in app.css ueberschrieb die
   Folder-Tab-Ecken von `.tab-btn` (gleiche Spezifitaet, app.css laedt
-  spaeter). Fix: `gat-btn` aus dem `.tab-btn`-Markup nehmen — `.tab-btn`
-  bringt eigene Flaeche/Rahmen/Radius mit und steht per eigenem Namen im
-  Fokus-Block.
-- **Klein:** `chartTrendKomm`-`areaStyle` nutzt noch `rgba(47,97,73,…)`
-  (Vor-Entsaettigungs-Gruen) — auf `rgba(63,125,79,…)` (= `INK.green`).
-- **Klein:** sechs `--web-chart-*`-/`--web-yellow`-Token sind nur
-  Doku (Charts lesen JS-Literale) — als solche kommentieren.
+  spaeter). Behoben: `gat-btn` aus dem `.tab-btn`-Markup entfernt —
+  `.tab-btn` bringt eigene Flaeche/Rahmen/Radius mit und steht per eigenem
+  Namen im Fokus-Block.
+- **Klein:** `chartTrendKomm`-`areaStyle` nutzte noch `rgba(47,97,73,…)`
+  (Vor-Entsaettigungs-Gruen) — auf `rgba(63,125,79,…)` (= `INK.green`)
+  umgestellt.
+- **Klein:** `--web-yellow` und `--web-chart-leaf/-teal/-gold/-plum/-sage`
+  sind reine Doku-Token (Charts lesen die Hex-Werte direkt im JS) — ein
+  Kommentar ueber der Gruppe haelt das nun explizit fest.
 
-_wird nach visueller Pruefung fortgeschrieben._
+**Ergebnis:** Der aktive Reiter rendert wieder als Folder-Tab — berechnetes
+`border-radius` `6px 6px 0px 0px`, also runde Oberkante und buendig in die
+Panel-Flaeche uebergehende, eckige Unterkante (visuell per Playwright mit
+geladenem VA-2026-PDF geprueft).
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).

@@ -425,7 +425,7 @@ export function chartTrendKomm(trend) {
         data: reihe.map((r) => r[1]),
         itemStyle: { color: INK.green },
         lineStyle: { color: INK.green, width: 2.5 },
-        areaStyle: { color: "rgba(47,97,73,0.10)" },
+        areaStyle: { color: "rgba(63,125,79,0.10)" },
         label: {
           show: true,
           position: "top",
