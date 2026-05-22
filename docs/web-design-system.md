@@ -744,7 +744,7 @@ Rueckmeldung: viele aeltere Nutzer:innen — die Beschriftungen in den
 Diagrammen sind zu klein. Lesbarkeit hat Vorrang.
 
 - Achsenbeschriftungen, Legenden, Tooltips, Datenbeschriftungen (Werte an
-  Balken/Punkten) und Sankey-Knotenbeschriftungen sp&uumlrbar vergroessern
+  Balken/Punkten) und Sankey-Knotenbeschriftungen spuerbar vergroessern
   (Richtwert: von ~11–12px auf ~14–15px).
 - Genug Rand/Abstand, damit groessere Labels nicht abgeschnitten werden.
 - Gilt fuer alle Diagramme in `dashboard-charts.js` und `sankey-drill.js`.
