@@ -229,19 +229,41 @@ umgestellt, Funktionsklassen/-IDs unveraendert, `dashboard.js` nicht
 angefasst. **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e`
 7/7).
 
-### Iteration 5 — Responsives Verhalten (in Arbeit)
+### Iteration 5 — Responsives Verhalten (erledigt)
 
 Ziel: die App nutzt die volle Bandbreite vom Smartphone bis zum breiten
 Desktop ordentlich — nicht nur eine zusammengestauchte Druckseite.
 
-- Pruefbreiten: ~390px (Smartphone), ~760px (Tablet), ~1440px (Desktop).
-- Metric-Raster: 4 -> 2 -> 1 Spalten sauber.
-- Tableiste: bei schmaler Breite umbrechen oder horizontal scrollbar,
-  ohne zu zerfallen.
-- Diagramm-Panels und `.dash-grid` (2-spaltig) -> 1-spaltig.
-- Breite Suchtabelle: horizontal scrollbar, Seite bricht nicht.
-- Header, Steuerleiste, Filterleiste, Overlay-Dialog bei schmaler Breite
-  benutzbar; Seitenraender greifen ueber `clamp()`.
-- Keine horizontale Seiten-Scrollbar auf Mobilbreite.
+Pruefbreiten: ~390px (Smartphone), ~760px (Tablet), ~1440px (Desktop).
+Visuelle Pruefung mit Playwright/Chromium, Screenshots Ueberblick- und
+Suche-Tab je Breite.
 
-_wird nach visueller Pruefung fortgeschrieben._
+- **Lagebild-Raster** (`.stats`) — 4 -> 2 -> 1 Spalten, jetzt an den
+  Design-System-Breakpoints `48rem`/`36rem` ausgerichtet (zuvor eigene
+  Werte `60rem`/`34rem`). Bei 1440px vier Spalten, bei 760px zwei, bei
+  390px eine.
+- **Tableiste** (`.tabs`/`.tab-btn`) — bricht ueber `flex-wrap: wrap`
+  bereits sauber in mehrere Zeilen um; bei 390px drei tidy Reihen, der
+  aktive Reiter bleibt sichtbar und markiert. Keine Aenderung noetig.
+- **`.dash-grid`** — die zweispaltigen Einnahmen-/Ausgaben-Raster fallen
+  bei `48rem` auf eine Spalte; Diagramm-Panels bleiben voller Breite und
+  lesbar. Bereits aus Iteration 3/4 vorhanden, visuell bestaetigt.
+- **Breite Suchtabelle** — die 15-spaltige Tabelle bekommt im
+  `.table-scroll` eine Mindestbreite (`56rem`), damit ihre Spalten lesbar
+  bleiben statt zusammenzustauchen; reicht der Platz nicht, scrollt der
+  Container horizontal. Die Seite selbst bleibt schmal — kein
+  horizontaler Seiten-Ueberlauf bei 390/760/1440px.
+- **Dokumentliste** — die fuenfspaltige `.doc-table` verursachte
+  ausgeklappt bei 390px einen Seiten-Ueberlauf (~474px). Sie sitzt jetzt
+  in einem `.doc-table-scroll`-Wrapper mit horizontalem Scroll und einer
+  Mindestbreite, die die Spalten lesbar haelt.
+- **Header, Steuerleiste, Filterleiste, Dokument-Umschalter,
+  Mehrjahres-Overlay** — bei 390px geprueft: Header, Switcher und
+  Filterleiste umbrechen sauber, der Overlay-Dialog (`width: min(880px,
+  94vw)`) passt in den kleinen Viewport. Seitenraender greifen weiterhin
+  ueber `clamp(1rem, 4vw, 2.5rem)`.
+
+Ergebnis: kein horizontaler Seiten-Ueberlauf bei 390/760/1440px, weder
+auf dem Ueberblick- noch auf dem Suche-Tab, auch nicht bei ausgeklappter
+Dokumentverwaltung. Breite Tabellen scrollen intern. **Tests gruen**
+(`npm run test:js` 61/61, `npm run test:e2e` 7/7).
