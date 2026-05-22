@@ -1,15 +1,36 @@
 /* Browser-App — Stil der Upload-Oberflaeche und Dokumentverwaltung.
-   Erweitert das flomotlik Design System (Papier-Optik, Haarlinien, vier
-   Tinten) um Drag-&-Drop-Zone, Fortschrittsanzeige und Dokumentliste. */
+   Baut auf den --gat-*-Tokens des Gruene-AT-Design-Systems auf und ergaenzt
+   eine App-Adapterschicht (Drag-&-Drop-Zone, Fortschrittsanzeige,
+   Dokumentliste, Sankey-Leiste) sowie die Basisstile, die das DS bewusst
+   nicht mitliefert. */
 
 :root {
-  --hair: var(--rule-hair, #cdc4b4);
-  --raised: var(--paper-raised, #faf6ee);
-  --ink-blue: #1f4a6d;
-  --ink-red: #8e2f2a;
-  --ink-green: #2f6149;
-  --ink-orange: #9a4a1c;
-  --soft: #5b5650;
+  /* Adapterschicht: aus den --gat-*-Tokens abgeleitete App-Variablen. Das DS
+     kennt keine neutrale Grauskala — Linien-, Flaechen- und Dimmtoene werden
+     hier per color-mix aus Anthrazit gemischt. */
+  --app-hair: color-mix(in srgb, var(--gat-color-anthrazit) 18%, white);
+  --app-raised: color-mix(in srgb, var(--gat-color-anthrazit) 4%, white);
+  --app-soft: color-mix(in srgb, var(--gat-color-anthrazit) 55%, white);
+
+  /* App-Akzentfarben auf die Gruene-AT-Markenfarben gemappt. Akzent und
+     Positiv sind bewusst beide dunkelgruen (org-Primaerfarbe) — die
+     Unterscheidung erfolgt im Kontext (Buttons vs. Statusfarben). */
+  --app-akzent-primaer: var(--gat-color-dunkelgruen);
+  --app-positiv: var(--gat-color-dunkelgruen);
+  --app-risiko: var(--gat-color-magenta);
+  --app-sachaufwand: color-mix(in srgb, var(--gat-color-magenta) 70%,
+                               var(--gat-color-gelb));
+
+  /* Uebergangs-Aliase auf die alten Variablennamen, damit die noch nicht
+     migrierten Selektoren waehrend des Umbaus lauffaehig bleiben. Werden in
+     Task 2 entfernt, sobald alle Selektoren migriert sind. */
+  --hair: var(--app-hair);
+  --raised: var(--app-raised);
+  --soft: var(--app-soft);
+  --ink-blue: var(--app-akzent-primaer);
+  --ink-red: var(--app-risiko);
+  --ink-green: var(--app-positiv);
+  --ink-orange: var(--app-sachaufwand);
 }
 
 .page {
