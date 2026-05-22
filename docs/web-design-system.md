@@ -717,3 +717,37 @@ Akzentlinie am unteren Rand, keine Kontrastprobleme; bei 390px passt der
 Header in eine Zeile ohne horizontalen Ueberlauf.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+## gruene.at — weitere Beobachtungen (ueber den Header hinaus)
+
+Visuelle + Code-Analyse der Gesamtseite:
+
+- **Weiss + Gruen als Basis**, dazu vollflaechige gruene Section-Baender mit
+  weisser, sehr grosser Schrift als Gliederungs-/Brand-Mittel.
+- **Section-Ueberschriften gruen** (`#257639`), zentriert, gross.
+- **Navigationslinks gruen und fett.**
+- **Pill-Buttons** durchgehend (vollrund) — gruen gefuellt, Umriss, sowie
+  Magenta als energetische Kampagnen-CTA.
+- Karten-Raster fuer „Aktuelles", grosszuegiger Weissraum, grosse Typo.
+- Eigenes Barrierefreiheits-Widget.
+
+**Was wir uebernehmen** (passend fuer ein ruhiges Datenwerkzeug):
+- Section-Titel (`h2`) in `--web-green-deep` — staerkt die gruene Identitaet,
+  bleibt ruhig.
+- Buttons als Pills (vollrund).
+**Was wir bewusst NICHT uebernehmen:** Magenta-CTAs und vollflaechige
+Knall-Baender — fuer eine Lese-/Analyseanwendung zu unruhig (siehe Leitsatz).
+
+### Iteration 16 — Diagramm-Lesbarkeit (in Arbeit)
+
+Rueckmeldung: viele aeltere Nutzer:innen — die Beschriftungen in den
+Diagrammen sind zu klein. Lesbarkeit hat Vorrang.
+
+- Achsenbeschriftungen, Legenden, Tooltips, Datenbeschriftungen (Werte an
+  Balken/Punkten) und Sankey-Knotenbeschriftungen sp&uumlrbar vergroessern
+  (Richtwert: von ~11–12px auf ~14–15px).
+- Genug Rand/Abstand, damit groessere Labels nicht abgeschnitten werden.
+- Gilt fuer alle Diagramme in `dashboard-charts.js` und `sankey-drill.js`.
+- Gegenpruefen, dass nichts ueberlappt.
+
+_wird nach visueller Pruefung fortgeschrieben._
