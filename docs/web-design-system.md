@@ -623,3 +623,17 @@ keine flachen Streifen. Bei 1440 und 390 keine Regression, kein
 horizontaler Seiten-Ueberlauf.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 14 — Lesbarkeit Tableiste & Umschalter (in Arbeit)
+
+Rueckmeldung: die Tab-Beschriftungen und die Dokument-Schalter
+(RA 2024, VA 2025 …) sind zu klein und dadurch schlecht lesbar.
+
+- `.tab-btn` deutlich groesser und gut lesbar (von `.9rem` anheben),
+  Innenabstand/Treffergroesse entsprechend; aktiver Tab bleibt klar.
+- `.switch-btn` (Dokument-Umschalter) groesser, ebenso die Treffergroesse.
+- `.switcher-label` („DOKUMENT") angemessen mitziehen.
+- Tableiste muss bei schmaler Breite weiter sauber umbrechen.
+- Ruhiger Stil bleibt — nur Lesbarkeit, kein neuer Laerm.
+
+_wird nach visueller Pruefung fortgeschrieben._
