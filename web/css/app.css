@@ -174,6 +174,20 @@ input, select { font-family: var(--gat-font-copy); }
   line-height: var(--gat-leading-copy);
   margin: var(--gat-space-4) 0;
 }
+
+/* --- Hero — Auftakt der Seite ---------------------------------------------
+   Seitentitel und Intro als eine ruhige Einheit: gemeinsamer Abstand zum
+   Header, Titel und Intro eng aneinander gebunden statt mit eigenem
+   Streuabstand. Die Leseweite des Intros bleibt begrenzt. */
+.web-hero {
+  margin: var(--gat-space-5) 0 var(--gat-space-5);
+}
+.web-hero__title {
+  margin: 0;
+}
+.web-hero__intro {
+  margin: var(--gat-space-2) 0 0;
+}
 .lead {
   font-size: var(--gat-text-subline);
   line-height: var(--gat-leading-copy);
