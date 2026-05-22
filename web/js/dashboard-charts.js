@@ -6,28 +6,29 @@
 // eingebettet und clientseitig von dashboard.js per revive() in echte
 // Funktionen zurueckverwandelt.
 
-// Aus den Gruene-AT-Markenfarben abgeleitete Palette; Quelle: Markenfarben des
-// Gruene-AT-DS (Dunkelgruen #257639, Hellgruen #56af31, Magenta #e6007e,
-// Anthrazit #1d1d1b). ECharts liest keine CSS-Variablen — die Hex-Werte werden
-// hier gespiegelt. Semantik der Schluessel: green=positiv/Ertraege,
-// blue=neutral/Personal (zweiter Gruenton), red=Aufwand/Risiko,
-// orange=Sachaufwand, soft=neutral-grau, paper=Diagramm-Flaeche.
+// Entsaettigte Diagramm-Palette des Web-Design-Systems (siehe
+// docs/web-design-system.md). ECharts liest keine CSS-Variablen — die
+// Hex-Werte werden hier gespiegelt und muessen mit den --web-chart-*-Token
+// in app.css uebereinstimmen. Semantik der Schluessel:
+// green=Ertraege/positiv, blue=Personal/neutral-kuehl (Teal),
+// orange=Sachaufwand (Gold), red=Aufwand/Risiko (Clay),
+// soft=Sonstige/Restgruppe (Sage), paper=Diagramm-Flaeche.
 const INK = {
-  red: "#e6007e",
-  blue: "#3c8a22",
-  orange: "#a8005c",
-  green: "#257639",
-  soft: "#5a5a57",
+  green: "#3f7d4f",
+  blue: "#4f93a0",
+  orange: "#c9a24b",
+  red: "#b9744f",
+  soft: "#8a8f7d",
   paper: "#ffffff",
 }
 
-// Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsen-/Linientoene aus den
-// Markenfarben abgeleitete neutrale Grautoene (anthrazit-basiert).
+// Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsen-/Linientoene weich
+// gehalten, abgestimmt auf den ruhigen Web-Grundton (web-design-system.md).
 const CHART_FONT = "Barlow Semi Condensed, sans-serif"
-const ACHSE_TEXT = "#1d1d1b"
-const ACHSE_TEXT_SOFT = "#5a5a57"
-const ACHSE_LINIE = "#c7c7c5"
-const ACHSE_SPLIT = "#e3e3e2"
+const ACHSE_TEXT = "#23271f"
+const ACHSE_TEXT_SOFT = "#5e6358"
+const ACHSE_LINIE = "#cdd2c8"
+const ACHSE_SPLIT = "#e7eae2"
 
 function baseText() {
   return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
@@ -458,22 +459,21 @@ function mehrjahrBasis(jahre) {
   }
 }
 
-// 10-stufige kategoriale Palette fuer den Mehrjahres-Vergleich, aus den
-// Gruene-AT-Markenfarben abgeleitet (je Markenfarbe ein Tint und/oder Shade,
-// HSL-Lightness ca. +/-12-18 %). Reihenfolge so, dass aufeinanderfolgende
-// Serien in Helligkeit oder Farbton deutlich kontrastieren; Gelb wird nicht
-// als Serienfarbe verwendet.
+// 10-stufige kategoriale Palette fuer den Mehrjahres-Vergleich: die acht
+// entsaettigten Diagrammtoene des Web-Design-Systems plus zwei weiche Tints.
+// Reihenfolge so, dass aufeinanderfolgende Serien in Farbton oder Helligkeit
+// deutlich kontrastieren; durchgehend niedrige Saettigung.
 const MEHRJAHR_PALETTE = [
-  "#257639", // dunkelgruen
-  "#e6007e", // magenta
-  "#56af31", // hellgruen
-  "#1d1d1b", // anthrazit
-  "#3f9457", // dunkelgruen-Tint
-  "#a8005c", // magenta-Shade
-  "#3c8a22", // hellgruen-Shade
-  "#5a5a57", // anthrazit-Tint (neutral-grau)
-  "#f25aa8", // magenta-Tint
-  "#18532a", // dunkelgruen-Shade
+  "#3f7d4f", // chart-green
+  "#c9a24b", // chart-gold
+  "#4f93a0", // chart-teal
+  "#b9744f", // chart-clay
+  "#6ba368", // chart-leaf
+  "#9c5b7d", // chart-plum
+  "#5d6b8a", // chart-slate
+  "#8a8f7d", // chart-sage
+  "#a7c4a3", // weicher Gruen-Tint
+  "#c9a98c", // weicher Clay-Tint
 ]
 
 // Vorberechnete ECharts-Optionen je Dokument plus Zeitreihen.

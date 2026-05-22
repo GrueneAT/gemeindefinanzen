@@ -18,21 +18,22 @@ const MITTE = "Gemeindehaushalt"
 // Hoechstzahl Detailknoten je ausgeklapptem Bereich; der Rest wird gebuendelt.
 export const TOP_N = 8
 
-// Aus den Gruene-AT-Markenfarben abgeleitete Palette — semantisch eingesetzt,
-// identisch zu dashboard-charts.js. green=positiv/Ertraege,
-// blue=neutral/Personal (zweiter Gruenton), red=Aufwand/Risiko,
-// orange=Sachaufwand, soft=neutral-grau.
+// Entsaettigte Diagramm-Palette des Web-Design-Systems — semantisch
+// eingesetzt, identisch zu dashboard-charts.js (siehe
+// docs/web-design-system.md). green=Ertraege/positiv,
+// blue=Personal/neutral-kuehl (Teal), orange=Sachaufwand (Gold),
+// red=Aufwand/Risiko (Clay), soft=Sonstige/Restgruppe (Sage).
 const INK = {
-  red: "#e6007e",
-  blue: "#3c8a22",
-  orange: "#a8005c",
-  green: "#257639",
-  soft: "#5a5a57",
+  green: "#3f7d4f",
+  blue: "#4f93a0",
+  orange: "#c9a24b",
+  red: "#b9744f",
+  soft: "#8a8f7d",
 }
 
 // Diagrammschrift = Seitenschrift (Gruene-AT-DS).
 const CHART_FONT = "Barlow Semi Condensed, sans-serif"
-const ACHSE_TEXT = "#1d1d1b"
+const ACHSE_TEXT = "#23271f"
 
 // Einnahmequelle eines Postens — Portierung der CASE-Logik aus
 // dashboard-data.js (sankey()), damit die Quellen-Aggregation des
