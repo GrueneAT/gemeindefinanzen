@@ -196,10 +196,12 @@ input, select { font-family: var(--gat-font-copy); }
   grid-template-columns: repeat(4, 1fr);
   gap: var(--gat-space-3);
 }
-@media (max-width: 60rem) {
+/* Lagebild-Raster: 4 Spalten (Desktop) -> 2 (Tablet) -> 1 (Smartphone).
+   Breakpoints aus dem Design-System (48rem/36rem) statt eigener Werte. */
+@media (max-width: 48rem) {
   .stats { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 34rem) {
+@media (max-width: 36rem) {
   .stats { grid-template-columns: 1fr; }
 }
 
@@ -581,11 +583,17 @@ input.search:focus-visible {
 }
 
 /* --- Dokumentliste ------------------------------------------------------- */
+/* Auf schmalen Viewports passen die fuenf Spalten nicht nebeneinander; der
+   Wrapper scrollt dann horizontal, statt die Seite zu sprengen. */
+.doc-table-scroll {
+  overflow-x: auto;
+  margin: 0.6rem 0 1.4rem;
+}
 .doc-table {
   width: 100%;
+  min-width: 32rem;
   border-collapse: collapse;
   font-size: 0.88rem;
-  margin: 0.6rem 0 1.4rem;
 }
 .doc-table th,
 .doc-table td {

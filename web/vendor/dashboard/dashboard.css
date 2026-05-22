@@ -114,6 +114,10 @@ input.search:focus-visible {
 .table-scroll { max-height: 70vh; overflow: auto;
   border: 1px solid var(--hair); border-radius: var(--web-radius-card, 10px);
   background: var(--web-surface, #fff); }
+/* Die breite 15-Spalten-Suchtabelle bekommt eine Mindestbreite, damit ihre
+   Spalten lesbar bleiben statt zusammenzustauchen. Reicht der Platz nicht,
+   scrollt .table-scroll horizontal — die Seite selbst bleibt schmal. */
+.table-scroll .dtable { min-width: 56rem; }
 .table-hint { font-size: .8rem; color: var(--web-text-soft, #5e6358); margin-top: .4rem; }
 
 .crumbs { font-size: .85rem; margin: .5rem 0; }
