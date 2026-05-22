@@ -268,18 +268,36 @@ auf dem Ueberblick- noch auf dem Suche-Tab, auch nicht bei ausgeklappter
 Dokumentverwaltung. Breite Tabellen scrollen intern. **Tests gruen**
 (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 6 — Code-Struktur (in Arbeit)
+### Iteration 6 — Code-Struktur (erledigt)
 
-Die CSS ist ueber fuenf Runden organisch gewachsen. Aufraeumen, ohne das
-gerenderte Ergebnis zu veraendern:
+Die CSS war ueber fuenf Runden organisch gewachsen. Rein strukturelles
+Aufraeumen, ohne das gerenderte Ergebnis zu veraendern:
 
-- `web/css/app.css` in klare Abschnitte gliedern (Tokens, Basis, Layout,
-  Komponenten, Bedienelemente) mit knappen Abschnittskommentaren.
-- Token-Schichten entwirren: `--web-*` ist die Quelle; `--gat-*`-Adapter
-  und `--app-*`-Aliase nur behalten, wo sie noch gebraucht werden; tote
-  oder doppelte Regeln entfernen.
-- Konsistente Radius-/Abstands-Tokens statt Streuwerte.
-- `dashboard.css` analog ordnen; keine Funktionsklasse umbenennen.
-- Rein strukturell — Pixel-Diff der gerenderten Seite = 0.
+- **`web/css/app.css` in fuenf nummerierte Abschnitte gegliedert**:
+  (1) Design-Token, (2) Basis-/Element-Stile, (3) Layout & Container,
+  (4) Komponenten (`.metric-card`, `.web-panel`, `.web-section-head`,
+  Callout, Markenleiste), (5) Bedienelemente & app-spezifische Flaechen
+  (Buttons, Dropzone, Dokumentverwaltung, Fortschritt, Tabellen,
+  Sankey-Leiste). Jeder Abschnitt mit knappem Kopfkommentar; verstreute
+  Regeln (z. B. `[hidden]`, `.dash-chart`, Toast) zu ihrer Gruppe
+  zusammengezogen.
+- **Token-Schichten entwirrt.** `--web-*` ist die Quelle. Tote/einmalige
+  `--app-*`-Aliase entfernt: `--app-sachaufwand` (nirgends referenziert)
+  geloescht, `--app-positiv` und `--app-raised` (je einmal genutzt) auf
+  ihre `--web-*`-Quelle inline aufgeloest. Behalten als semantische,
+  mehrfach genutzte Aliase: `--app-hair`, `--app-soft`,
+  `--app-akzent-primaer`, `--app-risiko`. In `dashboard.css` das nie
+  genutzte `--raised` entfernt; `--hair` bleibt.
+- **`dashboard.css` analog in sechs Abschnitte geordnet** (Token, Layout,
+  Tableiste/Umschalter, Tabellen/Filter, Drill-down, Mehrjahres-Vergleich);
+  zusammengehoerende Regeln (`.tab-panel`, `.mj-drill`, `th.pick`) zu ihrer
+  Gruppe gezogen. Keine Funktionsklasse umbenannt.
+- Radius-/Abstandswerte: bereits konsistent ueber `--web-radius-*` /
+  `--gat-space-*` getokenisiert; verbleibende Literale sind echte
+  Sonderwerte (Pill-Radius `999px`, 3px-Akzentbalken) ohne passenden Token.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Umfang: `app.css` 718 -> 744 Zeilen, `dashboard.css` 215 -> 252 Zeilen
+(reine Zunahme durch Abschnittskommentare; vier Custom-Properties
+entfernt). Pixel-Diff der gerenderten Seite (Landing + Ueberblick mit
+Fixture-PDF, 1440px) = 0. **Tests gruen** (`npm run test:js` 61/61,
+`npm run test:e2e` 7/7).
