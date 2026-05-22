@@ -428,20 +428,52 @@ geladenem VA-2026-PDF geprueft).
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 10 — Diagramm-Proportionen & Interaktion (in Arbeit)
+### Iteration 10 — Diagramm-Proportionen & Interaktion (erledigt)
 
-Die Diagramme sind funktional, aber noch sehr ECharts-Default: sehr breite
-Balken bei Ein-Dokument-Ansichten, lockere Raender, ungenutzte Hoehe.
+Die Diagramme waren funktional, aber noch sehr ECharts-Default: sehr breite
+Balken bei Ein-Dokument-Ansichten, lockere und je Diagramm unterschiedliche
+Raender, willkuerlich streuende Panel-Hoehen.
 
-- **Balkenbreite** deckeln (`barMaxWidth`), damit einzelne Balken nicht
-  uebermaessig wuchtig wirken.
-- **Grid-Raender** (`grid.left/right/top/bottom`, `containLabel`) ruhig und
-  konsistent setzen — Diagramme nutzen die Panel-Flaeche gleichmaessig.
-- **Chart-Hoehen** in `index.html` pruefen und vereinheitlichen, wo sie
-  willkuerlich streuen; zu hohe Panels straffen.
-- **Wasserfall**: Balken weniger dominant, klare Verbindungslinien.
-- **Interaktion** (zurueckhaltend, Reduced-Motion respektiert): weicher
-  Tab-Panel-Wechsel, klare Hover-/Active-Rueckmeldung auf wirklich
-  interaktiven Elementen (Drill-Zeilen, Buttons, Sankey-Knoten).
+- **Balkenbreite gedeckelt.** Neue gemeinsame Konstante `BAR_MAX = 40` in
+  `dashboard-charts.js`; jede Balken-/Saeulenserie traegt jetzt
+  `barMaxWidth: 40` (horizontale Balken, Wasserfall — Sockel und sichtbarer
+  Teil —, Korridor-Saeulen, Trend-Eckwerte, gestapelter Trend-Aufwand). Bei
+  Ein-Dokument-Ansichten mit wenigen Kategorien rendern die Balken nicht mehr
+  uebermaessig wuchtig; insbesondere der Wasserfall dominiert das Panel nicht
+  mehr.
+- **Grid-Raender vereinheitlicht.** Neuer Helfer `grid(extra)` liefert ruhige,
+  konsistente Standardraender (`left:10, right:18, top:14, bottom:10,
+  containLabel:true`); Diagramme mit Legende oder gedrehten Achsenlabels
+  erhoehen nur `bottom`/`top` per `extra`. Alle Builder (Balken, Wasserfall,
+  Korridor, Trend-Eckwerte, Trend-Kommunalsteuer, Trend-Aufwand,
+  Mehrjahres-Basis) nutzen den Helfer statt eigener Streuwerte.
+- **Wasserfall.** Balkenbreite von `55%` auf `45%` plus 40px-Deckel; die
+  Stufen wirken ruhiger. Eine duenne, gestrichelte Haarlinie (`markLine`,
+  `ACHSE_LINIE`) verbindet die Stufen — Ertraege -> Aufwendungen ->
+  Nettoergebnis — und macht den Treppen-Verlauf klar ablesbar.
+- **Chart-Hoehen in `index.html` gestrafft.** Zuvor 320/340/360/380/400/520px
+  ohne System. Jetzt gepaart und vereinheitlicht: beide Wasserfaelle 340px,
+  die Trend-Diagramme `c_trend_eck`/`c_trend_auf` 340px, das Paar
+  `c_einnahmen`/`c_trend_komm` 360px, das Paar `c_aufwandart`/`c_treemap`
+  340px, das Paar `c_investitionen`/`c_treiber` 360px, der Korridor von 400
+  auf 380px gestrafft, der intrinsisch hohe Sankey bleibt 520px. Chart-`#id`s
+  und `class="dash-chart"` unveraendert.
+- **Interaktion (zurueckhaltend, Reduced-Motion abgedeckt).** Weicher
+  Tab-Panel-Wechsel: `.tab-panel.is-active` blendet ueber die Keyframe-
+  Animation `tab-panel-ein` (.18s, leichtes Aufblenden + 4px-Versatz) ein —
+  `display` laesst sich nicht uebergangen, daher eine Animation. Klare
+  Active-Rueckmeldung auf wirklich klickbaren Elementen: `.drill-row.is-
+  clickable` bekommt einen kraeftigeren Active-Hintergrund, `.gat-btn` und
+  inaktive `.switch-btn` werden beim Klick um 1px eingedrueckt. Metric-Karten
+  und Diagramm-Panels (nicht klickbar) bleiben ohne Hover/Active. Der
+  bestehende `prefers-reduced-motion`-Block neutralisiert ueber seine
+  `animation-duration`-Regel auch `tab-panel-ein`; der Kopfkommentar nennt
+  den Panel-Wechsel jetzt explizit.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung mit Playwright/Chromium (1440px, Fixture-PDF
+`VA-2026-Auflage.pdf`): Ueberblick, Einnahmen, Ausgaben und Sparpotenzial als
+Screenshots geprueft — die Balken sind durchgehend schlank und gleichmaessig
+breit, kein Diagramm dominiert mehr sein Panel, die Wasserfall-Stufen tragen
+sichtbare Verbindungslinien, die Panel-Raender sitzen ruhig und konsistent.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
