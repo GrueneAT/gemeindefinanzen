@@ -34,6 +34,19 @@ function baseText() {
   return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
 }
 
+// Einheitliche Balkenbreiten-Deckelung: bei Ein-Dokument-Ansichten mit
+// wenigen Kategorien wuerden Balken sonst absurd breit. Ein gemeinsamer
+// Hoechstwert haelt alle Balken-/Saeulen-Diagramme ruhig und vergleichbar.
+const BAR_MAX = 40
+
+// Gemeinsame, ruhige Grid-Raender — jedes Diagramm nutzt seine Panel-
+// flaeche gleichmaessig. containLabel haelt Achsenbeschriftungen drin;
+// bottom wird je Diagramm erhoeht, wenn Legende oder gedrehte Labels
+// zusaetzlichen Platz brauchen.
+function grid(extra = {}) {
+  return { left: 10, right: 18, top: 14, bottom: 10, containLabel: true, ...extra }
+}
+
 // Tooltip auf die Komponentensprache des Web-Design-Systems: helle Karte
 // mit Haarlinie und weichem Schatten statt der dunklen ECharts-Voreinstellung.
 // Schrift = Seitenschrift, Text im ruhigen --web-text-Ton. extra erlaubt es,
@@ -113,7 +126,7 @@ function bar(categories, values, color, colors = null) {
     : values.map((v) => round(v))
   return {
     textStyle: baseText(),
-    grid: { left: 8, right: 22, top: 12, bottom: 8, containLabel: true },
+    grid: grid(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     xAxis: valAxis(),
     yAxis: { ...catAxis(categories), inverse: true },
@@ -122,6 +135,7 @@ function bar(categories, values, color, colors = null) {
         type: "bar",
         data,
         barWidth: "62%",
+        barMaxWidth: BAR_MAX,
         itemStyle: { color, borderRadius: 2 },
       },
     ],
@@ -311,7 +325,7 @@ export function chartWasserfall(agg, jahr) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    grid: { left: 8, right: 18, top: 16, bottom: 8, containLabel: true },
+    grid: grid({ top: 18 }),
     xAxis: catAxis(namen, 10),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: [
@@ -321,13 +335,35 @@ export function chartWasserfall(agg, jahr) {
         itemStyle: { color: "transparent" },
         data: sockel,
         silent: true,
+        barWidth: "45%",
+        barMaxWidth: BAR_MAX,
       },
       {
         type: "bar",
         stack: "w",
         data: sichtbar,
-        barWidth: "55%",
+        barWidth: "45%",
+        barMaxWidth: BAR_MAX,
         itemStyle: { borderRadius: 2 },
+        // Ruhige Verbindungslinie zwischen den Wasserfall-Stufen — eine
+        // duenne Haarlinie macht den Treppen-Verlauf ablesbar, ohne den
+        // entsaettigten Charakter zu stoeren.
+        markLine: {
+          symbol: "none",
+          silent: true,
+          lineStyle: { color: ACHSE_LINIE, width: 1, type: "dashed" },
+          label: { show: false },
+          data: [
+            [
+              { coord: [0, round(e.ertraege)] },
+              { coord: [1, round(e.ertraege)] },
+            ],
+            [
+              { coord: [1, round(e.ertraege - e.aufwand)] },
+              { coord: [2, round(e.ertraege - e.aufwand)] },
+            ],
+          ],
+        },
         label: {
           show: true,
           position: "top",
@@ -349,7 +385,7 @@ export function chartKorridor(agg) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: { left: 8, right: 18, top: 12, bottom: 48, containLabel: true },
+    grid: grid({ bottom: 48 }),
     xAxis: catAxis(cats, 9, 38),
     yAxis: valAxis(),
     series: [
@@ -359,6 +395,7 @@ export function chartKorridor(agg) {
         data: einzeln,
         itemStyle: { color: INK.orange, borderRadius: 2 },
         barWidth: "52%",
+        barMaxWidth: BAR_MAX,
       },
       {
         name: "kumuliert",
@@ -381,7 +418,7 @@ export function chartTrendEckwerte(trend) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
+    grid: grid({ bottom: 40 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: [
@@ -389,12 +426,14 @@ export function chartTrendEckwerte(trend) {
         name: "Ertraege",
         type: "bar",
         data: reihe.map((r) => r[1]),
+        barMaxWidth: BAR_MAX,
         itemStyle: { color: INK.green, borderRadius: 2 },
       },
       {
         name: "Aufwendungen",
         type: "bar",
         data: reihe.map((r) => r[2]),
+        barMaxWidth: BAR_MAX,
         itemStyle: { color: INK.red, borderRadius: 2 },
       },
       {
@@ -414,7 +453,7 @@ export function chartTrendKomm(trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis" }),
-    grid: { left: 8, right: 18, top: 16, bottom: 8, containLabel: true },
+    grid: grid({ top: 18 }),
     xAxis: catAxis(reihe.map((r) => r[0])),
     yAxis: valAxis(),
     series: [
@@ -451,7 +490,7 @@ export function chartTrendAufwand(trend) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
+    grid: grid({ bottom: 40 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: reihen.map(([name, idx, col]) => ({
@@ -459,6 +498,7 @@ export function chartTrendAufwand(trend) {
       type: "bar",
       stack: "a",
       data: reihe.map((r) => r[idx]),
+      barMaxWidth: BAR_MAX,
       itemStyle: { color: col },
     })),
   }
@@ -469,7 +509,7 @@ function mehrjahrBasis(jahre) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
     legend: legende({ type: "scroll" }),
-    grid: { left: 8, right: 22, top: 16, bottom: 56, containLabel: true },
+    grid: grid({ top: 18, bottom: 56 }),
     xAxis: catAxis(jahre, 11),
     yAxis: valAxis(),
     series: [],
