@@ -580,21 +580,46 @@ Gewaehlte `.page`-`max-width`: **`min(2040px, 94vw)`** (Token
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 13 — Einheitliche Panel-Breite (in Arbeit)
+### Iteration 13 — Einheitliche Panel-Breite (erledigt)
 
-Befund nach Iteration 12: `.web-panel--breit` deckelt grosse Einzel-Charts
-auf 1180px und zentriert sie — sie schweben als Insel zwischen vollbreiten
-Metric-Cards und vollbreitem Sankey. Inkonsistente Kanten, wirkt unfertig.
+Befund nach Iteration 12: `.web-panel--breit` deckelte grosse Einzel-Charts
+auf 1180px und zentrierte sie — sie schwebten als Insel zwischen vollbreiten
+Metric-Cards und vollbreitem Sankey. Inkonsistente Kanten, wirkte unfertig.
 
-- **Alle Panels nutzen die volle Containerbreite** — durchgehend gleiche
-  linke und rechte Kante (Metric-Cards, Charts, Tabellen, Sankey). Eine
-  einzelne zentrierte Insel gibt es nicht mehr. `.web-panel--breit`
-  (zentrierte Deckelung) entfernen.
-- Damit Einzel-Diagramme bei grosser Breite **nicht leer/flach** wirken:
-  Diagramm-Hoehen angemessen anheben und `barMaxWidth` je Diagramm sinnvoll
-  waehlen (3-Balken-Wasserfall braucht breitere Balken als ein
-  Viele-Posten-Balkendiagramm) — die Diagramme sollen bei 2560px bewusst
-  gefuellt aussehen, nicht als duenne Striche in einer leeren Flaeche.
-- Gegenpruefen 2560 / 1440 / 390px.
+- **`.web-panel--breit` entfernt.** Die Modifier-Klasse ist aus den sieben
+  betroffenen Panels in `index.html` (`c_wasserfall`, `c_trend_eck`,
+  `c_investitionen`, `c_wasserfall_sp`, `c_korridor`, `c_treiber`,
+  `c_trend_auf`) und die zugehoerige `@media`-Regel aus `app.css`
+  geloescht. Jedes `.web-panel` — Metric-Cards, Chart-Panels, Tabellen-
+  Panels, Sankey — spannt jetzt die volle Containerbreite mit identischer
+  linker und rechter Kante. Kein zentrierter Insel-Block mehr; das
+  Dashboard liest sich als eine durchgehende Spalte vollbreiter Panels.
+- **`barMaxWidth` nach Datendichte gestaffelt.** Der globale `BAR_MAX = 40`
+  aus Iteration 10 wurde durch zwei Stufen ersetzt: `BAR_MAX_DICHT = 56`
+  fuer kategorienreiche Diagramme (horizontale Ertragsposten-Liste,
+  Korridor-Saeulen) und `BAR_MAX_WEIT = 130` fuer kategorienarme
+  Diagramme. Den weiten Deckel tragen jetzt: beide Wasserfaelle (nur 3
+  Saeulen — bei 40px duenne Slivers ueber 2000px), die Trend-Eckwerte und
+  der gestapelte Trend-Aufwand (wenige Dokumente je Achse) sowie die
+  vollbreiten Einzel-Chart-Balkenlisten Kostentreiber und Investitionen
+  (liegende Balken, bei wenigen Posten sonst duenne Streifen in viel
+  Hoehe). `bar()` nimmt dafuer einen optionalen `barMax`-Parameter.
+- **Chart-Hoehen angehoben.** Die vollbreiten Einzel-Charts wurden von
+  einheitlich 380px gezielt erhoeht, damit ein ~2000px-Panel kein flacher
+  Streifen ist: beide Wasserfaelle und der Korridor 460px, die beiden
+  Trend-Diagramme 440px, die liegenden Balkenlisten Kostentreiber und
+  Investitionen 480px. Die halbbreiten `.dash-grid`-Charts (360px) und
+  der Sankey (520px) bleiben unveraendert. Alle `#id`s erhalten.
+- **`.dash-grid` und 4-up-Metric-Raster** unveraendert — beide spannen
+  bereits die volle Breite und sitzen bei 2040px gut proportioniert.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung mit Playwright/Chromium (Fixture-PDF `VA-2026-Auflage.pdf`),
+Ueberblick/Einnahmen/Ausgaben/Sparpotenzial je bei 2560/1440/390px: bei 2560
+teilen alle Panels dieselbe linke und rechte Kante — keine zentrierte Insel
+mehr, das Dashboard ist eine durchgehende vollbreite Spalte. Die
+Wasserfall-Saeulen wirken mit 130px-Deckel substanziell statt als Striche,
+Korridor und Kostentreiber fuellen ihre Flaeche, die hoeheren Panels sind
+keine flachen Streifen. Bei 1440 und 390 keine Regression, kein
+horizontaler Seiten-Ueberlauf.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
