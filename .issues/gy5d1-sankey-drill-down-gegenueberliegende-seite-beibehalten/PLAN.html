@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Provenance: SHA-256 of the source .md this page was generated from. -->
+<meta name="artifact-source-sha256" content="70f7afd60a5bb818a0d3d74e0d8deb0d0fdc3d5cb86c7b92e3f8a37c607364d9">
+<meta name="artifact-source-file" content="PLAN.md">
+<meta name="artifact-generated-at" content="2026-05-22">
+<!-- Which version of the design system this page was authored against. -->
+<meta name="design-system-version" content="ds-1">
+<title>Plan: Sankey-Drill-down — gegenueberliegende Seite beibehalten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+</head>
+<body>
+<div class="page">
+
+<header class="row">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">00</span>Plan</p>
+  </div>
+  <div class="body">
+    <h1 class="masthead-title">Sankey-Drill-down: gegenueberliegende Seite beibehalten</h1>
+    <p class="masthead-sub">Issue: gy5d1 · Generated 2026-05-22</p>
+  </div>
+</header>
+
+<hr class="rule">
+
+<section class="row" id="strategy">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">01</span>Strategy</p>
+    <p class="margin-note">Zuerst lesen — der Rest ist Detail.</p>
+  </div>
+  <div class="body">
+    <h2>Strategy summary</h2>
+    <p>PR #3 hat den Sankey-Drill-down so geschnitten, dass beim Aufklappen
+       eines Knotens die <em>gesamte</em> gegenueberliegende Seite verschwindet.
+       Die Richtung:
+       <span class="mark mark-green">zwei aeussere Guards entfernen und die
+       innere Uebersicht-Bedingung seitenspezifisch weiten</span> — minimal,
+       rein additiv, ohne Render-Pfad zu duplizieren.</p>
+    <ul class="points">
+      <li class="point">
+        <p class="point-claim">Drei Render-Zustaende statt zwei.</p>
+        <p class="point-detail">Jede Seite kennt: Uebersicht, eigene Seite
+          gedrillt, Gegenseite. Die Gegenseite soll wie die Uebersicht
+          rendern.</p>
+      </li>
+      <li class="point is-note">
+        <p class="point-claim">Bestehenden Zweig weiten, nicht duplizieren.</p>
+        <p class="point-detail">Der <code>else if (!expand)</code>-Zweig wird
+          ueber eine pro-Seite-Flagge zu <code>else if (!&lt;seite&gt;Gedrillt)</code>.</p>
+      </li>
+      <li class="point is-risk">
+        <p class="point-claim">Bedingung MUSS seitenspezifisch sein.</p>
+        <p class="point-detail">Ein <code>else { ... }</code> wuerde die von
+          PR #3 korrekt entfernten anderen Knoten der gedrillten Seite wieder
+          einblenden — der einzige Fallstrick.</p>
+      </li>
+      <li class="point is-note">
+        <p class="point-claim">Kein Handler-Eingriff.</p>
+        <p class="point-detail"><code>drillAufKnoten</code> in
+          <code>dashboard.js</code> ersetzt eine bestehende Ausklappung
+          bereits — Gegenseiten-Knoten behalten <code>drillExpandbar</code>.</p>
+      </li>
+    </ul>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Tasks</div></div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Dateien</div></div>
+      <div class="stat">
+        <div class="stat-num is-green">1</div>
+        <div class="stat-label">Quelldatei</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="flow">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">02</span>Flow</p>
+  </div>
+  <div class="body">
+    <h2>Task flow &amp; dependencies</h2>
+    <div class="flow">
+      <div class="flow-node is-foundation is-key">
+        <span class="n">Task 1</span>
+        <span class="t">buildSankeyOption — Gegenseite erhalten</span>
+        <span class="d">Beide aeusseren Guards entfernen, innere Bedingung auf
+          quelleGedrillt/gruppeGedrillt weiten, Kommentare anpassen.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 2</span>
+        <span class="t">Unit-Tests in run.mjs anpassen</span>
+        <span class="d">Zwei "zeigt nur den gewaehlten Zweig"-Assertions
+          umschreiben + neue Assertions fuer die Gegenseite.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Task 3</span>
+        <span class="t">e2e-Test praezisieren</span>
+        <span class="d">Kommentar schaerfen, Assertion "Gegenseite bleibt
+          sichtbar" ergaenzen, Suite gruen.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="decisions">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">03</span>Decisions</p>
+  </div>
+  <div class="body">
+    <h2>Key decisions &amp; options</h2>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Wie die Gegenseite im Drill-down gerendert wird</p>
+        <span class="lozenge is-chosen">Gewaehlt</span>
+      </div>
+      <p class="decision-body">Beide aeusseren Guards entfernen und den
+        bestehenden <code>else if (!expand)</code>-Zweig ueber eine
+        pro-Seite-Flagge zu <code>else if (!&lt;seite&gt;Gedrillt)</code>
+        weiten — die Gegenseite faellt damit in den vorhandenen
+        Uebersicht-Pfad.</p>
+      <p class="decision-body rejected">Den Uebersicht-Render-Pfad fuer die
+        Gegenseite duplizieren — doppelter Code, Wartungslast, kein Vorteil.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Klick-Handler drillAufKnoten anfassen</p>
+        <span class="lozenge is-note">Ausser Scope</span>
+      </div>
+      <p class="decision-body">Keine Aenderung. RESEARCH.md verifiziert: der
+        Handler ersetzt eine bestehende Ausklappung bereits; Gegenseiten-Knoten
+        behalten ueber den Uebersicht-Pfad <code>drillExpandbar: true</code> —
+        ein Klick startet symmetrisch einen neuen Drill-down.</p>
+    </div>
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Bedingung zu else { ... } aufweiten</p>
+        <span class="lozenge is-risk">Verworfen</span>
+      </div>
+      <p class="decision-body">Ein unbedingtes <code>else</code> wuerde die
+        anderen, nicht-gewaehlten Knoten der GEDRILLTEN Seite wieder einblenden
+        — exakt das von PR #3 korrekt entfernte Verhalten. Die Flagge muss
+        seitenspezifisch bleiben.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="detail">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">04</span>Detail</p>
+  </div>
+  <div class="body">
+    <h2>Full detail</h2>
+    <details class="detail">
+      <summary>Show full artifact source
+        <span class="summary-hint">click to expand</span></summary>
+      <div class="detail-body">
+        <pre><code id="artifact-source-target"></code></pre>
+      </div>
+    </details>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="provenance">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">05</span>Provenance</p>
+  </div>
+  <div class="body">
+    <h2>Provenance</h2>
+    <p>Generated from the canonical <code>.md</code>. This HTML is never
+       hand-edited — if the <code>.md</code> changes, regenerate with
+       <code>/issue:view</code>.</p>
+    <footer class="footer">
+      <span>Source: <code>PLAN.md</code> ·
+        SHA-256 <code>70f7afd60a5bb818a0d3d74e0d8deb0d0fdc3d5cb86c7b92e3f8a37c607364d9</code></span>
+      <span>Generated 2026-05-22 · design system ds-1</span>
+    </footer>
+  </div>
+</section>
+
+</div>
+
+<!-- Raw artifact source as DATA, never markup. See Section 6. -->
+<script type="application/json" id="artifact-source">
+{"source": "# Plan: Sankey-Drill-down: gegenueberliegende Seite beibehalten\n\n<objective>\nWas: Beim Sankey-Drill-down soll nur die *gedrillte* Seite ihre uebrigen\nTop-Level-Knoten ausblenden; die gegenueberliegende Seite bleibt in ihrer\nUebersichtsform stehen.\n\nWarum: PR #3 (`0bc9bf0`) blendet beim Aufklappen eines Knotens die *gesamte*\nGegenseite aus. Dadurch ist nicht mehr ablesbar, welchen Anteil der\naufgeklappte Bereich am Gesamthaushalt hat \u2014 genau diese Einordnung ist der\nZweck des Sankey.\n\nScope: Reiner Logik-Fix in der reinen Funktion `buildSankeyOption`\n(`web/js/sankey-drill.js`) plus Anpassung der Unit-Tests (`tests/js/run.mjs`)\nund e2e-Tests (`tests/e2e/sankey.spec.mjs`). Ausser Scope: der Klick-Handler\n`drillAufKnoten` in `web/vendor/dashboard/dashboard.js` (keine Aenderung\nnoetig \u2014 bereits in RESEARCH.md verifiziert), die Kapp-/Aggregations-Logik\n(`TOP_N`, `kappen`), die Uebersicht und der \"Uebersicht\"-Reset.\n</objective>\n\n<strategy>\nDer Bug ist eng begrenzt: zwei aeussere Guards in `buildSankeyOption`\n(`if (!expand || expand.seite === \"quelle\")` bzw. `=== \"gruppe\"`) ueberspringen\nim Drill-down die komplette Gegenseite. Heute kennt jede Seite damit nur zwei\nZustaende; gebraucht werden drei: (a) Uebersicht, (b) eigene Seite gedrillt,\n(c) Gegenseite \u2014 Zustand (c) soll wie (a) rendern.\n\nOptionen erwogen:\n- *Beide Guards entfernen + innere Bedingung weiten* (gewaehlt). Minimal,\n  rein additiv, dupliziert keinen Render-Pfad. Der bestehende\n  Uebersicht-Zweig (`else if (!expand)`) wird zu `else if (!<seite>Gedrillt)`\n  ueber eine pro-Seite berechnete Boolean-Flagge \u2014 damit faellt die Gegenseite\n  in den Uebersicht-Zweig, ein nicht-gewaehlter Knoten der gedrillten Seite\n  bleibt korrekt ausgeblendet.\n- *Uebersicht-Render-Pfad fuer die Gegenseite duplizieren* (verworfen) \u2014\n  doppelter Code, Wartungslast, kein Vorteil.\n\nSchluessel-Entscheidungspunkt: die Bedingung muss seitenspezifisch sein\n(`quelleGedrillt`, `gruppeGedrillt`) \u2014 NICHT `!expand`. Ein `else { ... }`\nwuerde die von PR #3 korrekt entfernten anderen Knoten der gedrillten Seite\nwieder einblenden. Das ist der einzige Fallstrick.\n\nDie zwei Unit-Test-Assertions \"zeigt nur den gewaehlten Zweig\" kodieren\nexplizit \"keine Gegenseite\" und werden nach dem Fix rot \u2014 sie muessen\numgeschrieben werden (nur die gedrillte Seite einschraenken) und um\nAssertions fuer die Gegenseite in Uebersichtsform ergaenzt werden.\n</strategy>\n\n<context>\nIssue: @.issues/gy5d1-sankey-drill-down-gegenueberliegende-seite-beibehalten/ISSUE.md\nResearch: @.issues/gy5d1-sankey-drill-down-gegenueberliegende-seite-beibehalten/RESEARCH.md\n\n<interfaces>\n<!-- Executor: nutze diese Kontrakte direkt. Keine Codebase-Erkundung noetig. -->\n\n// Aus web/js/sankey-drill.js \u2014 die zu aendernde Datei:\nexport const TOP_N: number  // = 8\nexport function buildSankeyOption(\n  posten: Posten[],\n  dokId: string | number,\n  expand: null | { seite: \"quelle\" | \"gruppe\", key: string }\n): EChartsSankeyOption\n\n// Knoten-Struktur, die buildSankeyOption pro Knoten erzeugt (node()-Helfer):\n// {\n//   name: string,\n//   itemStyle: { color: string },\n//   drillSeite: \"\" | \"mitte\" | \"quelle\" | \"gruppe\",\n//   drillKey: string,        // Quellenname bzw. Gruppencode\n//   drillExpandbar: boolean, // true = eingeklappter, aufklappbarer Knoten\n// }\n// Link-Struktur: { source: string, target: string, value: number }\n// MITTE = \"Gemeindehaushalt\" (konstanter Mittelknoten, drillSeite \"mitte\")\n\n// Aktuelle Code-Struktur in buildSankeyOption (verifiziert, Zeilennummern exakt):\n//   Zeile 176-178: Block-Kommentar Einnahmeseite (behauptet \"entfaellt ganz\")\n//   Zeile 179:     if (!expand || expand.seite === \"quelle\") {   <- Guard\n//   Zeile 181-190: if (expand && expand.key === name) { ... }    <- aufgeklappter Zweig\n//   Zeile 191:     } else if (!expand) {                         <- Uebersicht-Zweig\n//   Zeile 200:     // Kommentar \"andere Quelle bleibt ausgeblendet\"\n//   Zeile 202:     }   <- Ende Guard-Block\n//   Zeile 204-205: Block-Kommentar Ausgabeseite (behauptet \"entfaellt ganz\")\n//   Zeile 206:     if (!expand || expand.seite === \"gruppe\") {   <- Guard\n//   Zeile 208-217: if (expand && expand.key === code) { ... }    <- aufgeklappter Zweig\n//   Zeile 218:     } else if (!expand) {                         <- Uebersicht-Zweig\n//   Zeile 226:     // Kommentar \"andere Gruppe bleibt ausgeblendet\"\n//   Zeile 228:     }   <- Ende Guard-Block\n\n// Aus tests/js/run.mjs \u2014 Test-Harness:\n// function pruefe(name: string, bedingung: boolean, detail?: string): void\n// imports aus sankey-drill.js: { buildSankeyOption, quelleVonPosten, kappen, TOP_N }\n\n// Aus web/vendor/dashboard/dashboard.js \u2014 NICHT aendern:\n// window.__sankeyDrill(knotenName): Test-Seam, ruft drillAufKnoten(knoten)\n</interfaces>\n\nKey files:\n@web/js/sankey-drill.js \u2014 reine Funktion `buildSankeyOption`, einzige zu aendernde Quelldatei\n@tests/js/run.mjs \u2014 Node-Unit-Tests, sankey-drill-Block Zeilen 258-413\n@tests/e2e/sankey.spec.mjs \u2014 Playwright-e2e, Drill-down-Test Zeilen 24-49\n</context>\n\n<commit_format>\nFormat: `{id}: {message}` (aus .issues/config.yaml), keine Werkzeug-Attribution.\nBeispiel: `gy5d1: fix(sankey): Gegenseite im Drill-down erhalten`\nPattern: `gy5d1: <type>(<scope>): <Beschreibung>` \u2014 type aus feat/fix/test/refactor.\n</commit_format>\n\n<tasks>\n\n<task type=\"auto\">\n  <name>Task 1: buildSankeyOption \u2014 Gegenseite im Drill-down erhalten</name>\n  <files>web/js/sankey-drill.js</files>\n  <action>\n  In `buildSankeyOption` (`web/js/sankey-drill.js`) die beiden aeusseren Guards\n  entfernen, sodass beide Seiten immer durchlaufen werden, und die inneren\n  Uebersicht-Bedingungen seitenspezifisch weiten.\n\n  1. Direkt nach `node(MITTE, ...)` (nach Zeile 174, vor dem\n     Einnahmeseiten-Kommentar) zwei pro-Seite-Flaggen berechnen:\n       const quelleGedrillt = !!expand && expand.seite === \"quelle\"\n       const gruppeGedrillt = !!expand && expand.seite === \"gruppe\"\n\n  2. Einnahmeseite:\n     - Zeile 179 `if (!expand || expand.seite === \"quelle\") {` ENTFERNEN.\n       Die `quellen(einnahmen).forEach(...)`-Schleife laeuft jetzt immer\n       (Einrueckung der Schleife entsprechend reduzieren).\n     - Zeile 202 `}` (schliessender Guard-Block) ENTFERNEN.\n     - Zeile 191 `} else if (!expand) {` ersetzen durch\n       `} else if (!quelleGedrillt) {`.\n     - Der `if (expand && expand.key === name)`-Zweig (Zeilen 181-190) bleibt\n       UNVERAENDERT.\n\n  3. Ausgabeseite (symmetrisch):\n     - Zeile 206 `if (!expand || expand.seite === \"gruppe\") {` ENTFERNEN.\n       Die `gruppen(ausgaben).forEach(...)`-Schleife laeuft jetzt immer.\n     - Zeile 228 `}` (schliessender Guard-Block) ENTFERNEN.\n     - Zeile 218 `} else if (!expand) {` ersetzen durch\n       `} else if (!gruppeGedrillt) {`.\n     - Der `if (expand && expand.key === code)`-Zweig (Zeilen 208-217) bleibt\n       UNVERAENDERT.\n\n  WICHTIG \u2014 Bedingung NICHT zu `else { ... }` aufweiten: das wuerde die\n  anderen, nicht-gewaehlten Knoten der GEDRILLTEN Seite wieder einblenden (das\n  von PR #3 korrekt entfernte Verhalten). Auf der gedrillten Seite faellt ein\n  nicht-gewaehlter Knoten in den `else if`-Zweig, dessen Bedingung dann `false`\n  ist -> Knoten bleibt korrekt ausgeblendet. Auf der Gegenseite ist\n  `!<seite>Gedrillt === true` -> Uebersichtsform.\n\n  4. Kommentare auf das neue Verhalten anpassen (Deutsch, keine\n     Werkzeug-Attribution):\n     - Modul-Header Zeilen 8-11: Die Aussage \"die uebrigen Knoten der obersten\n       Ebene werden ausgeblendet\" praezisieren auf \"die uebrigen Knoten der\n       gedrillten Seite werden ausgeblendet; die Gegenseite bleibt in\n       Uebersichtsform sichtbar\".\n     - Block-Kommentar Einnahmeseite (Zeilen 176-178): den Satz \"Bei einem\n       Drill-down in eine Gruppe entfaellt die Einnahmeseite ganz\" ersetzen\n       durch eine Beschreibung des neuen Verhaltens (Gegenseite bleibt in\n       Uebersichtsform).\n     - Block-Kommentar Ausgabeseite (Zeilen 204-205): analog, \"bei einem\n       Drill-down in eine Quelle entfaellt die Ausgabeseite ganz\" ersetzen.\n     - Kommentar Zeile 200 (\"Im Drill-down einer anderen Quelle ...\") und\n       Zeile 226 (\"Im Drill-down einer anderen Gruppe ...\") praezisieren auf\n       \"anderer Knoten DERSELBEN gedrillten Seite\".\n\n  Keine Aenderung an `node()`, `quellen()`, `gruppen()`, `kontenDerQuelle()`,\n  `ansaetzeDerGruppe()`, `kappen()`, `TOP_N` oder der zurueckgegebenen\n  Options-Struktur.\n  </action>\n  <verify>\n  <automated>cd /workspace/.worktrees/gy5d1-sankey-drill-down-gegenueberliegende-seite-beibehalten && node -e \"import('./web/js/sankey-drill.js').then(m=>{const o1=m.buildSankeyOption([],1,null);const o2=m.buildSankeyOption([],1,{seite:'gruppe',key:'x'});console.log('l\u00e4dt:',typeof m.buildSankeyOption==='function', Array.isArray(o1.series[0].data), Array.isArray(o2.series[0].data))}).catch(e=>{console.error(e);process.exit(1)})\"</automated>\n  </verify>\n  <done>\n  - Beide aeusseren Guards `if (!expand || expand.seite === ...)` sind entfernt.\n  - Vor den Schleifen sind `quelleGedrillt` und `gruppeGedrillt` definiert.\n  - Die beiden Uebersicht-Zweige lauten `} else if (!quelleGedrillt) {` bzw.\n    `} else if (!gruppeGedrillt) {`.\n  - Die `if (expand && expand.key === ...)`-Zweige sind unveraendert.\n  - Modul- und Block-Kommentare beschreiben das neue Verhalten (kein\n    \"entfaellt ganz\" mehr).\n  - `buildSankeyOption` ist syntaktisch gueltig und ESM-importierbar (Smoke-Test gruen).\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 2: Unit-Tests in run.mjs an das neue Drill-down-Verhalten anpassen</name>\n  <files>tests/js/run.mjs</files>\n  <action>\n  Im sankey-drill-Block (`tests/js/run.mjs`, Zeilen 258-413) die zwei\n  Assertions umschreiben, die das alte \"Gegenseite verschwindet\"-Verhalten\n  kodieren, und neue Assertions fuer die Gegenseite in Uebersichtsform\n  ergaenzen. Alle Namen Deutsch, Format `pruefe(name, bedingung, detail?)`.\n\n  1. Gruppen-Drill-down \u2014 Assertion Zeilen 352-360\n     (`\"buildSankeyOption: Drill-down einer Gruppe zeigt nur den gewaehlten\n     Zweig\"`) umschreiben: nur noch die GEDRILLTE Seite einschraenken. Neue\n     Bedingung: jeder Knoten mit `drillSeite === \"gruppe\"` hat\n     `drillKey === eineGruppe.drillKey`. Knoten mit `drillSeite === \"quelle\"`\n     oder `\"mitte\"` sind erlaubt. Konkret:\n       gSerie.data\n         .filter((n) => n.drillSeite === \"gruppe\")\n         .every((n) => n.drillKey === eineGruppe.drillKey)\n     Den Kommentar darueber auf \"keine ANDEREN Gruppen-Knoten\" praezisieren.\n\n  2. Nach der Gruppen-Drill-down-Assertion eine NEUE Assertion ergaenzen, die\n     bestaetigt, dass die Einnahmeseite in Uebersichtsform erhalten ist. Nutze\n     `quelleKnoten` aus Zeile 323 (Uebersicht). Pruefe:\n       const gEinnahmeseite = gSerie.data.filter((n) => n.drillSeite === \"quelle\")\n       pruefe(\n         \"buildSankeyOption: Gruppen-Drill-down erhaelt die Einnahmeseite in Uebersichtsform\",\n         gEinnahmeseite.length === quelleKnoten.length &&\n           gEinnahmeseite.every((n) => n.drillExpandbar) &&\n           gEinnahmeseite.every((n) =>\n             quelleKnoten.some((q) => q.name === n.name)),\n         gEinnahmeseite.length + \" vs \" + quelleKnoten.length,\n       )\n\n  3. Quellen-Drill-down \u2014 Assertion Zeilen 397-405\n     (`\"buildSankeyOption: Drill-down einer Quelle zeigt nur den gewaehlten\n     Zweig\"`) symmetrisch umschreiben: jeder Knoten mit\n     `drillSeite === \"quelle\"` hat `drillKey === eineQuelle.drillKey`;\n     `\"gruppe\"`/`\"mitte\"` erlaubt. Konkret:\n       qSerie.data\n         .filter((n) => n.drillSeite === \"quelle\")\n         .every((n) => n.drillKey === eineQuelle.drillKey)\n     Kommentar entsprechend praezisieren.\n\n  4. Nach der Quellen-Drill-down-Assertion eine NEUE Assertion ergaenzen, die\n     bestaetigt, dass die Ausgabeseite in Uebersichtsform erhalten ist. Nutze\n     `gruppeKnoten` aus Zeile 324:\n       const qAusgabeseite = qSerie.data.filter((n) => n.drillSeite === \"gruppe\")\n       pruefe(\n         \"buildSankeyOption: Quellen-Drill-down erhaelt die Ausgabeseite in Uebersichtsform\",\n         qAusgabeseite.length === gruppeKnoten.length &&\n           qAusgabeseite.every((n) => n.drillExpandbar) &&\n           qAusgabeseite.every((n) =>\n             gruppeKnoten.some((g) => g.name === n.name)),\n         qAusgabeseite.length + \" vs \" + gruppeKnoten.length,\n       )\n\n  NICHT aendern (bleiben gruen, RESEARCH.md verifiziert):\n  - Zeilen 346-351 / 391-396 (aufgeklappter Knoten verschwindet als\n    Einzelknoten) \u2014 pruefen nur den aufgeklappten Knoten selbst.\n  - Zeilen 362-376 / 384-413 (Betragstreue via `gruppenSumme`/`quellenSumme`)\n    \u2014 die Richtungsfilter `source === \"Gemeindehaushalt\"` bzw.\n    `target === \"Gemeindehaushalt\"` trennen die Gegenseiten-Links sauber ab.\n    Diese Tests muessen nach der Aenderung weiterhin gruen sein \u2014 beim\n    Test-Lauf ausdruecklich pruefen.\n  - Zeilen 311-338 (Uebersicht ohne Drill-down) und 259-308\n    (`quelleVonPosten`/`kappen`) \u2014 unberuehrt.\n  </action>\n  <verify>\n  <automated>cd /workspace/.worktrees/gy5d1-sankey-drill-down-gegenueberliegende-seite-beibehalten && npm run test:js</automated>\n  </verify>\n  <done>\n  - Die zwei \"zeigt nur den gewaehlten Zweig\"-Assertions schraenken nur die\n    gedrillte Seite ein.\n  - Zwei neue Assertions bestaetigen die Gegenseite in Uebersichtsform\n    (gleiche Knotenanzahl/Namen wie die Uebersicht, alle `drillExpandbar`).\n  - Die Betragstreue-Assertions (`gruppenSumme`/`quellenSumme`) sind gruen.\n  - `npm run test:js` laeuft vollstaendig gruen.\n  </done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 3: e2e-Test sankey.spec.mjs praezisieren und verankern</name>\n  <files>tests/e2e/sankey.spec.mjs</files>\n  <action>\n  Den Drill-down-e2e-Test (`tests/e2e/sankey.spec.mjs`, Zeilen 24-49) an das\n  neue Verhalten anpassen.\n\n  1. Kommentar Zeilen 45-46 praezisieren: \"die Grafik blendet die uebrigen\n     Knoten der obersten Ebene aus\" ist nach dem Fix ungenau. Auf \"die Grafik\n     blendet die uebrigen Knoten DER GEDRILLTEN SEITE aus; die Gegenseite\n     bleibt in Uebersichtsform sichtbar\" aendern.\n\n  2. `await expect.poll(() => knotenzahl(page)).toBeLessThan(vorher)`\n     (Zeile 48) bleibt korrekt \u2014 die gedrillte Seite verliert Top-Level-Knoten,\n     die Netto-Knotenzahl sinkt. Beim Testlauf bestaetigen; falls die Zusicherung\n     bei den realen Fixture-Daten doch nicht haelt (z. B. die gewaehlte Quelle\n     klappt in viele Konten auf), den Vergleich praezisieren \u2014 z. B. statt der\n     Gesamtknotenzahl gezielt pruefen, dass auf der gedrillten Seite weniger\n     Top-Level-Knoten stehen.\n\n  3. Eine neue Assertion ergaenzen, die das Akzeptanzkriterium \"Gegenseite\n     bleibt sichtbar\" e2e verankert. Nach dem Drill-down ueber die ECharts-\n     Serien-Daten pruefen, dass mindestens ein Knoten der Gegenseite noch in\n     Uebersichtsform vorhanden ist (`drillExpandbar === true`). Der gedrillte\n     Knoten kann Quelle oder Gruppe sein \u2014 pruefe daher seitenagnostisch, dass\n     nach dem Drill-down noch aufklappbare Knoten existieren, deren\n     `drillSeite` sich von der gedrillten Seite unterscheidet. Beispiel:\n       const seiten = await page.evaluate(() =>\n         window.echarts\n           .getInstanceByDom(document.getElementById('c_sankey'))\n           .getOption().series[0].data\n           .filter((n) => n.drillExpandbar)\n           .map((n) => n.drillSeite))\n       // Im Drill-down ist genau eine Seite gedrillt; die Gegenseite muss\n       // weiterhin aufklappbare Knoten beisteuern.\n       expect(new Set(seiten).size).toBeGreaterThan(0)\n     Praeziser: ermittle die gedrillte Seite aus dem zuvor gewaehlten Knoten\n     und pruefe, dass `seiten` mindestens einen Eintrag mit der ANDEREN Seite\n     enthaelt. Den gewaehlten Knoten liefert `aufklappbarerKnoten`; seine\n     `drillSeite` laesst sich im selben `page.evaluate` mitlesen.\n\n  4. Der Reset-Test (Zeilen 51-68) bleibt unveraendert.\n\n  Sprache Deutsch in Kommentaren, keine Werkzeug-Attribution.\n  </action>\n  <verify>\n  <automated>cd /workspace/.worktrees/gy5d1-sankey-drill-down-gegenueberliegende-seite-beibehalten && (npx playwright install --with-deps chromium || npx playwright install chromium) && npm run test:e2e</automated>\n  </verify>\n  <done>\n  - Kommentar Zeilen 45-46 beschreibt das neue Verhalten praezise.\n  - Eine neue Assertion bestaetigt, dass die Gegenseite nach dem Drill-down in\n    Uebersichtsform (aufklappbare Knoten) sichtbar bleibt.\n  - Der Reset-Test ist unveraendert.\n  - `npm run test:e2e` laeuft gruen (beide Tests).\n  </done>\n</task>\n\n</tasks>\n\n<verification>\nNach allen Tasks die volle Test-Suite des Projekts gruen halten:\n- `cd <worktree> && npm run test:js` \u2014 Node-Unit-Tests, alle `pruefe`-Zeilen gruen.\n- `cd <worktree> && npm run test:e2e` \u2014 Playwright-e2e, beide Sankey-Tests gruen.\n  Bei fehlendem Browser zuvor `npx playwright install chromium`.\n- Manuell sicherstellen, dass keine Werkzeug-Attribution in Code/Kommentaren/\n  Commit-Messages steht und alle neuen Bezeichner Deutsch sind.\n</verification>\n\n<success_criteria>\nBildet 1:1 die Akzeptanzkriterien aus ISSUE.md ab:\n- Drill-down auf eine Aufgabengruppe blendet nur die anderen Gruppen aus; die\n  Einnahmeseite bleibt unveraendert in Uebersichtsform sichtbar.\n  (Task 1 + Unit-Assertion in Task 2)\n- Drill-down auf eine Einnahmequelle blendet nur die anderen Quellen aus; die\n  Ausgabeseite bleibt unveraendert in Uebersichtsform sichtbar.\n  (Task 1 + Unit-Assertion in Task 2)\n- Der aufgeklappte Knoten zeigt seine Unterelemente; die Betragstreue bleibt\n  erhalten (Betragstreue-Assertions in Task 2 gruen).\n- Die Uebersicht (kein Drill-down) bleibt unveraendert (Uebersicht-Assertions\n  Zeilen 311-338 unberuehrt und gruen).\n- Der \"Uebersicht\"-Reset funktioniert weiterhin (Reset-e2e-Test unveraendert\n  und gruen).\n- Tests gruen: `npm run test:js` und `npm run test:e2e`.\n</success_criteria>\n"}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var dataEl = document.getElementById("artifact-source");
+  var target = document.getElementById("artifact-source-target");
+  if (dataEl && target) {
+    try {
+      target.textContent = JSON.parse(dataEl.textContent).source || "";
+    } catch (e) {
+      target.textContent = dataEl.textContent;
+    }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) { ev.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
