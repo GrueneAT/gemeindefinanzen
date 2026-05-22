@@ -143,3 +143,15 @@ und ohne Server bedienbar.
 - Der **Drill-down** im Ausgaben-Tab führt von der Aufgabengruppe über den
   Ansatz bis zum Einzelposten — die Summen je Ebene stimmen mit den
   Ansatz-Summen der Datenbank überein.
+- Der **Mehrjahres-Vergleich** zeigt, wie sich einzelne Budgetzeilen oder
+  ganze Gruppen über die Dokumente entwickeln. In „Suche & Daten“ einzelne
+  Posten ankreuzen und über „Ausgewählte Posten über die Jahre“ als
+  Liniendiagramm öffnen — jede Linie ist ein Posten, über Ansatz + Konto
+  über die Jahre hinweg identifiziert; fehlt ein Posten in einem Dokument,
+  bleibt die Linie dort offen. „Gefilterte Menge als Gruppe“ summiert die
+  gesamte aktuell gefilterte Treffermenge je Dokument zu einer einzigen
+  Linie — etwa „alles aus Gruppe 5“ oder alle Treffer eines Suchbegriffs.
+  Im Drill-down öffnet die Schaltfläche „über die Jahre“ je Aufgabengruppe
+  und je Ansatz dieselbe Mehrjahres-Ansicht. So lässt sich ein Posten oder
+  eine Gruppe direkt im zeitlichen Verlauf bewerten, ohne die Dokumente
+  einzeln umzuschalten.

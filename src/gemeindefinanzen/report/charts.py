@@ -319,12 +319,41 @@ def chart_trend_aufwand(trend: dict) -> dict:
     }
 
 
+def mehrjahr_basis(jahre: list[str]) -> dict:
+    """Geruest-Option fuer den Mehrjahres-Vergleich (Posten/Gruppen ueber Jahre).
+
+    Die ``series`` bleiben leer — sie werden clientseitig aus der jeweils
+    aktuellen Auswahl gefuellt. Geliefert wird nur die Huelle im Stil der
+    uebrigen Zeitreihen-Diagramme (Inter, vier Tinten, Haarlinien).
+    """
+    return {
+        "textStyle": _base_text(),
+        "tooltip": {"trigger": "axis",
+                    "axisPointer": {"type": "line"}},
+        "legend": {"type": "scroll", "bottom": 0,
+                   "textStyle": {"fontFamily": "Inter, sans-serif",
+                                 "fontSize": 11}},
+        "grid": {"left": 8, "right": 22, "top": 16, "bottom": 56,
+                 "containLabel": True},
+        "xAxis": _cat_axis(jahre, fontsize=11),
+        "yAxis": _val_axis(),
+        "series": [],
+    }
+
+
+# Reihenfolge der vier Tinten fuer die Linien des Mehrjahres-Vergleichs.
+MEHRJAHR_PALETTE = [INK["blue"], INK["orange"], INK["green"], INK["red"],
+                    INK["soft"], "#b7ad99", "#3d6f8e", "#bf6a3a",
+                    "#4a8068", "#a85852"]
+
+
 def alle_charts(daten: dict) -> dict:
     """Vorberechnete ECharts-Optionen je Dokument plus Zeitreihen.
 
-    Liefert ``{dok_charts: {dok_id: {chart: option}}, trend_charts: {...}}``.
-    Die dokumentbezogenen Charts liegen je Dokument vor, damit der
-    Jahr-Umschalter ohne Server-Abfrage umschalten kann.
+    Liefert ``{dok_charts: {dok_id: {chart: option}}, trend_charts: {...},
+    mehrjahr: {...}}``. Die dokumentbezogenen Charts liegen je Dokument vor,
+    damit der Jahr-Umschalter ohne Server-Abfrage umschalten kann; ``mehrjahr``
+    ist die leere Huelle fuer den clientseitig gefuellten Mehrjahres-Vergleich.
     """
     dok_charts: dict[str, dict] = {}
     for did, agg in daten["aggregate"].items():
@@ -346,4 +375,10 @@ def alle_charts(daten: dict) -> dict:
         "trend_komm": chart_trend_komm(trend),
         "trend_auf": chart_trend_aufwand(trend),
     }
-    return {"dok_charts": dok_charts, "trend_charts": trend_charts}
+    # Dokumente in chronologischer Reihenfolge — x-Achse des Mehrjahres-Charts.
+    jahre = [d["label"] for d in daten["dokumente"]]
+    mehrjahr = {"basis": mehrjahr_basis(jahre),
+                "palette": MEHRJAHR_PALETTE,
+                "dok_reihenfolge": [d["id"] for d in daten["dokumente"]]}
+    return {"dok_charts": dok_charts, "trend_charts": trend_charts,
+            "mehrjahr": mehrjahr}

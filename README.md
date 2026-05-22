@@ -94,6 +94,11 @@ JSON eingebettet, die gesamte Bedienung läuft clientseitig in Vanilla-JavaScrip
   sortierbare Spalten, Treffer- und Summenanzeige.
 - **Drill-down** im Ausgaben-Tab: Aufgabengruppe → Ansatz → Einzelposten mit
   Brotkrumen-Navigation.
+- **Mehrjahres-Vergleich:** einzelne Posten in der Suchtabelle ankreuzen und
+  als Liniendiagramm über alle Dokumente betrachten (eine Linie je Posten,
+  gematcht über Ansatz + Konto); die gesamte gefilterte Menge als eine
+  aggregierte Gruppen-Linie; je Gruppe und Ansatz im Drill-down eine
+  „über die Jahre“-Aktion.
 
 ### Deployment auf GitHub Pages
 

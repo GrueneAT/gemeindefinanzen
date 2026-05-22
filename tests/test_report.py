@@ -137,3 +137,35 @@ def test_charts_je_dokument(tmp_path: Path) -> None:
     for charts in cfg["dok_charts"].values():
         assert "wasserfall" in charts and "sankey" in charts
     assert {"trend_eck", "trend_komm", "trend_auf"} <= set(cfg["trend_charts"])
+
+
+@db_vorhanden
+def test_mehrjahr_konfiguration(tmp_path: Path) -> None:
+    # Der Mehrjahres-Vergleich liefert eine leere Chart-Huelle, eine
+    # Linienpalette und die Dokumente in chronologischer Reihenfolge.
+    daten = collect(str(DB))
+    cfg = alle_charts(daten)
+    assert "mehrjahr" in cfg
+    mj = cfg["mehrjahr"]
+    assert mj["basis"]["series"] == [], "Basis-Huelle muss leer sein"
+    assert mj["basis"]["xAxis"]["type"] == "category"
+    assert len(mj["palette"]) >= 4, "mindestens vier Tinten fuer die Linien"
+    # x-Achse und Dokument-Reihenfolge stimmen mit den Dokumenten ueberein.
+    assert mj["basis"]["xAxis"]["data"] == [d["label"]
+                                            for d in daten["dokumente"]]
+    assert mj["dok_reihenfolge"] == [d["id"] for d in daten["dokumente"]]
+
+
+@db_vorhanden
+def test_html_enthaelt_mehrjahres_vergleich(tmp_path: Path) -> None:
+    # Die Bedienelemente des Mehrjahres-Vergleichs sind im HTML vorhanden:
+    # Auswahl-Spalte, beide Aktionsschaltflaechen und der Overlay-Dialog.
+    out = tmp_path / "dashboard.html"
+    build_report(str(DB), str(out))
+    html = out.read_text(encoding="utf-8")
+    assert 'id="such-pickall"' in html, "Auswahl-Kopfbox fehlt"
+    assert 'id="mj-selected"' in html, "Aktion 'Posten ueber die Jahre' fehlt"
+    assert 'id="mj-group"' in html, "Aktion 'Gruppe ueber die Jahre' fehlt"
+    assert 'id="mj-overlay"' in html, "Mehrjahres-Overlay fehlt"
+    assert 'id="mj-chart"' in html, "Mehrjahres-Chartflaeche fehlt"
+    assert 'class="mj-drill"' in html, "Drill-down-Mehrjahres-Aktion fehlt"

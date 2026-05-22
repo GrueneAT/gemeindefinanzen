@@ -132,7 +132,9 @@ def _panel_ausgaben() -> str:
   </div>
   <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
   <p>Klick auf eine Zeile blendet die naechste Ebene auf; ueber die
-    Brotkrumen geht es wieder zurueck.</p>
+    Brotkrumen geht es wieder zurueck. Die Schaltflaeche
+    &bdquo;ueber die Jahre&ldquo; je Gruppe oder Ansatz zeigt deren
+    Entwicklung ueber alle Dokumente als Liniendiagramm.</p>
   <div class="crumbs" id="drill-crumbs"></div>
   <p class="result-meta" id="drill-sum"></p>
   <ul class="drill-list" id="drill-list"></ul>
@@ -216,11 +218,15 @@ def _panel_suche(dokumente: list[dict], gruppen: list[tuple[str, str]]) -> str:
         f'<th class="sortable{" num" if key in ("ew","ev","ed","fw","fv","fd") else ""}"'
         f' data-key="{key}">{titel} <span class="arrow"></span></th>'
         for key, titel in spalten)
+    pick_th = ('<th class="pick" title="Zeile fuer den Mehrjahres-Vergleich '
+               'waehlen"><input type="checkbox" id="such-pickall"></th>')
     return f"""
 <section class="tab-panel" data-panel="suche" id="such-box">
   <h2>Suche &amp; Daten</h2>
   <p>Alle Detailposten aller Dokumente — durchsuchbar, filterbar, sortierbar.
-    Suche und Filter laufen vollstaendig im Browser.</p>
+    Suche und Filter laufen vollstaendig im Browser. Einzelne Posten oder die
+    gesamte gefilterte Menge lassen sich ueber die Jahre als Liniendiagramm
+    vergleichen.</p>
   <div class="filterbar">
     <label>Volltextsuche
       <input type="search" class="search" id="f-such"
@@ -247,14 +253,40 @@ def _panel_suche(dokumente: list[dict], gruppen: list[tuple[str, str]]) -> str:
       <input type="number" class="betrag" id="f-max" placeholder="max"></label>
   </div>
   <p class="result-meta" id="such-meta"></p>
+  <div class="mj-actions">
+    <button class="mj-btn is-primary" id="mj-selected" disabled>
+      Ausgewaehlte Posten ueber die Jahre</button>
+    <button class="mj-btn" id="mj-group" disabled>
+      Gefilterte Menge als Gruppe</button>
+    <span class="mj-count" id="mj-count">keine Zeile gewaehlt</span>
+  </div>
   <div class="table-scroll">
     <table class="dtable">
-      <thead><tr>{th}</tr></thead>
+      <thead><tr>{pick_th}{th}</tr></thead>
       <tbody id="such-tbody"></tbody>
     </table>
   </div>
   <p class="table-hint" id="such-hint"></p>
 </section>"""
+
+
+def _overlay_mehrjahr() -> str:
+    """Overlay-Dialog mit dem Mehrjahres-Liniendiagramm."""
+    return """
+<div class="mj-overlay" id="mj-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="mj-titel">
+  <div class="mj-dialog">
+    <div class="mj-dialog-head">
+      <h3 id="mj-titel">Vergleich ueber die Jahre</h3>
+      <button class="mj-close" id="mj-close"
+        aria-label="Schliessen">&times;</button>
+    </div>
+    <p class="mj-sub" id="mj-sub"></p>
+    <p class="mj-empty" id="mj-empty"></p>
+    <div class="mj-chart" id="mj-chart"></div>
+    <p class="table-hint" id="mj-hint"></p>
+  </div>
+</div>"""
 
 
 def _build_html(daten: dict, cfg: dict) -> str:
@@ -319,6 +351,7 @@ def _build_html(daten: dict, cfg: dict) -> str:
   </footer>
 
 </div>
+{_overlay_mehrjahr()}
 <script id="dashboard-data" type="application/json">{payload}</script>
 <script>
 const DATA = JSON.parse(

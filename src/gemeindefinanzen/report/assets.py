@@ -95,6 +95,49 @@ CSS = """
   margin-right: .4rem; font-variant-numeric: tabular-nums; }
 .drill-row .betrag { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .drill-row .chev { color: #9a8f78; margin-left: .5rem; }
+
+/* Mehrjahres-Vergleich — Auswahl, Aktionsleiste und Overlay. */
+.mj-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  margin: .6rem 0 .4rem; }
+.mj-btn { font: inherit; font-size: .82rem; cursor: pointer;
+  padding: .3rem .8rem; border: 1px solid var(--hair);
+  background: var(--raised); color: #2b2825; border-radius: 3px;
+  line-height: 1.2; }
+.mj-btn:hover { border-color: #9a8f78; }
+.mj-btn.is-primary { background: #1F4A6D; border-color: #1F4A6D;
+  color: #F4EFE6; font-weight: 600; }
+.mj-btn:disabled { opacity: .5; cursor: default; }
+.mj-btn.is-primary:disabled { background: #9aa6af; border-color: #9aa6af; }
+.mj-count { font-size: .8rem; color: #5b5650; }
+
+.drill-row .mj-drill { font: inherit; font-size: .76rem; cursor: pointer;
+  padding: .12rem .5rem; border: 1px solid var(--hair);
+  background: var(--raised); color: #1F4A6D; border-radius: 3px;
+  margin-left: .5rem; white-space: nowrap; }
+.drill-row .mj-drill:hover { border-color: #9a8f78; }
+
+th.pick, td.pick { width: 2rem; text-align: center; }
+td.pick input, th.pick input { cursor: pointer; }
+
+.mj-overlay { position: fixed; inset: 0; z-index: 60; display: none;
+  background: rgba(43,40,37,0.55); }
+.mj-overlay.is-open { display: flex; align-items: center;
+  justify-content: center; }
+.mj-dialog { background: var(--paper, #F4EFE6); border: 1px solid var(--hair);
+  border-radius: 4px; width: min(880px, 94vw); max-height: 92vh;
+  overflow: auto; padding: 1.1rem 1.3rem 1.3rem;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.mj-dialog-head { display: flex; justify-content: space-between;
+  align-items: baseline; gap: 1rem; }
+.mj-dialog-head h3 { margin: 0; }
+.mj-close { font: inherit; font-size: 1.3rem; line-height: 1; cursor: pointer;
+  background: none; border: none; color: #5b5650; padding: .1rem .3rem; }
+.mj-close:hover { color: #2b2825; }
+.mj-sub { font-size: .85rem; color: #5b5650; margin: .3rem 0 .2rem; }
+.mj-chart { height: 420px; margin-top: .4rem;
+  border: 1px solid var(--hair); border-radius: 3px;
+  background: var(--paper-raised, #faf6ee); padding: 6px; }
+.mj-empty { font-size: .85rem; color: #9a4a1c; margin: .5rem 0; }
 """
 
 
@@ -112,8 +155,14 @@ JS = r"""
   var meta   = DATA.meta;
   var dokChart   = CFG.dok_charts;
   var trendChart = CFG.trend_charts;
+  var mehrjahrCfg = CFG.mehrjahr;
 
   var aktivDok = String(meta.default_dok);
+
+  // Dokumente in chronologischer Reihenfolge — x-Achse des Mehrjahres-Charts.
+  var jahrFolge = mehrjahrCfg.dok_reihenfolge.map(function (id) {
+    return String(id);
+  });
 
   // --- Hilfen --------------------------------------------------------------
   function euro(v, mio) {
@@ -341,6 +390,9 @@ JS = r"""
         });
     }
 
+    // Ebene fuer die Mehrjahres-Aktion: 0 = Gruppe, 1 = Ansatz.
+    var mjEbene = drillPfad.length;
+
     var ges = items.reduce(function (s, i) { return s + i.sum; }, 0);
     listEl.innerHTML = items.map(function (i) {
       var clickable = i.next ? " is-clickable" : "";
@@ -349,10 +401,17 @@ JS = r"""
           esc(i.next.text) + '"'
         : "";
       var chev = i.next ? '<span class="chev">&rsaquo;</span>' : "";
+      // Gruppen- und Ansatz-Zeilen bekommen eine Mehrjahres-Aktion.
+      var mjBtn = (mjEbene <= 1 && i.next)
+        ? '<button class="mj-drill" data-mj-code="' + esc(i.code) +
+          '" data-mj-text="' + esc(i.text) +
+          '">über die Jahre</button>'
+        : "";
       return '<li class="drill-row' + clickable + '"' + dataAttr + ">" +
         '<span class="label"><span class="code">' + esc(i.code) +
         "</span>" + esc(i.text) + "</span>" +
-        '<span class="betrag">' + euro(i.sum) + "</span>" + chev + "</li>";
+        '<span class="betrag">' + euro(i.sum) + "</span>" + mjBtn +
+        chev + "</li>";
     }).join("");
     var sumEl = document.getElementById("drill-sum");
     if (sumEl) {
@@ -365,6 +424,32 @@ JS = r"""
     var crumbEl = document.getElementById("drill-crumbs");
     if (!listEl || !crumbEl) return;
     listEl.addEventListener("click", function (ev) {
+      // Mehrjahres-Aktion hat Vorrang vor der Drill-Navigation.
+      var mjBtn = ev.target.closest(".mj-drill");
+      if (mjBtn) {
+        ev.stopPropagation();
+        var code = mjBtn.dataset.mjCode;
+        var text = mjBtn.dataset.mjText;
+        if (drillPfad.length === 0) {
+          // Gruppe ueber die Jahre: alle Ausgabe-Posten dieser Gruppe.
+          openMehrjahr("Aufgabengruppe über die Jahre",
+            code + " " + text + " — Ausgaben je Dokument aufsummiert.",
+            gruppenLinie(code + " " + text, function (p) {
+              return p.richtung === "ausgabe" && p.gruppe === code;
+            }), "");
+        } else {
+          // Ansatz ueber die Jahre: alle Ausgabe-Posten dieses Ansatzes
+          // innerhalb der aktuellen Gruppe.
+          var g0 = drillPfad[0].code;
+          openMehrjahr("Ansatz über die Jahre",
+            code + " " + text + " — Ausgaben je Dokument aufsummiert.",
+            gruppenLinie(code + " " + text, function (p) {
+              return p.richtung === "ausgabe" && p.gruppe === g0 &&
+                     p.ansatz === code;
+            }), "");
+        }
+        return;
+      }
       var row = ev.target.closest(".drill-row.is-clickable");
       if (!row) return;
       drillPfad.push({ code: row.dataset.code, text: row.dataset.text });
@@ -379,8 +464,118 @@ JS = r"""
     onDocChange(function () { drillPfad = []; renderDrill(); });
   }
 
+  // --- Mehrjahres-Vergleich: Posten/Gruppen ueber die Jahre ----------------
+  // Wert eines Postens: Ergebnishaushalt, ersatzweise Finanzierungshaushalt.
+  function postenWert(p) {
+    if (p.ew !== 0 && p.ew != null) return p.ew;
+    return p.fw || 0;
+  }
+
+  var MJ_MAX = 10;          // Obergrenze sichtbarer Linien
+  var mjChart = null;       // ECharts-Instanz im Overlay (lazy)
+
+  // Eine Linie je Dokument: Werte aller passenden Posten je Dokument summiert.
+  function reiheUeberJahre(filterFn) {
+    return jahrFolge.map(function (dokId) {
+      var summe = 0;
+      var treffer = false;
+      posten.forEach(function (p) {
+        if (String(p.dok) !== dokId) return;
+        if (!filterFn(p)) return;
+        treffer = true;
+        summe += postenWert(p);
+      });
+      return treffer ? Math.round(summe) : null;
+    });
+  }
+
+  // Eine Linie je ausgewaehltem Posten — gematcht ueber ansatz+konto.
+  function postenLinien(auswahl) {
+    return auswahl.map(function (sel, idx) {
+      var farbe = mehrjahrCfg.palette[idx % mehrjahrCfg.palette.length];
+      var werte = reiheUeberJahre(function (p) {
+        return p.ansatz === sel.ansatz && p.konto === sel.konto;
+      });
+      return {
+        name: sel.name, type: "line", connectNulls: false,
+        symbolSize: 7, data: werte,
+        itemStyle: { color: farbe },
+        lineStyle: { color: farbe, width: 2 },
+      };
+    });
+  }
+
+  // Eine einzelne aggregierte Linie fuer eine ganze gefilterte Menge.
+  function gruppenLinie(name, filterFn) {
+    var werte = reiheUeberJahre(filterFn);
+    return [{
+      name: name, type: "line", connectNulls: false,
+      symbolSize: 8, data: werte,
+      itemStyle: { color: mehrjahrCfg.palette[0] },
+      lineStyle: { color: mehrjahrCfg.palette[0], width: 2.5 },
+      areaStyle: { color: "rgba(31,74,109,0.10)" },
+      label: { show: true, position: "top",
+               fontFamily: "Inter, sans-serif", fontSize: 10,
+               formatter: function (pt) {
+                 return pt.value == null ? ""
+                   : (pt.value / 1000).toLocaleString("de-AT") + "k";
+               } },
+    }];
+  }
+
+  function openMehrjahr(titel, sub, series, hinweis) {
+    var ov = document.getElementById("mj-overlay");
+    if (!ov) return;
+    fillText("mj-titel", titel);
+    fillText("mj-sub", sub || "");
+    var hintEl = document.getElementById("mj-hint");
+    if (hintEl) hintEl.textContent = hinweis || "";
+    ov.classList.add("is-open");
+    var el = document.getElementById("mj-chart");
+    if (!el) return;
+    if (!mjChart) mjChart = echarts.init(el);
+    var hatDaten = series.some(function (s) {
+      return s.data.some(function (v) { return v != null; });
+    });
+    var emptyEl = document.getElementById("mj-empty");
+    if (emptyEl) {
+      emptyEl.textContent = hatDaten ? ""
+        : "Keine Werte fuer diese Auswahl in den geladenen Dokumenten.";
+    }
+    var opt = JSON.parse(JSON.stringify(mehrjahrCfg.basis));
+    opt.series = series;
+    mjChart.setOption(revive(opt), true);
+    requestAnimationFrame(function () { mjChart.resize(); });
+  }
+
+  function closeMehrjahr() {
+    var ov = document.getElementById("mj-overlay");
+    if (ov) ov.classList.remove("is-open");
+  }
+
+  function setupMehrjahr() {
+    var ov = document.getElementById("mj-overlay");
+    if (!ov) return;
+    var closeBtn = document.getElementById("mj-close");
+    if (closeBtn) closeBtn.addEventListener("click", closeMehrjahr);
+    ov.addEventListener("click", function (ev) {
+      if (ev.target === ov) closeMehrjahr();
+    });
+    window.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") closeMehrjahr();
+    });
+  }
+
   // --- Tab 7: Suche & Daten ------------------------------------------------
   var LIMIT = 500;
+
+  // Posten-Identitaet fuer den Mehrjahres-Vergleich (gleiche Stelle = gleiche
+  // ansatz+konto-Kombination ueber alle Dokumente hinweg).
+  function postenKey(p) { return p.ansatz + "|" + p.konto; }
+  function postenName(p) {
+    var bez = p.bezeichnung || p.konto || postenKey(p);
+    return p.ansatz ? p.ansatz + " " + bez : bez;
+  }
 
   function setupSearch() {
     var box = document.getElementById("such-box");
@@ -396,8 +591,26 @@ JS = r"""
     var metaEl  = document.getElementById("such-meta");
     var hintEl  = document.getElementById("such-hint");
     var headEls = box.querySelectorAll("th.sortable");
+    var pickAll = document.getElementById("such-pickall");
+    var mjSel   = document.getElementById("mj-selected");
+    var mjGroup = document.getElementById("mj-group");
+    var mjCount = document.getElementById("mj-count");
 
     var sortKey = null, sortDir = 1;
+    // Auswahl der Suchtabelle — Schluessel ansatz|konto -> Anzeigename.
+    var auswahl = {};
+    var letzteTreffer = [];   // zuletzt gefilterte (ungekuerzte) Menge
+
+    function auswahlAnzahl() { return Object.keys(auswahl).length; }
+
+    function syncAuswahl() {
+      var n = auswahlAnzahl();
+      if (mjCount) {
+        mjCount.textContent = n === 0 ? "keine Zeile gewaehlt"
+          : n + (n === 1 ? " Posten gewaehlt" : " Posten gewaehlt");
+      }
+      if (mjSel) mjSel.disabled = n === 0;
+    }
 
     function matches() {
       var q = (qEl.value || "").trim().toLowerCase();
@@ -427,7 +640,11 @@ JS = r"""
         p.gruppe + " " + p.gruppe_text, p.ansatz, p.konto, p.bezeichnung,
         p.ew, p.ev, p.ed, p.fw, p.fv, p.fd, p.mvag, p.qu,
       ];
-      return "<tr>" + c.map(function (v, i) {
+      var key = postenKey(p);
+      var pick = '<td class="pick"><input type="checkbox" class="row-pick"' +
+        ' data-key="' + esc(key) + '" data-name="' + esc(postenName(p)) +
+        '"' + (auswahl[key] ? " checked" : "") + "></td>";
+      return "<tr>" + pick + c.map(function (v, i) {
         var num = i >= 6 && i <= 11;
         var text = num ? Math.round(v).toLocaleString("de-AT") : esc(v);
         return "<td" + (num ? ' class="num"' : "") + ">" + text + "</td>";
@@ -445,6 +662,7 @@ JS = r"""
           return String(x).localeCompare(String(y), "de") * sortDir;
         });
       }
+      letzteTreffer = rows;
       var ges = rows.reduce(function (s, p) { return s + p.ew; }, 0);
       metaEl.innerHTML = "<strong>" + rows.length.toLocaleString("de-AT") +
         "</strong> Treffer — Summe Einnahmen/Ausgaben-Spalte " +
@@ -456,6 +674,9 @@ JS = r"""
           rows.length.toLocaleString("de-AT") +
           " Treffern angezeigt — Filter verfeinern."
         : "";
+      if (mjGroup) mjGroup.disabled = rows.length === 0;
+      if (pickAll) pickAll.checked = false;
+      syncAuswahl();
     }
 
     var t = null;
@@ -485,6 +706,76 @@ JS = r"""
         apply();
       });
     });
+
+    // Einzelauswahl je Zeile.
+    tbody.addEventListener("change", function (ev) {
+      var cb = ev.target;
+      if (!cb || !cb.classList || !cb.classList.contains("row-pick")) return;
+      var key = cb.dataset.key;
+      if (cb.checked) { auswahl[key] = cb.dataset.name; }
+      else { delete auswahl[key]; }
+      syncAuswahl();
+    });
+
+    // Kopf-Auswahl: alle sichtbaren (gekuerzten) Treffer waehlen/abwaehlen.
+    if (pickAll) {
+      pickAll.addEventListener("change", function () {
+        var sichtbar = letzteTreffer.slice(0, LIMIT);
+        if (pickAll.checked) {
+          sichtbar.forEach(function (p) {
+            auswahl[postenKey(p)] = postenName(p);
+          });
+        } else {
+          sichtbar.forEach(function (p) { delete auswahl[postenKey(p)]; });
+        }
+        tbody.querySelectorAll(".row-pick").forEach(function (cb) {
+          cb.checked = !!auswahl[cb.dataset.key];
+        });
+        syncAuswahl();
+      });
+    }
+
+    // Aktion: ausgewaehlte Posten ueber die Jahre.
+    if (mjSel) {
+      mjSel.addEventListener("click", function () {
+        var keys = Object.keys(auswahl);
+        if (keys.length === 0) return;
+        var hinweis = "";
+        if (keys.length > MJ_MAX) {
+          hinweis = "Auswahl auf die ersten " + MJ_MAX + " von " +
+            keys.length + " Posten begrenzt — fuer mehr die Gruppen-Ansicht " +
+            "nutzen.";
+          keys = keys.slice(0, MJ_MAX);
+        }
+        var sel = keys.map(function (k) {
+          var teil = k.split("|");
+          return { ansatz: teil[0], konto: teil[1], name: auswahl[k] };
+        });
+        openMehrjahr("Ausgewaehlte Posten ueber die Jahre",
+          sel.length + " Posten, gematcht ueber Ansatz und Konto. " +
+          "Linie je Posten, fehlende Jahre als Luecke.",
+          postenLinien(sel), hinweis);
+      });
+    }
+
+    // Aktion: aktuelle Filtermenge als eine aggregierte Gruppe.
+    if (mjGroup) {
+      mjGroup.addEventListener("click", function () {
+        if (letzteTreffer.length === 0) return;
+        // Menge ueber ansatz+konto identifizieren — dokumentunabhaengig.
+        var mengeKeys = {};
+        letzteTreffer.forEach(function (p) { mengeKeys[postenKey(p)] = 1; });
+        var q = (qEl.value || "").trim();
+        var name = q ? 'Gefilterte Menge "' + q + '"'
+                     : "Gefilterte Menge";
+        openMehrjahr(name + " als Gruppe",
+          Object.keys(mengeKeys).length + " unterschiedliche Posten, " +
+          "je Dokument aufsummiert.",
+          gruppenLinie(name, function (p) {
+            return mengeKeys[postenKey(p)] === 1;
+          }), "");
+      });
+    }
 
     apply();
   }
@@ -516,6 +807,7 @@ JS = r"""
 
   onDocChange(rerenderStats);
   onDocChange(rerenderTables);
+  setupMehrjahr();
   setupDrill();
   setupSearch();
 
