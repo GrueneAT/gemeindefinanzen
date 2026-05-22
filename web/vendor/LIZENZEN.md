@@ -25,5 +25,6 @@ Wird per CDN eingebunden (jsDelivr). Lizenz: Apache 2.0.
 
 ## Design System
 
-`design-system.css` wird per CDN eingebunden
-(`flomotlik.github.io/claude-code`).
+Gruene-AT-Design-System — `design-system.css` wird per CDN eingebunden
+(`https://grueneat.github.io/design-system/`).
+Lizenz: **CC BY 4.0**. Urheber: Die Gruenen.
