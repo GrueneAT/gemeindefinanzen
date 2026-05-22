@@ -1,0 +1,19 @@
+# Generierte Artefakte
+/data/*.db
+/data/*.csv
+/data/*.parquet
+/data/*.xlsx
+/reports/*.html
+/build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv-claude-code/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Quelldokumente bleiben im Repo (klein, versionswuerdig) — bei Bedarf hier ausnehmen

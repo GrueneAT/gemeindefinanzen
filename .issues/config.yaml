@@ -1,0 +1,18 @@
+# Issue-System — Konfiguration
+# Einzelnes Repository, lokal (kein externer Tracker).
+
+model: claude-opus-4-7
+
+# Artefakte (ISSUE.md, CONTEXT.md ...) auf dem Feature-Branch mitcommitten
+commit_artifacts: true
+
+# Einzel-Repo: das Workspace-Wurzelverzeichnis selbst
+repos:
+  - name: gemeindefinanzen
+    path: .
+
+naming:
+  branch_prefix: issue/
+
+# Commit-Format ohne Werkzeug-Attribution
+commit_format: "{id}: {message}"

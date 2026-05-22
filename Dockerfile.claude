@@ -1,0 +1,30 @@
+# Extends the Claude Flow base image for Gemeindefinanz-Analyse
+# (Voranschlag / Nachtragsvoranschlag / Rechnungsabschluss — VRV-2015-PDFs).
+#
+# Base already provides: python3 + pip + venv, uv, ruff/mypy/pytest, git,
+# jq, ripgrep, fd-find, tree, make. This layer adds the PDF + data stack.
+#
+# NOTE: no WORKDIR directive — the base sets WORKDIR /workspace and the
+# clocal/cports aliases mount $PWD there. Overriding it breaks the mount.
+FROM ghcr.io/flomotlik/claude-code:latest
+
+# sqlite3 CLI — primary, versionable store for parsed budget rows.
+# (Python's sqlite3 module is stdlib; this adds the command-line tool.)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    sqlite3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Python data stack, installed into the system interpreter so scripts and
+# the REPL can import them directly (matches the base image's graphify
+# precedent). pymupdf is the working PDF text extractor for VRV-2015
+# table pages; pdfplumber cross-checks table geometry. duckdb runs fast
+# analytical SQL over CSV/Parquet; pandas + openpyxl handle Excel export.
+RUN python3 -m pip install --break-system-packages --no-cache-dir \
+        pymupdf \
+        pdfplumber \
+        duckdb \
+        pandas \
+        openpyxl && \
+    python3 -c "import fitz, pdfplumber, duckdb, pandas, openpyxl; print('data stack ok')"

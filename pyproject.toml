@@ -1,0 +1,37 @@
+[project]
+name = "gemeindefinanzen"
+version = "0.1.0"
+description = "Analyse oesterreichischer Gemeindevoranschlaege und Rechnungsabschluesse (VRV 2015)"
+requires-python = ">=3.11"
+dependencies = [
+    "pymupdf>=1.24",
+]
+
+[project.optional-dependencies]
+export = ["openpyxl>=3.1"]
+analyse = ["duckdb>=0.10", "pandas>=2.0"]
+dev = ["pytest>=8.0", "ruff", "mypy"]
+
+[project.scripts]
+gemfin = "gemeindefinanzen.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gemeindefinanzen = ["schema.sql"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
