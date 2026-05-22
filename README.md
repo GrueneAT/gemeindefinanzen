@@ -27,9 +27,9 @@ documents/*.pdf   VA / NVA / RA — beliebig viele
 data/gemeindefinanzen.db   SQLite — ein Datenmodell, alle Dokumente nebeneinander
       │  validate  Detailposten gegen die PDF-Summen geprüft (je Dokument)
       │  query     Analyse-Bibliothek in sql/
-      │  report    HTML-Dashboard (Zeitreihe, Sankey, Treemap, Wasserfall)
+      │  report    interaktives Dashboard (Tabs, Umschalter, Suche, Drill-down)
       ▼
-reports/dashboard.html
+reports/dashboard.html   bzw. site/index.html (GitHub Pages)
 ```
 
 ## Schnellstart
@@ -53,6 +53,7 @@ make db             # alle PDFs in documents/ → data/gemeindefinanzen.db
 make validate       # Plausibilitätsprüfung (je Dokument)
 make queries        # alle Analyse-Abfragen ausgeben
 make report         # reports/dashboard.html erzeugen
+make pages          # site/index.html für GitHub Pages erzeugen
 make export         # CSV + Excel nach data/
 ```
 
@@ -78,12 +79,40 @@ Die drei Betragsspalten bedeuten je Dokumenttyp etwas anderes (VA: Plan;
 RA: Ist gegen Soll) — das Datenmodell trennt das sauber, siehe
 [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
+## Das Dashboard
+
+`make report` erzeugt eine einzelne, interaktive HTML-Seite — kein Server,
+keine Live-Datenbankabfragen im Browser. Alle Posten aller Dokumente sind als
+JSON eingebettet, die gesamte Bedienung läuft clientseitig in Vanilla-JavaScript.
+
+- **Sieben Themen-Tabs:** Überblick, Einnahmen, Ausgaben, Investitionen,
+  Transfers & Umlagen, 800k-Analyse, Suche & Daten.
+- **Jahr-/Dokument-Umschalter:** stellt die sechs dokumentbezogenen Tabs auf
+  RA 2024, RA 2025, VA 2025 inkl. NVA oder VA 2026 um.
+- **Suche & Daten:** Volltextsuche über Bezeichnung, Konto und Ansatz, Filter
+  nach Dokument, Aufgabengruppe, Richtung, Gebarung und Betragsbereich,
+  sortierbare Spalten, Treffer- und Summenanzeige.
+- **Drill-down** im Ausgaben-Tab: Aufgabengruppe → Ansatz → Einzelposten mit
+  Brotkrumen-Navigation.
+
+### Deployment auf GitHub Pages
+
+`make pages` baut das Dashboard nach `site/index.html` — fertig für GitHub
+Pages. Die Seite ist eigenständig (CSS, Schrift und ECharts kommen per CDN).
+
+Im Repository-Setup unter **Settings → Pages** als Quelle einen Branch und den
+Ordner `/site` wählen, oder `site/index.html` per Workflow in den
+Pages-Branch publizieren. Der Ordner `site/` ist `.gitignore`-t und wird bei
+jedem `make pages` neu erzeugt.
+
 ## Aufbau
 
 | Pfad | Inhalt |
 |------|--------|
-| `src/gemeindefinanzen/` | Python-Paket (extract, parser, loader, validate, report) |
+| `src/gemeindefinanzen/` | Python-Paket (extract, parser, loader, validate) |
+| `src/gemeindefinanzen/report/` | Dashboard-Erzeugung (data, charts, assets, html) |
 | `src/gemeindefinanzen/schema.sql` | SQLite-Schema mit Views |
+| `scripts/check_dashboard_js.py` | prüft das eingebettete Dashboard-JS mit node |
 | `sql/` | Analyse-Abfragen — eine Datei je Fragestellung |
 | `docs/` | Format-, Schema- und Analyse-Dokumentation |
 | `tests/` | Parser-Tests |

@@ -32,6 +32,11 @@ report: $(DB) ## HTML-Dashboard erzeugen
 	$(GEMFIN) report --db "$(DB)" --out reports/dashboard.html
 	@echo "Dashboard: reports/dashboard.html"
 
+pages: $(DB) ## Dashboard nach site/index.html bauen (GitHub Pages)
+	@mkdir -p site
+	$(GEMFIN) report --db "$(DB)" --out site/index.html
+	@echo "GitHub-Pages-Seite: site/index.html"
+
 queries: $(DB) ## Alle Abfragen in sql/ ausfuehren und anzeigen
 	$(GEMFIN) query --db "$(DB)" --all
 
@@ -47,6 +52,6 @@ lint: ## Code pruefen
 all: db validate report ## Komplette Pipeline
 
 clean: ## Generierte Artefakte loeschen
-	rm -rf data/*.db data/*.csv data/*.xlsx reports/*.html build
+	rm -rf data/*.db data/*.csv data/*.xlsx reports/*.html site build
 
-.PHONY: help setup db validate report queries export test lint all clean
+.PHONY: help setup db validate report pages queries export test lint all clean
