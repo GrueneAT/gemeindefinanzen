@@ -68,7 +68,15 @@
 .tab-btn { --web-focus-offset: -2px; }
 
 .tab-panel { display: none; }
-.tab-panel.is-active { display: block; }
+/* Weicher, schneller Panel-Wechsel: beim Aktivwerden blendet das Panel
+   kurz auf und schiebt sich minimal nach oben. display laesst sich nicht
+   uebergangen, daher eine Einblend-Animation auf .is-active. Bei
+   reduzierter Bewegung wird sie ueber den Block in app.css neutralisiert. */
+.tab-panel.is-active { display: block; animation: tab-panel-ein .18s ease-out; }
+@keyframes tab-panel-ein {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* --- Dokument-Umschalter — ruhige Segmente --------------------------------
    Die Buttons sitzen als zusammenhaengende Segmentleiste auf einer hellen
@@ -84,9 +92,15 @@
   padding: .3rem .8rem; border: 1px solid var(--hair);
   background: var(--web-surface, #fff); color: var(--web-text, #23271f);
   border-radius: var(--web-radius-control, 6px); line-height: 1.2;
-  transition: background .15s, border-color .15s, color .15s; }
+  transition: background .15s, border-color .15s, color .15s,
+    transform .1s; }
 .switch-btn:hover { border-color: var(--web-green, #4a8a52);
   background: var(--web-green-tint, #e7efe3); }
+/* Active-Zustand: das Segment wird beim Klick kurz minimal eingedrueckt —
+   klare, zurueckhaltende Rueckmeldung. */
+.switch-btn:not(.is-active):active {
+  background: color-mix(in srgb, var(--web-green, #4a8a52) 22%, white);
+  transform: translateY(1px); }
 .switch-btn.is-active { background: var(--web-green-deep, #2c6e40);
   border-color: var(--web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); font-weight: 600; }
@@ -171,8 +185,12 @@ td.pick input, th.pick input { cursor: pointer; }
   padding: .4rem .55rem; border-bottom: 1px solid var(--hair); }
 /* Im .web-panel sitzt die Liste am Koerper-Ende — keine baumelnde Linie. */
 .drill-list .drill-row:last-child { border-bottom: none; }
-.drill-row.is-clickable { cursor: pointer; }
+/* Klickbare Drill-Zeilen — sanfter Hover, etwas kraeftigerer Active-Zustand
+   als klare Rueckmeldung beim Aufklappen der naechsten Ebene. */
+.drill-row.is-clickable { cursor: pointer;
+  transition: background .12s; }
 .drill-row.is-clickable:hover { background: color-mix(in srgb, var(--web-green, #4a8a52) 8%, transparent); }
+.drill-row.is-clickable:active { background: color-mix(in srgb, var(--web-green, #4a8a52) 15%, transparent); }
 .drill-row .label { flex: 1; }
 .drill-row .label .code { color: var(--web-text-mute, #6b6f63); font-size: .8rem;
   margin-right: .4rem; font-variant-numeric: tabular-nums; }

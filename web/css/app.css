@@ -492,7 +492,12 @@ input, select { font-family: var(--gat-font-copy); }
 .gat-btn {
   border-radius: var(--web-radius-control);
   transition: background 0.15s, border-color 0.15s, color 0.15s,
-    box-shadow 0.15s;
+    box-shadow 0.15s, transform 0.1s;
+}
+/* Active-Zustand: der Button wird beim Klick kurz minimal eingedrueckt —
+   klare, zurueckhaltende Rueckmeldung auf wirklich klickbaren Elementen. */
+.gat-btn:not(:disabled):active {
+  transform: translateY(1px);
 }
 /* Primaer — gedaempfte gruene Flaeche, weisse Schrift. */
 .gat-btn--primary {
@@ -845,10 +850,12 @@ input.search:focus-visible {
    6. REDUZIERTE BEWEGUNG
    ===========================================================================
    Wer im Betriebssystem reduzierte Bewegung verlangt, bekommt keine
-   CSS-Uebergaenge mehr: Hover-/Fokus-Farbwechsel der Bedienelemente, der
-   Fortschrittsbalken, die Dropzone, der Aufklapp-Pfeil der Dokument-
-   verwaltung und die Tableisten-Animation greifen dann ohne Zeitverlauf.
-   Deckt app.css und dashboard.css gemeinsam ab. */
+   CSS-Uebergaenge und keine Animationen mehr: Hover-/Fokus-/Active-Wechsel
+   der Bedienelemente, der Fortschrittsbalken, die Dropzone, der Aufklapp-
+   Pfeil der Dokumentverwaltung, die Tableisten-Optik sowie die Einblend-
+   Animation des Tab-Panel-Wechsels greifen dann ohne Zeitverlauf. Die
+   animation-duration-Regel deckt auch tab-panel-ein ab. Gilt fuer app.css
+   und dashboard.css gemeinsam. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
