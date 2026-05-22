@@ -478,20 +478,57 @@ sichtbare Verbindungslinien, die Panel-Raender sitzen ruhig und konsistent.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 11 — Komponenten erweitern (in Arbeit)
+### Iteration 11 — Komponenten erweitern (erledigt)
 
-Mehr echte Web-Komponenten, mehr Web-Tauglichkeit:
+Mehr Web-Tauglichkeit: Druckausgabe, gestraffter Auftakt, Seiten-Metadaten.
 
-- **Badge/Pill `.web-tag`.** Kategoriale Tabellenwerte (Transfer-Art
-  Pflichtumlage/freiwillig, Richtung Einnahme/Ausgabe) als ruhige Pills
-  statt Klartext — nur sofern `dashboard.js` bereits klassifizierbares
-  Markup ausgibt (CSS-only; `dashboard.js` bleibt unangetastet). Falls
-  nicht moeglich: Befund dokumentieren.
-- **Druck-Stylesheet** (`@media print`): Upload/Steuerleiste/Navigation
-  ausblenden, Panels sauber umbrechen, ruhiges Schwarz-auf-Weiss fuer den
-  Ausdruck einer Auswertung.
-- **Hero/Auftakt** straffen: Titel + Intro als ruhige Einheit, Intro
-  knapper gegliedert.
-- Seiten-Metadaten (Favicon, `theme-color`, `meta description`).
+- **Badge/Pill `.web-tag` — nicht umsetzbar, Befund.** Die kategorialen
+  Tabellenwerte (Transfer-Art „Pflichtumlage" / „freiwillig/sonstige",
+  Suche-Richtung „Einnahme" / „Ausgabe") werden ausschliesslich von
+  `web/vendor/dashboard/dashboard.js` gerendert. Beide Stellen geben die
+  Werte als **blanken Text** in einer `<td>` aus: der gemeinsame Helfer
+  `tableRows()` baut `"<td" + (c.num ? ' class="num"' : "") + ">" +
+  c.text + "</td>"`, also ohne jede Klasse oder umschliessendes Element;
+  die Transfer-Art (`rerenderTables`) liefert nur den Klartext
+  „Pflichtumlage" bzw. „freiwillig/sonstige", die Suche-Richtung (`row()`)
+  nur `esc(p.richtung)`. Es gibt **keinen klassifizierbaren Anker** —
+  weder eine Klasse auf der `<td>` noch ein `<span>` um den Wert. Ein
+  reines CSS-Pill liesse sich daher nicht zielgenau ansetzen (eine Regel
+  auf der ganzen Spalte traefe auch die Kopfzeile und liesse die zwei
+  semantischen Varianten nicht unterscheiden). Pills waeren nur ueber eine
+  Aenderung an `dashboard.js` moeglich — und das ist fuer diese Iteration
+  ausdruecklich untersagt. Folglich **kein `.web-tag` umgesetzt**; die
+  bestehenden `.doc-status`-Pills (in `app.js`-gerenderten Tabellen)
+  bleiben die Pill-Referenz. Sollte `dashboard.js` spaeter angefasst
+  werden duerfen, ist die saubere Loesung: den Art-/Richtungswert dort in
+  ein `<span class="web-tag web-tag--pflicht|--neutral">` wickeln und das
+  `.web-tag`-CSS analog zu `.doc-status` ergaenzen.
+- **Druck-Stylesheet** (`@media print`, neuer Abschnitt 7 in `app.css`):
+  Beim Ausdruck einer Auswertung werden Dokumentverwaltung/Upload,
+  Empty-State, Dokument-Umschalter, Tableiste, Toasts, Sankey-Leiste,
+  Mehrjahres-Aktionen, das Overlay und der Seitenfuss ausgeblendet. Der
+  aktive Tab (nur `.tab-panel.is-active` ist sichtbar) druckt ruhig in
+  Schwarz auf Weiss: Markenleiste als schlichte Kopfzeile mit duenner
+  Unterlinie statt Dunkelgruen-Block, Karten/Panels ohne Schatten mit
+  feiner Graulinie, Metric-Akzentbalken und Hero-Tint entfernt. Panels,
+  Sektionskoepfe und Tabellenzeilen tragen `break-inside: avoid`,
+  Ueberschriften `break-after: avoid`, `thead` wird je Seite wiederholt;
+  der `.page`-Container nutzt die volle Druckbreite. Die hohe
+  Sankey-Flaeche wird auf 420px gekuerzt.
+- **Hero/Auftakt gestrafft.** Titel und Intro sitzen jetzt in einer
+  `<header class="web-hero">`-Einheit: `.web-hero__title` und
+  `.web-hero__intro` ohne eigenen Streuabstand, eng gebunden, mit einem
+  gemeinsamen Block-Abstand zum Header. Der Intro-Text wurde von drei auf
+  zwei Saetze gekuerzt (factually unveraendert: clientseitiges Parsen von
+  VRV-2015-PDFs, kein Server, kein Upload ins Netz).
+- **Seiten-Metadaten.** `<head>` ergaenzt um `<meta name="description">`
+  (deutsch, knapp), `<meta name="theme-color" content="#2c6e40">` (=
+  `--web-green-deep`) und ein Inline-SVG-Favicon (`web/favicon.svg`, ein
+  schlichtes gruenes Balken-Mark, keine externe Abhaengigkeit).
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung mit Playwright/Chromium (1440px, Fixture-PDF
+`VA-2026-Auflage.pdf`): Hero als ruhige Einheit, Transfers-Tab unveraendert
+(Art-Spalte weiter als Klartext — siehe Befund), Druckemulation
+(`emulateMedia({ media: 'print' })`) zeigt eine saubere Schwarz-auf-Weiss-
+Auswertung ohne Bedienelemente. **Tests gruen** (`npm run test:js`,
+`npm run test:e2e`).
