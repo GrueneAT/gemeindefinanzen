@@ -427,3 +427,21 @@ Panel-Flaeche uebergehende, eckige Unterkante (visuell per Playwright mit
 geladenem VA-2026-PDF geprueft).
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 10 — Diagramm-Proportionen & Interaktion (in Arbeit)
+
+Die Diagramme sind funktional, aber noch sehr ECharts-Default: sehr breite
+Balken bei Ein-Dokument-Ansichten, lockere Raender, ungenutzte Hoehe.
+
+- **Balkenbreite** deckeln (`barMaxWidth`), damit einzelne Balken nicht
+  uebermaessig wuchtig wirken.
+- **Grid-Raender** (`grid.left/right/top/bottom`, `containLabel`) ruhig und
+  konsistent setzen — Diagramme nutzen die Panel-Flaeche gleichmaessig.
+- **Chart-Hoehen** in `index.html` pruefen und vereinheitlichen, wo sie
+  willkuerlich streuen; zu hohe Panels straffen.
+- **Wasserfall**: Balken weniger dominant, klare Verbindungslinien.
+- **Interaktion** (zurueckhaltend, Reduced-Motion respektiert): weicher
+  Tab-Panel-Wechsel, klare Hover-/Active-Rueckmeldung auf wirklich
+  interaktiven Elementen (Drill-Zeilen, Buttons, Sankey-Knoten).
+
+_wird nach visueller Pruefung fortgeschrieben._
