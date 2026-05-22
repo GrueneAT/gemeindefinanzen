@@ -50,8 +50,8 @@
    (gefuellte Flaeche, gruene Unterkante). Sichtbarer Tastatur-Fokus. */
 .tabs { display: flex; flex-wrap: wrap; gap: .15rem;
   border-bottom: 1px solid var(--hair); }
-.tab-btn { font: inherit; font-size: .9rem; cursor: pointer;
-  padding: .5rem .95rem; border: 1px solid transparent; border-bottom: none;
+.tab-btn { font: inherit; font-size: 1.08rem; cursor: pointer;
+  padding: .62rem 1.2rem; border: 1px solid transparent; border-bottom: none;
   background: transparent; color: var(--web-text-soft, #5e6358);
   border-radius: var(--web-radius-control, 6px) var(--web-radius-control, 6px) 0 0;
   margin-bottom: -1px;
@@ -83,13 +83,13 @@
    Flaeche; das aktive Segment ist gruen markiert. */
 .switcher { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .55rem;
   align-items: baseline; }
-.switcher-label { font-size: .72rem; letter-spacing: .09em;
+.switcher-label { font-size: .82rem; letter-spacing: .09em;
   text-transform: uppercase; color: var(--web-text-soft, #5e6358);
   margin-right: .35rem; }
 .switcher #switcher-buttons { display: inline-flex; flex-wrap: wrap;
   gap: .3rem; }
-.switch-btn { font: inherit; font-size: .82rem; cursor: pointer;
-  padding: .3rem .8rem; border: 1px solid var(--hair);
+.switch-btn { font: inherit; font-size: .98rem; cursor: pointer;
+  padding: .42rem 1rem; border: 1px solid var(--hair);
   background: var(--web-surface, #fff); color: var(--web-text, #23271f);
   border-radius: var(--web-radius-control, 6px); line-height: 1.2;
   transition: background .15s, border-color .15s, color .15s,

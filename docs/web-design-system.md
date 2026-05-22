@@ -624,16 +624,31 @@ horizontaler Seiten-Ueberlauf.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
 
-### Iteration 14 — Lesbarkeit Tableiste & Umschalter (in Arbeit)
+### Iteration 14 — Lesbarkeit Tableiste & Umschalter (erledigt)
 
 Rueckmeldung: die Tab-Beschriftungen und die Dokument-Schalter
-(RA 2024, VA 2025 …) sind zu klein und dadurch schlecht lesbar.
+(RA 2024, VA 2025 …) waren zu klein und dadurch schlecht lesbar.
 
-- `.tab-btn` deutlich groesser und gut lesbar (von `.9rem` anheben),
-  Innenabstand/Treffergroesse entsprechend; aktiver Tab bleibt klar.
-- `.switch-btn` (Dokument-Umschalter) groesser, ebenso die Treffergroesse.
-- `.switcher-label` („DOKUMENT") angemessen mitziehen.
-- Tableiste muss bei schmaler Breite weiter sauber umbrechen.
-- Ruhiger Stil bleibt — nur Lesbarkeit, kein neuer Laerm.
+Reine Groessen-/Lesbarkeitsanpassung in `web/vendor/dashboard/dashboard.css`,
+keine Farb- oder Zustandsaenderung — Aktiv-/Hover-/Fokus-Optik bleibt
+unveraendert, nur mitskaliert:
 
-_wird nach visueller Pruefung fortgeschrieben._
+- **`.tab-btn`** — Schriftgroesse von `.9rem` auf `1.08rem` angehoben, der
+  Innenabstand von `.5rem .95rem` auf `.62rem 1.2rem` mitgezogen, damit die
+  Reiter ausgewogen bleiben und gute Klick-/Tipp-Ziele bieten. Der aktive
+  Reiter bleibt klar markiert (gruene Flaeche, gruene Unterkante).
+- **`.switch-btn`** — Schriftgroesse von `.82rem` auf `.98rem`, Innenabstand
+  von `.3rem .8rem` auf `.42rem 1rem` — die Dokument-Schalter sind jetzt
+  klar lesbar mit gutem Tipp-Ziel.
+- **`.switcher-label`** („DOKUMENT") — von `.72rem` auf `.82rem` leicht
+  angehoben, bleibt als Grossbuchstaben-Kicker proportioniert kleiner als
+  die Buttons daneben.
+
+Visuelle Pruefung mit Playwright/Chromium (Fixture-PDF `VA-2026-Auflage.pdf`),
+Steuerleiste (Tableiste + Umschalter) bei 1440 und 390px: bei 1440 sitzt die
+Tableiste in einer Reihe, die Labels sind deutlich besser lesbar; bei 390
+bricht die Tableiste weiterhin sauber in drei tidy Reihen um, der aktive
+Reiter bleibt sichtbar markiert, und die Dokument-Schalter samt „DOKUMENT"-
+Label sind klar lesbar.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
