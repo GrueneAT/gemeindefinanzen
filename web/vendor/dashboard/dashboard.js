@@ -283,22 +283,26 @@
         ev.stopPropagation();
         var code = mjBtn.dataset.mjCode;
         var text = mjBtn.dataset.mjText;
+        // p.ew > 0 haelt den Mehrjahres-Wert deckungsgleich mit dem
+        // Drill-down (ausgabePosten): operative Ausgaben des Ergebnis-
+        // haushalts, ohne investive Auszahlungen.
         if (drillPfad.length === 0) {
-          // Gruppe ueber die Jahre: alle Ausgabe-Posten dieser Gruppe.
+          // Gruppe ueber die Jahre: operative Ausgaben dieser Gruppe.
           openMehrjahr("Aufgabengruppe über die Jahre",
-            code + " " + text + " — Ausgaben je Dokument aufsummiert.",
+            code + " " + text + " — operative Ausgaben je Dokument aufsummiert.",
             gruppenLinie(code + " " + text, function (p) {
-              return p.richtung === "ausgabe" && p.gruppe === code;
+              return p.richtung === "ausgabe" && p.gruppe === code &&
+                     p.ew > 0;
             }), "");
         } else {
-          // Ansatz ueber die Jahre: alle Ausgabe-Posten dieses Ansatzes
+          // Ansatz ueber die Jahre: operative Ausgaben dieses Ansatzes
           // innerhalb der aktuellen Gruppe.
           var g0 = drillPfad[0].code;
           openMehrjahr("Ansatz über die Jahre",
-            code + " " + text + " — Ausgaben je Dokument aufsummiert.",
+            code + " " + text + " — operative Ausgaben je Dokument aufsummiert.",
             gruppenLinie(code + " " + text, function (p) {
               return p.richtung === "ausgabe" && p.gruppe === g0 &&
-                     p.ansatz === code;
+                     p.ansatz === code && p.ew > 0;
             }), "");
         }
         return;
