@@ -430,6 +430,45 @@ export function chartKorridor(agg) {
 }
 
 // --- Zeitreihen-Diagramme ------------------------------------------------- //
+// Plan (VA/NVA) und Ist (RA) sind fachlich verschiedene Groessen. In den
+// Trend-Diagrammen werden sie deshalb optisch getrennt: RA-Datenpunkte
+// voll gefuellt, VA/NVA-Datenpunkte mit einem leichten Schraffur-Decal.
+// `typ` kommt je Datenpunkt aus dashboard-data.js (trend()).
+const VA_DECAL = {
+  symbol: "rect",
+  color: "rgba(255,255,255,0.55)",
+  dashArrayX: [1, 0],
+  dashArrayY: [3, 4],
+  rotation: -Math.PI / 4,
+}
+
+// Balkendatenpunkt mit typabhaengigem itemStyle: RA solide, VA/NVA mit
+// Decal-Schraffur. Wert und Grundfarbe wie bisher.
+function trendBalken(wert, typ, farbe) {
+  const stil = { color: farbe, borderRadius: 2 }
+  if (typ !== "RA") stil.decal = VA_DECAL
+  return { value: wert, itemStyle: stil }
+}
+
+// Unsichtbare Hilfsserien nur fuer die Legende: erklaeren Plan vs. Ist,
+// ohne selbst Daten beizutragen.
+function planIstLegende() {
+  return [
+    {
+      name: "Ist (RA)",
+      type: "bar",
+      data: [],
+      itemStyle: { color: ACHSE_TEXT_SOFT },
+    },
+    {
+      name: "Plan (VA/NVA)",
+      type: "bar",
+      data: [],
+      itemStyle: { color: ACHSE_TEXT_SOFT, decal: VA_DECAL },
+    },
+  ]
+}
+
 export function chartTrendEckwerte(trend) {
   const reihe = trend.eckwerte
   const namen = reihe.map((r) => r[0])
@@ -437,6 +476,7 @@ export function chartTrendEckwerte(trend) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
+    aria: { enabled: true, decal: { show: true } },
     grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
@@ -444,25 +484,32 @@ export function chartTrendEckwerte(trend) {
       {
         name: "Ertraege",
         type: "bar",
-        data: reihe.map((r) => r[1]),
+        data: reihe.map((r) => trendBalken(r[1], r[4], INK.green)),
         barMaxWidth: BAR_MAX_WEIT,
-        itemStyle: { color: INK.green, borderRadius: 2 },
+        // Serien-Grundfarbe nur fuer die Legenden-Swatch — die Balken
+        // selbst tragen ihre Farbe je Datenpunkt aus trendBalken().
+        itemStyle: { color: INK.green },
       },
       {
         name: "Aufwendungen",
         type: "bar",
-        data: reihe.map((r) => r[2]),
+        data: reihe.map((r) => trendBalken(r[2], r[4], INK.red)),
         barMaxWidth: BAR_MAX_WEIT,
-        itemStyle: { color: INK.red, borderRadius: 2 },
+        itemStyle: { color: INK.red },
       },
       {
         name: "Nettoergebnis",
         type: "line",
         symbolSize: 7,
-        data: reihe.map((r) => r[3]),
+        // Plan-Punkte als Ring, Ist-Punkte als gefuellter Kreis.
+        data: reihe.map((r) => ({
+          value: r[3],
+          symbol: r[4] === "RA" ? "circle" : "emptyCircle",
+        })),
         itemStyle: { color: INK.blue },
         lineStyle: { color: INK.blue, width: 2 },
       },
+      ...planIstLegende(),
     ],
   }
 }
@@ -472,15 +519,22 @@ export function chartTrendKomm(trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis" }),
-    grid: grid({ top: 30 }),
+    legend: legende(),
+    grid: grid({ top: 30, bottom: 36 }),
     xAxis: catAxis(reihe.map((r) => r[0])),
     yAxis: valAxis(),
     series: [
       {
+        name: "Kommunalsteuer",
         type: "line",
         smooth: true,
-        symbolSize: 8,
-        data: reihe.map((r) => r[1]),
+        symbolSize: 9,
+        // Ist-Punkte gefuellt, Plan-Punkte als Ring — Plan/Ist sichtbar
+        // getrennt (typ je Datenpunkt aus dashboard-data.js).
+        data: reihe.map((r) => ({
+          value: r[1],
+          symbol: r[2] === "RA" ? "circle" : "emptyCircle",
+        })),
         itemStyle: { color: INK.green },
         lineStyle: { color: INK.green, width: 2.5 },
         areaStyle: { color: "rgba(63,125,79,0.10)" },
@@ -492,6 +546,25 @@ export function chartTrendKomm(trend) {
           formatter: "(p)=>(p.value/1e6).toLocaleString('de')+' Mio'",
         },
       },
+      // Legendenhinweise: Punktform erklaert Plan vs. Ist.
+      {
+        name: "Ist (RA)",
+        type: "line",
+        data: [],
+        symbol: "circle",
+        symbolSize: 9,
+        itemStyle: { color: ACHSE_TEXT_SOFT },
+        lineStyle: { opacity: 0 },
+      },
+      {
+        name: "Plan (VA/NVA)",
+        type: "line",
+        data: [],
+        symbol: "emptyCircle",
+        symbolSize: 9,
+        itemStyle: { color: ACHSE_TEXT_SOFT },
+        lineStyle: { opacity: 0 },
+      },
     ],
   }
 }
@@ -499,6 +572,7 @@ export function chartTrendKomm(trend) {
 export function chartTrendAufwand(trend) {
   const reihe = trend.aufwand
   const namen = reihe.map((r) => r[0])
+  // typ-Index ist die letzte Spalte je Zeile.
   const reihen = [
     ["Personal", 1, INK.blue],
     ["Sachaufwand", 2, INK.orange],
@@ -509,17 +583,23 @@ export function chartTrendAufwand(trend) {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
+    aria: { enabled: true, decal: { show: true } },
     grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
-    series: reihen.map(([name, idx, col]) => ({
-      name,
-      type: "bar",
-      stack: "a",
-      data: reihe.map((r) => r[idx]),
-      barMaxWidth: BAR_MAX_WEIT,
-      itemStyle: { color: col },
-    })),
+    series: [
+      ...reihen.map(([name, idx, col]) => ({
+        name,
+        type: "bar",
+        stack: "a",
+        // Plan-Stapel (VA/NVA) mit Decal-Schraffur, Ist-Stapel (RA) solide.
+        data: reihe.map((r) => trendBalken(r[idx], r[5], col)),
+        barMaxWidth: BAR_MAX_WEIT,
+        // Serien-Grundfarbe nur fuer die Legenden-Swatch.
+        itemStyle: { color: col },
+      })),
+      ...planIstLegende(),
+    ],
   }
 }
 
