@@ -421,21 +421,6 @@ input, select { font-family: var(--gat-font-copy); }
   margin: 0;
 }
 
-/* --- Diagramm-Breite auf grossen Schirmen ---------------------------------
-   Die .page nutzt jetzt fast die volle 4K-Breite (bis 2040px). Ein einzelnes
-   Diagramm mit ~340px Hoehe wuerde damit zu einem extrem flachen Streifen.
-   Die grossflaechigen Einzel-Diagramm-Panels werden daher ab grosser Breite
-   in der Lesebreite gedeckelt und mittig gesetzt — so bleibt das
-   Seitenverhaeltnis ruhig, waehrend Metric-Raster, .dash-grid und der
-   intrinsisch hohe Sankey die volle Breite behalten. ECharts resized von
-   selbst, sobald sich der Container aendert. */
-@media (min-width: 75rem) {
-  .web-panel--breit {
-    max-width: 1180px;
-    margin-inline: auto;
-  }
-}
-
 /* --- .web-section-head — Abschnittskopf -----------------------------------
    Titel (h2) und einleitender Absatz als eine ruhige Einheit; klare
    Trennung von der Steuerleiste und vom Abschnittsinhalt. */
