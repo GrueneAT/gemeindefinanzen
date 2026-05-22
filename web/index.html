@@ -112,19 +112,19 @@
         Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
         Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
         Ausgaben und Spielraeume weiter auf.</p>
-      <div class="stats gat-grid gat-grid--3">
-        <div class="stat gat-card gat-card--secondary">
-          <div class="stat-num gat-card__title" id="st-ertraege"></div>
-          <div class="stat-label gat-card__body">Ertraege</div></div>
-        <div class="stat gat-card gat-card--secondary">
-          <div class="stat-num gat-card__title" id="st-aufwand"></div>
-          <div class="stat-label gat-card__body">Aufwendungen</div></div>
-        <div class="stat gat-card gat-card--secondary">
-          <div class="stat-num gat-card__title" id="st-netto"></div>
-          <div class="stat-label gat-card__body">Nettoergebnis</div></div>
-        <div class="stat gat-card gat-card--primary">
-          <div class="stat-num gat-card__title" id="st-komm-anteil"></div>
-          <div class="stat-label gat-card__body">Kommunalsteuer-Anteil</div></div>
+      <div class="stats">
+        <div class="stat metric-card">
+          <div class="stat-label">Ertraege</div>
+          <div class="stat-num" id="st-ertraege"></div></div>
+        <div class="stat metric-card">
+          <div class="stat-label">Aufwendungen</div>
+          <div class="stat-num" id="st-aufwand"></div></div>
+        <div class="stat metric-card">
+          <div class="stat-label">Nettoergebnis</div>
+          <div class="stat-num" id="st-netto"></div></div>
+        <div class="stat metric-card metric-card--hero">
+          <div class="stat-label">Kommunalsteuer-Anteil</div>
+          <div class="stat-num" id="st-komm-anteil"></div></div>
       </div>
       <h3 style="margin-top:1.2rem">Ergebnis als Wasserfall</h3>
       <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
