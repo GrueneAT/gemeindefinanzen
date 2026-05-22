@@ -36,6 +36,10 @@ const CHART_FONT = "Barlow Semi Condensed, sans-serif"
 const ACHSE_TEXT = "#23271f"
 const ACHSE_LINIE = "#cdd2c8"
 
+// Gemeinsame Diagramm-Schriftgroesse (Iteration 16) — identisch zu
+// dashboard-charts.js. Spuerbar groesser fuer aeltere Nutzer:innen.
+const LABEL_SIZE = 15
+
 // Tooltip auf die Komponentensprache: helle Karte mit Haarlinie und weichem
 // Schatten statt der dunklen ECharts-Voreinstellung — identisch zu
 // dashboard-charts.js.
@@ -46,7 +50,7 @@ const TOOLTIP = {
   borderWidth: 1,
   padding: [7, 11],
   extraCssText: "box-shadow: 0 4px 14px rgba(31,38,28,.12); border-radius: 8px;",
-  textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT, fontSize: 12 },
+  textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT, fontSize: LABEL_SIZE },
 }
 
 // Einnahmequelle eines Postens — Portierung der CASE-Logik aus
@@ -259,14 +263,14 @@ export function buildSankeyOption(posten, dokId, expand) {
       {
         type: "sankey",
         left: 8,
-        right: 170,
-        top: 14,
-        bottom: 14,
-        nodeGap: 11,
+        right: 300,
+        top: 16,
+        bottom: 16,
+        nodeGap: 13,
         nodeWidth: 26,
         label: {
           fontFamily: CHART_FONT,
-          fontSize: 11,
+          fontSize: LABEL_SIZE,
           color: ACHSE_TEXT,
         },
         lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
