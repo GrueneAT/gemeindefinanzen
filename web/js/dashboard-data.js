@@ -191,11 +191,19 @@ function aggregateDok(db, did) {
      WHERE richtung='ausgabe' AND eh_wert>0 AND dokument_id=${did}
      GROUP BY gruppe_text, ansatz_text`,
   )
-  const treiber = rows(
+  // Zweiseitig (diverging): die groessten Anstiege UND die groessten
+  // Rueckgaenge. Frueher nur eh_delta>0 — Einsparungen blieben unsichtbar.
+  const treiberAnstieg = rows(
     db,
     `SELECT bezeichnung, eh_delta FROM v_detail
      WHERE richtung='ausgabe' AND eh_delta>0 AND dokument_id=${did}
-     ORDER BY eh_delta DESC LIMIT 12`,
+     ORDER BY eh_delta DESC LIMIT 8`,
+  )
+  const treiberRueckgang = rows(
+    db,
+    `SELECT bezeichnung, eh_delta FROM v_detail
+     WHERE richtung='ausgabe' AND eh_delta<0 AND dokument_id=${did}
+     ORDER BY eh_delta ASC LIMIT 8`,
   )
   const korridor = rows(
     db,
@@ -248,7 +256,13 @@ function aggregateDok(db, did) {
       a || "ohne Ansatz",
       round(v),
     ]),
-    treiber: treiber.map(([b, v]) => [b, round(v)]),
+    // Anstiege absteigend, danach Rueckgaenge (bereits aufsteigend, also
+    // vom staerksten Minus zum schwaechsten) — eine durchgehend nach
+    // eh_delta absteigend sortierte Liste fuer das zweiseitige Diagramm.
+    treiber: [...treiberAnstieg, ...treiberRueckgang].map(([b, v]) => [
+      b,
+      round(v),
+    ]),
     korridor: korridor.map(([b, v, k]) => [b, round(v), round(k)]),
     transfers: transfers.map(([b, v, vg]) => [b, round(v), round(vg || 0)]),
     investitionen: investitionen.map(([b, a, v]) => [b, a || "", round(v)]),

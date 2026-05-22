@@ -221,10 +221,16 @@ export function chartEinnahmen(agg) {
 // Einzel-Chart-Panels. Haben sie nur wenige Posten, blieben die liegenden
 // Balken bei knappem Deckel duenne Streifen in viel Hoehe — daher der
 // weitere BAR_MAX_WEIT-Deckel statt des dichten.
+//
+// Zweiseitiges (diverging) Diagramm: agg.treiber enthaelt die groessten
+// Anstiege (positives Delta) UND die groessten Rueckgaenge (negatives
+// Delta). Anstiege in der Risiko-Farbe (Clay), Rueckgaenge in Gruen —
+// konsistent mit der Farbsemantik des Design-Systems.
 export function chartTreiber(agg) {
   const cats = agg.treiber.map(([b]) => b.slice(0, 34)).reverse()
   const vals = agg.treiber.map(([, d]) => d).reverse()
-  return bar(cats, vals, INK.red, null, BAR_MAX_WEIT)
+  const cols = vals.map((v) => (v >= 0 ? INK.red : INK.green))
+  return bar(cats, vals, INK.red, cols, BAR_MAX_WEIT)
 }
 
 export function chartInvestitionen(agg) {
