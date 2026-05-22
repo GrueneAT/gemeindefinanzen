@@ -123,3 +123,23 @@ betrachtet werden.
 
 Weitere Dokumente lassen sich jederzeit ergänzen: PDF nach `documents/`
 legen, `make db` erneut ausführen.
+
+## Das interaktive Dashboard
+
+`make report` (bzw. `make pages` für GitHub Pages) erzeugt eine einzelne
+HTML-Seite, die alle Posten aller Dokumente eingebettet trägt — meetingtauglich
+und ohne Server bedienbar.
+
+- **Themen-Tabs** gliedern die Auswertung: Überblick, Einnahmen, Ausgaben,
+  Investitionen, Transfers & Umlagen, 800k-Analyse, Suche & Daten.
+- Der **Jahr-/Dokument-Umschalter** über den Tabs stellt die sechs
+  dokumentbezogenen Tabs auf RA 2024, RA 2025, VA 2025 inkl. NVA oder VA 2026
+  um. So lässt sich dieselbe Kennzahl direkt über die Dokumente vergleichen.
+- **Suche & Daten** ist die Volltabelle aller Detailposten: Volltextsuche über
+  Bezeichnung, Konto und Ansatz, Filter nach Dokument, Aufgabengruppe,
+  Richtung, Gebarung und Betragsbereich, sortierbare Spalten sowie Treffer-
+  und Summenanzeige. Das ist der schnellste Weg, einen konkreten Posten zu
+  finden, ohne eine SQL-Abfrage zu schreiben.
+- Der **Drill-down** im Ausgaben-Tab führt von der Aufgabengruppe über den
+  Ansatz bis zum Einzelposten — die Summen je Ebene stimmen mit den
+  Ansatz-Summen der Datenbank überein.
