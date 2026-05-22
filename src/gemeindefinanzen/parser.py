@@ -36,8 +36,23 @@ Y_FOOTER = 558.0       # darunter: Seitenfuss
 # Mittelherkunft (1 operativer Aufwand, 2 operativer Ertrag, 5 investive
 # Auszahlung, 6 investive Einzahlung). Massgeblich fuer die Richtung ist das
 # Vorzeichen: '-' = Ausgabe, '+' = Einnahme; die Gebarung kommt aus dem Kontext.
-DETAIL_RE = re.compile(r"^(\d)/(\d{6})([+-])(\d{6})$")
-NUMBER_RE = re.compile(r"^-?\d{1,3}(?:\.\d{3})*,\d{2}$")
+# Das Konto ist sechsstellig; manche Gemeinden fassen die Personalkonten je
+# Ansatz zu einer verdichteten Zeile mit verkuerztem Konto zusammen (z.B.
+# '1/439000-5' = Personalkonten verdichtet), daher 1-6 Stellen zugelassen.
+DETAIL_RE = re.compile(r"^(\d)/(\d{6})([+-])(\d{1,6})$")
+# Vollstaendiger Betrag: gepunktet ('47.800,00') oder bereits zusammengezogen
+# ('47800,00') — letzteres entsteht beim Zusammenfuehren aufgeteilter Fragmente.
+NUMBER_RE = re.compile(r"^-?\d{1,3}(?:\.\d{3})*,\d{2}$|^-?\d+,\d{2}$")
+
+# Zahlfragmente fuer die Vor-Aufbereitung aufgeteilter Betraege. Manche PDFs
+# rendern eine tausendergetrennte Zahl als mehrere Textfragmente statt als ein
+# Wort (z.B. '47' + '800,00'). Fragmente sind reine Ziffernbloecke ('-?\d{1,3}')
+# oder ein abschliessender Block mit Nachkommastellen ('\d{3},\d{2}').
+_FRAG_HEAD = re.compile(r"^-?\d{1,3}$")        # fuehrender/mittlerer Block
+_FRAG_TAIL = re.compile(r"^\d{3},\d{2}$")      # abschliessender Block mit Cent
+# Maximaler horizontaler Abstand (pt) zwischen zwei Fragmenten derselben Zahl.
+# Gemessen: zahlinterne Luecken ~2 pt, Luecken zwischen Betragsspalten >=17 pt.
+FRAG_GAP_MAX = 6.0
 GEBARUNG_LABELS = {
     "operative gebarung": "operativ",
     "investive gebarung": "investiv",
@@ -83,6 +98,60 @@ def _num(text: str) -> float | None:
     if not NUMBER_RE.match(text):
         return None
     return float(text.replace(".", "").replace(",", "."))
+
+
+def _ist_fragment(text: str) -> bool:
+    """Ist der Text ein moegliches Fragment einer aufgeteilten Zahl?"""
+    return (
+        _FRAG_HEAD.match(text) is not None
+        or _FRAG_TAIL.match(text) is not None
+        or NUMBER_RE.match(text) is not None
+    )
+
+
+def _merge_number_fragments(words: list[extract.Word]) -> list[extract.Word]:
+    """Aufgeteilte Betraege vor der Spaltenzuordnung wieder zusammenfuehren.
+
+    Manche PDFs rendern '47.800,00' als zwei Woerter '47' und '800,00'. Liegen
+    zwei Zahlfragmente horizontal dicht beieinander (Abstand <= FRAG_GAP_MAX),
+    gehoeren sie zur selben Zahl. Die Fragmenttexte werden direkt verkettet
+    ('47' + '800,00' -> '47800,00'); ``_num`` liest die zusammengezogene Form.
+    Das synthetische Wort behaelt x0 des ersten und x1 des letzten Fragments,
+    sodass die rechtskantige Spaltenzuordnung unveraendert weiterfunktioniert.
+
+    Die Eingabe ist nach x0 sortiert (siehe ``extract.page_lines``).
+    """
+    if len(words) < 2:
+        return words
+    merged: list[extract.Word] = []
+    i = 0
+    while i < len(words):
+        cluster = [words[i]]
+        j = i + 1
+        while j < len(words):
+            vorgaenger = cluster[-1]
+            kandidat = words[j]
+            gap = kandidat.x0 - vorgaenger.x1
+            # Ein abgeschlossenes Fragment (Nachkommastellen) beendet den Cluster.
+            if _FRAG_TAIL.match(vorgaenger.text) or NUMBER_RE.match(vorgaenger.text):
+                break
+            if 0 <= gap <= FRAG_GAP_MAX and _ist_fragment(vorgaenger.text) \
+                    and _ist_fragment(kandidat.text):
+                cluster.append(kandidat)
+                j += 1
+            else:
+                break
+        if len(cluster) > 1:
+            text = "".join(w.text for w in cluster)
+            merged.append(extract.Word(
+                text=text,
+                x0=cluster[0].x0, y0=cluster[0].y0,
+                x1=cluster[-1].x1, y1=cluster[-1].y1,
+            ))
+        else:
+            merged.append(cluster[0])
+        i = j if j > i + 1 else i + 1
+    return merged
 
 
 def _amount_column(x1: float) -> int | None:
@@ -151,13 +220,15 @@ def parse_document(path: str) -> ParseResult:
         for line in extract.page_lines(doc, page):
             if line.y < Y_HEADER or line.y > Y_FOOTER:
                 continue
-            words = line.words
-            if not words:
+            if not line.words:
                 continue
             text = line.text.strip()
             if re.fullmatch(r"Seite\s+\d+", text):
                 continue
 
+            # Aufgeteilte Betraege ('47' + '800,00') wieder zusammenfuehren,
+            # bevor die Spaltenzuordnung greift.
+            words = _merge_number_fragments(line.words)
             first = words[0].text
             buckets = _split_columns(words)
             label = " ".join(w.text for w in buckets["label"]).strip()

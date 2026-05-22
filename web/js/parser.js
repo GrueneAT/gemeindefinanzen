@@ -10,7 +10,7 @@
 // rechte Kante der richtigen Spalte zugeordnet — unabhaengig davon, wie viele
 // Spalten in einer Zeile befuellt sind.
 
-import { openDocument, sectionRanges, pageLines } from "./extract.js"
+import { openDocument, sectionRanges, pageLines, Word } from "./extract.js"
 
 // --- Geometrie (aus VA-2026-Auflage.pdf vermessen, A4 quer) -----------------
 // Rechte Kante (x1) der sechs Betragsspalten: EH VA / EH VA-VJ / EH RA-VJ |
@@ -26,9 +26,24 @@ const Y_HEADER = 90.0 // darueber: Seitenkopf
 const Y_FOOTER = 558.0 // darunter: Seitenfuss
 
 // Detailzeilen-Schluessel '<typ>/<ansatz>±<konto>'.
-const DETAIL_RE = /^(\d)\/(\d{6})([+-])(\d{6})$/
-const NUMBER_RE = /^-?\d{1,3}(?:\.\d{3})*,\d{2}$/
+// Das Konto ist sechsstellig; manche Gemeinden fassen die Personalkonten je
+// Ansatz zu einer verdichteten Zeile mit verkuerztem Konto zusammen (z.B.
+// '1/439000-5' = Personalkonten verdichtet), daher 1-6 Stellen zugelassen.
+const DETAIL_RE = /^(\d)\/(\d{6})([+-])(\d{1,6})$/
+// Vollstaendiger Betrag: gepunktet ('47.800,00') oder bereits zusammengezogen
+// ('47800,00') — letzteres entsteht beim Zusammenfuehren aufgeteilter Fragmente.
+const NUMBER_RE = /^-?\d{1,3}(?:\.\d{3})*,\d{2}$|^-?\d+,\d{2}$/
 const SEITE_RE = /^Seite\s+\d+$/
+
+// Zahlfragmente fuer die Vor-Aufbereitung aufgeteilter Betraege. Manche PDFs
+// rendern eine tausendergetrennte Zahl als mehrere Textfragmente statt als ein
+// Wort (z.B. '47' + '800,00'). Fragmente sind reine Ziffernbloecke
+// ('-?\d{1,3}') oder ein abschliessender Block mit Nachkommastellen.
+const FRAG_HEAD_RE = /^-?\d{1,3}$/
+const FRAG_TAIL_RE = /^\d{3},\d{2}$/
+// Maximaler horizontaler Abstand (pt) zwischen zwei Fragmenten derselben Zahl.
+// Gemessen: zahlinterne Luecken ~2 pt, Luecken zwischen Betragsspalten >=17 pt.
+const FRAG_GAP_MAX = 6.0
 const GEBARUNG_LABELS = {
   "operative gebarung": "operativ",
   "investive gebarung": "investiv",
@@ -73,6 +88,67 @@ export class ParseResult {
 function num(text) {
   if (!NUMBER_RE.test(text)) return null
   return Number(text.replace(/\./g, "").replace(",", "."))
+}
+
+// Ist der Text ein moegliches Fragment einer aufgeteilten Zahl?
+function istFragment(text) {
+  return FRAG_HEAD_RE.test(text) || FRAG_TAIL_RE.test(text) || NUMBER_RE.test(text)
+}
+
+// Aufgeteilte Betraege vor der Spaltenzuordnung wieder zusammenfuehren.
+//
+// Manche PDFs rendern '47.800,00' als zwei Woerter '47' und '800,00'. Liegen
+// zwei Zahlfragmente horizontal dicht beieinander (Abstand <= FRAG_GAP_MAX),
+// gehoeren sie zur selben Zahl. Die Fragmenttexte werden direkt verkettet
+// ('47' + '800,00' -> '47800,00'); num() liest die zusammengezogene Form.
+// Das synthetische Wort behaelt x0 des ersten und x1 des letzten Fragments,
+// sodass die rechtskantige Spaltenzuordnung unveraendert weiterfunktioniert.
+//
+// Die Eingabe ist nach x0 sortiert (siehe extract.pageLines).
+export function mergeNumberFragments(words) {
+  if (words.length < 2) return words
+  const merged = []
+  let i = 0
+  while (i < words.length) {
+    const cluster = [words[i]]
+    let j = i + 1
+    while (j < words.length) {
+      const vorgaenger = cluster[cluster.length - 1]
+      const kandidat = words[j]
+      const gap = kandidat.x0 - vorgaenger.x1
+      // Ein abgeschlossenes Fragment (Nachkommastellen) beendet den Cluster.
+      if (FRAG_TAIL_RE.test(vorgaenger.text) || NUMBER_RE.test(vorgaenger.text)) {
+        break
+      }
+      if (
+        gap >= 0 &&
+        gap <= FRAG_GAP_MAX &&
+        istFragment(vorgaenger.text) &&
+        istFragment(kandidat.text)
+      ) {
+        cluster.push(kandidat)
+        j += 1
+      } else {
+        break
+      }
+    }
+    if (cluster.length > 1) {
+      const last = cluster[cluster.length - 1]
+      merged.push(
+        new Word(
+          cluster.map((w) => w.text).join(""),
+          cluster[0].x0,
+          cluster[0].y0,
+          last.x1,
+          last.y1,
+        ),
+      )
+    } else {
+      merged.push(cluster[0])
+    }
+    i = j > i + 1 ? j : i + 1
+  }
+  return merged
 }
 
 // Betragswort ueber seine rechte Kante einer der sechs Spalten zuordnen.
@@ -163,11 +239,13 @@ export function parseDocument(doc) {
   for (let page = start; page <= end; page++) {
     for (const line of pageLines(doc, page)) {
       if (line.y < Y_HEADER || line.y > Y_FOOTER) continue
-      const words = line.words
-      if (words.length === 0) continue
+      if (line.words.length === 0) continue
       const text = line.text.trim()
       if (SEITE_RE.test(text)) continue
 
+      // Aufgeteilte Betraege ('47' + '800,00') wieder zusammenfuehren,
+      // bevor die Spaltenzuordnung greift.
+      const words = mergeNumberFragments(line.words)
       const first = words[0].text
       const buckets = splitColumns(words)
       const label = buckets.label

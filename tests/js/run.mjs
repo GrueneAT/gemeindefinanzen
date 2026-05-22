@@ -9,12 +9,12 @@
 
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm"
 import * as mupdf from "mupdf"
-import { readFileSync, readdirSync, existsSync } from "node:fs"
+import { readFileSync, existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
 
 import { openDocument, documentMeta, sectionRanges } from "../../web/js/extract.js"
-import { parseDocumentBytes } from "../../web/js/parser.js"
+import { parseDocumentBytes, mergeNumberFragments } from "../../web/js/parser.js"
 import { validate, pruefStatus } from "../../web/js/validate.js"
 import { spalten } from "../../web/js/loader.js"
 import { oeffneDb, importBytes } from "../../web/js/db.js"
@@ -47,16 +47,82 @@ const ERWARTET = {
   "VA-2026-Auflage.pdf": { detail: 1408, summe: 690, saldo: 805 },
 }
 
+// Fest gepinnte Herzogenburg-Fixtures: der Test darf NICHT den ganzen
+// documents/-Ordner globben, sonst verschieben zusaetzliche PDFs anderer
+// Gemeinden die Erwartungswerte (4 Dokumente, 20/20, 5415 Posten).
+const FIXTURES = Object.keys(ERWARTET).sort()
+
 function pdfBytes(name) {
   return new Uint8Array(readFileSync(join(DOCS, name)))
 }
 
-async function teste() {
-  const pdfs = readdirSync(DOCS)
-    .filter((f) => f.endsWith(".pdf"))
-    .sort()
+// Hilfswort mit gegebener Lage; x1 ergibt sich aus einer fixen Zeichenbreite.
+function wort(text, x0) {
+  return { text, x0, y0: 0.0, x1: x0 + 4.0 * text.length, y1: 8.0 }
+}
 
-  console.log("loader.spalten — Spaltenbedeutung je Dokumenttyp")
+// Einheitstests fuer das Zusammenfuehren aufgeteilter Zahlfragmente.
+function testeFragmentMerge() {
+  // Zwei Fragmente: '47' + '800,00' -> '47800,00'.
+  const zwei = mergeNumberFragments([wort("47", 430.0), wort("800,00", 440.0)])
+  pruefe(
+    "zwei Fragmente -> 47800,00",
+    zwei.length === 1 && zwei[0].text === "47800,00",
+    JSON.stringify(zwei.map((w) => w.text)),
+  )
+  // Drei Fragmente: '1' + '234' + '567,00' -> '1234567,00'.
+  const drei = mergeNumberFragments([
+    wort("1", 400.0),
+    wort("234", 406.0),
+    wort("567,00", 420.0),
+  ])
+  pruefe(
+    "drei Fragmente -> 1234567,00",
+    drei.length === 1 && drei[0].text === "1234567,00",
+    JSON.stringify(drei.map((w) => w.text)),
+  )
+  // Negatives Fragment: '-5' + '100,00' -> '-5100,00'.
+  const neg = mergeNumberFragments([wort("-5", 400.0), wort("100,00", 410.0)])
+  pruefe(
+    "negatives Fragment -> -5100,00",
+    neg.length === 1 && neg[0].text === "-5100,00",
+    JSON.stringify(neg.map((w) => w.text)),
+  )
+  // Ganzes Zahlwort bleibt unveraendert.
+  const ganz = mergeNumberFragments([wort("4.900.000,00", 400.0)])
+  pruefe(
+    "ganzes Zahlwort unveraendert",
+    ganz.length === 1 && ganz[0].text === "4.900.000,00",
+    JSON.stringify(ganz.map((w) => w.text)),
+  )
+  // Kleine ungeteilte Zahl bleibt unveraendert.
+  const klein = mergeNumberFragments([wort("300,00", 440.0)])
+  pruefe(
+    "kleine ungeteilte Zahl unveraendert",
+    klein.length === 1 && klein[0].text === "300,00",
+    JSON.stringify(klein.map((w) => w.text)),
+  )
+  // Spaltengrenze: zwei Betraege mit Luecke ~18 pt bleiben getrennt.
+  const grenze = mergeNumberFragments([
+    { text: "800,00", x0: 440.0, y0: 0.0, x1: 463.7, y1: 8.0 },
+    { text: "100,00", x0: 502.7, y0: 0.0, x1: 526.1, y1: 8.0 },
+  ])
+  pruefe(
+    "Spaltengrenze trennt zwei Betraege",
+    grenze.length === 2 &&
+      grenze[0].text === "800,00" &&
+      grenze[1].text === "100,00",
+    JSON.stringify(grenze.map((w) => w.text)),
+  )
+}
+
+async function teste() {
+  const pdfs = FIXTURES
+
+  console.log("parser.mergeNumberFragments — aufgeteilte Betraege zusammenfuehren")
+  testeFragmentMerge()
+
+  console.log("\nloader.spalten — Spaltenbedeutung je Dokumenttyp")
   pruefe(
     "VA",
     JSON.stringify(spalten("VA", 2026)) ===
