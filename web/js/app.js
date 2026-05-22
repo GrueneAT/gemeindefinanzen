@@ -52,6 +52,22 @@ async function init() {
   zeichneDokumentliste()
   zeichneDashboard()
   window.__appBereit = true
+  zeigeBuildStempel()
+}
+
+// Build-Commit aus version.json in die Fusszeile schreiben. Fehlt die Datei
+// oder schlaegt der Fetch fehl, faellt der Text sauber auf "Build dev" zurueck.
+function zeigeBuildStempel() {
+  fetch("./version.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((v) => {
+      const el = document.getElementById("build-stamp")
+      if (!el) return
+      el.textContent = v && v.shortCommit
+        ? "Build " + v.shortCommit
+        : "Build dev"
+    })
+    .catch(() => {})
 }
 
 // Dashboard aufbauen, wenn Dokumente vorhanden sind; sonst Empty-State.
