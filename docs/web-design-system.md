@@ -146,6 +146,25 @@ zusaetzlich macht es laut. Ruhigere Skala:
 - Header: schlank (~64–72px), Logo + Wortmarke als Markenleiste; nicht als
   hoher Farbblock.
 
-### Iteration 2 — Typografie & Header (in Arbeit)
+### Iteration 2 — Typografie & Header (erledigt)
 
-_wird nach visueller Pruefung fortgeschrieben._
+Ueberschriften von durchgehend Gewicht 900 auf die ruhigere Skala gebracht:
+`h1`/`​.gat-headline` -> 800, `h2`/`h3` -> 700, `h3` kleiner (auf
+`--gat-text-subline`). Farbe `--web-text` statt Schwarz. Vertikaler Rhythmus
+in CSS statt Inline-Hacks: `h2` mit grossem Oberabstand (`--gat-space-6`),
+`h3` eng am Inhalt (`--gat-space-5`/`-2`); erste Panel-Ueberschrift und
+erste h3 einer Rasterzelle ohne Extra-Oberabstand. Inline-`margin-top`-Hacks
+auf `<h3>` und Callout aus `index.html` entfernt.
+
+Header von einem ~115px-Dunkelgruen-Block zu einer schlanken Markenleiste
+(~65px) umgebaut: Logo-Mark plus Wortmarke „Gemeindefinanzen" als
+Markeneinheit auf `--web-green-deep`, weisse Schrift. Doppelte Wortmarke
+aufgeloest — der Header traegt die Marke, die rechte Navi zeigt jetzt
+„VRV-2015-Analyse", der Body-`<h1>` lautet „Gemeindebudget auswerten"
+(Arbeitstitel der Seite). DS-Klassen (`.gat-header`/`.gat-nav`/
+`.gat-header__logo-mark`) bleiben am Element, nur per `.web-brandbar*`
+ueberschrieben. **Tests gruen.**
+
+Verbleibende Befunde fuer die naechsten Runden:
+- Metric-Card-Akzentbalken alle gruen — keine semantische Unterscheidung.
+- Diagramm-Container (`.dash-chart`) noch nicht als `.web-panel` umgesetzt.
