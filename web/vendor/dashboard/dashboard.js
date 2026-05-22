@@ -651,6 +651,7 @@
   registerChart("c_aufwandart", "dok", "aufwandart");
   registerChart("c_treemap", "dok", "treemap");
   registerChart("c_wasserfall", "dok", "wasserfall");
+  registerChart("c_wasserfall_sp", "dok", "wasserfall");
   registerChart("c_korridor", "dok", "korridor");
   registerChart("c_treiber", "dok", "treiber");
   registerChart("c_investitionen", "dok", "investitionen");
