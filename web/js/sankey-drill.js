@@ -4,11 +4,12 @@
 //
 // Drei Ebenen: Einnahmequellen -> "Gemeindehaushalt" -> Aufgabengruppen.
 // Ein Klick auf einen Quellen-Knoten klappt diesen in seine Konten auf, ein
-// Klick auf einen Aufgabengruppen-Knoten in seine Ansaetze. Der Drill-down
-// zeigt dann nur noch den gewaehlten Zweig (Mittelknoten plus dessen Kinder) —
-// die uebrigen Knoten der obersten Ebene werden ausgeblendet, damit die
-// Grafik uebersichtlich bleibt. Lange Kinderlisten werden auf TOP_N gekappt
-// und der Rest in einen "Sonstige"-Knoten gebuendelt.
+// Klick auf einen Aufgabengruppen-Knoten in seine Ansaetze. Im Drill-down
+// werden die uebrigen Knoten der gedrillten Seite ausgeblendet; die
+// Gegenseite bleibt in Uebersichtsform sichtbar, damit der Anteil des
+// aufgeklappten Bereichs am Gesamthaushalt ablesbar bleibt. Lange
+// Kinderlisten werden auf TOP_N gekappt und der Rest in einen
+// "Sonstige"-Knoten gebuendelt.
 //
 // Reine Funktionen ohne ECharts-/DOM-Abhaengigkeit, damit in Node testbar.
 
@@ -173,59 +174,62 @@ export function buildSankeyOption(posten, dokId, expand) {
 
   node(MITTE, INK.soft, { seite: "mitte", key: "", expandbar: false })
 
-  // Einnahmeseite. Im Drill-down nur den aufgeklappten Zweig zeigen — die
-  // uebrigen Knoten der obersten Ebene wuerden die Grafik ueberladen. Bei
-  // einem Drill-down in eine Gruppe entfaellt die Einnahmeseite ganz.
-  if (!expand || expand.seite === "quelle") {
-    quellen(einnahmen).forEach(([name, betrag]) => {
-      if (expand && expand.key === name) {
-        // Diese Quelle ausgeklappt: ein Knoten je Konto.
-        kontenDerQuelle(einnahmen, name).forEach(([kLabel, kBetrag]) => {
-          node(kLabel, quelleFarbe(name), {
-            seite: "quelle",
-            key: name,
-            expandbar: false,
-          })
-          links.push({ source: kLabel, target: MITTE, value: kBetrag })
-        })
-      } else if (!expand) {
-        // Uebersicht: jede Quelle als eingeklappter, aufklappbarer Knoten.
-        node(name, quelleFarbe(name), {
+  // Pro Seite: ist genau diese Seite die gedrillte Seite? Nur auf der
+  // gedrillten Seite werden die nicht-gewaehlten Knoten ausgeblendet; die
+  // Gegenseite faellt in den Uebersichts-Zweig.
+  const quelleGedrillt = !!expand && expand.seite === "quelle"
+  const gruppeGedrillt = !!expand && expand.seite === "gruppe"
+
+  // Einnahmeseite. Ist sie die gedrillte Seite, wird nur der aufgeklappte
+  // Zweig gezeigt; ist sie die Gegenseite (oder kein Drill-down aktiv),
+  // bleibt sie in Uebersichtsform sichtbar.
+  quellen(einnahmen).forEach(([name, betrag]) => {
+    if (expand && expand.key === name) {
+      // Diese Quelle ausgeklappt: ein Knoten je Konto.
+      kontenDerQuelle(einnahmen, name).forEach(([kLabel, kBetrag]) => {
+        node(kLabel, quelleFarbe(name), {
           seite: "quelle",
           key: name,
-          expandbar: true,
+          expandbar: false,
         })
-        links.push({ source: name, target: MITTE, value: betrag })
-      }
-      // Im Drill-down einer anderen Quelle: dieser Knoten bleibt ausgeblendet.
-    })
-  }
+        links.push({ source: kLabel, target: MITTE, value: kBetrag })
+      })
+    } else if (!quelleGedrillt) {
+      // Uebersicht: jede Quelle als eingeklappter, aufklappbarer Knoten.
+      node(name, quelleFarbe(name), {
+        seite: "quelle",
+        key: name,
+        expandbar: true,
+      })
+      links.push({ source: name, target: MITTE, value: betrag })
+    }
+    // Anderer, nicht-gewaehlter Knoten DERSELBEN gedrillten Seite: bleibt
+    // ausgeblendet.
+  })
 
-  // Ausgabeseite. Im Drill-down nur den aufgeklappten Zweig zeigen; bei einem
-  // Drill-down in eine Quelle entfaellt die Ausgabeseite ganz.
-  if (!expand || expand.seite === "gruppe") {
-    gruppen(ausgaben).forEach(([code, text, betrag]) => {
-      if (expand && expand.key === code) {
-        // Diese Gruppe ausgeklappt: ein Knoten je Ansatz.
-        ansaetzeDerGruppe(ausgaben, code).forEach(([aLabel, aBetrag]) => {
-          node(aLabel, INK.orange, {
-            seite: "gruppe",
-            key: code,
-            expandbar: false,
-          })
-          links.push({ source: MITTE, target: aLabel, value: aBetrag })
-        })
-      } else if (!expand) {
-        node(text, INK.orange, {
+  // Ausgabeseite — symmetrisch zur Einnahmeseite.
+  gruppen(ausgaben).forEach(([code, text, betrag]) => {
+    if (expand && expand.key === code) {
+      // Diese Gruppe ausgeklappt: ein Knoten je Ansatz.
+      ansaetzeDerGruppe(ausgaben, code).forEach(([aLabel, aBetrag]) => {
+        node(aLabel, INK.orange, {
           seite: "gruppe",
           key: code,
-          expandbar: true,
+          expandbar: false,
         })
-        links.push({ source: MITTE, target: text, value: betrag })
-      }
-      // Im Drill-down einer anderen Gruppe: dieser Knoten bleibt ausgeblendet.
-    })
-  }
+        links.push({ source: MITTE, target: aLabel, value: aBetrag })
+      })
+    } else if (!gruppeGedrillt) {
+      node(text, INK.orange, {
+        seite: "gruppe",
+        key: code,
+        expandbar: true,
+      })
+      links.push({ source: MITTE, target: text, value: betrag })
+    }
+    // Anderer, nicht-gewaehlter Knoten DERSELBEN gedrillten Seite: bleibt
+    // ausgeblendet.
+  })
 
   return {
     textStyle: { fontFamily: "Inter, sans-serif", color: "#2b2825" },
