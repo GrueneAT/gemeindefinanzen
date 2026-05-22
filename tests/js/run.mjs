@@ -336,7 +336,7 @@ async function teste() {
       (l) => l.source === "Gemeindehaushalt" || l.target === "Gemeindehaushalt",
     ),
   )
-  // Aufklappen einer Aufgabengruppe -> Ansatz-Knoten ersetzen den Gruppenknoten.
+  // Drill-down in eine Aufgabengruppe -> nur ihre Ansatz-Knoten plus Mitte.
   const eineGruppe = gruppeKnoten[0]
   const sGruppe = buildSankeyOption(daten.posten, sDok, {
     seite: "gruppe",
@@ -350,12 +350,15 @@ async function teste() {
     ),
   )
   pruefe(
-    "buildSankeyOption: andere Gruppen bleiben eingeklappt",
-    gSerie.data.filter((n) => n.drillSeite === "gruppe" && n.drillExpandbar)
-      .length ===
-      gruppeKnoten.length - 1,
+    "buildSankeyOption: Drill-down einer Gruppe zeigt nur den gewaehlten Zweig",
+    // Nur der Mittelknoten und die Kinder der gewaehlten Gruppe — keine
+    // anderen Gruppen, keine Einnahmeseite.
+    gSerie.data.length >= 2 &&
+      gSerie.data.every(
+        (n) => n.drillSeite === "mitte" || n.drillKey === eineGruppe.drillKey,
+      ),
   )
-  // Betragserhalt: Summe Gruppen-Links unveraendert nach Aufklappen.
+  // Betragstreue: die Kinder-Links summieren sich zum Betrag der Gruppe.
   function gruppenSumme(serie) {
     return Math.round(
       serie.links
@@ -363,12 +366,15 @@ async function teste() {
         .reduce((s, l) => s + l.value, 0),
     )
   }
+  const gruppeBetrag = sSerie.links.find(
+    (l) => l.source === "Gemeindehaushalt" && l.target === eineGruppe.name,
+  ).value
   pruefe(
-    "buildSankeyOption: Aufklappen erhaelt die Ausgabensumme",
-    gruppenSumme(sSerie) === gruppenSumme(gSerie),
-    gruppenSumme(sSerie) + " vs " + gruppenSumme(gSerie),
+    "buildSankeyOption: Drill-down erhaelt den Betrag der gewaehlten Gruppe",
+    gruppenSumme(gSerie) === Math.round(gruppeBetrag),
+    gruppenSumme(gSerie) + " vs " + Math.round(gruppeBetrag),
   )
-  // Aufklappen einer Einnahmequelle -> Konten-Knoten.
+  // Drill-down in eine Einnahmequelle -> nur ihre Konten-Knoten plus Mitte.
   const eineQuelle = quelleKnoten[0]
   const sQuelle = buildSankeyOption(daten.posten, sDok, {
     seite: "quelle",
@@ -383,15 +389,27 @@ async function teste() {
     )
   }
   pruefe(
-    "buildSankeyOption: Aufklappen einer Quelle erhaelt die Einnahmesumme",
-    quellenSumme(sSerie) === quellenSumme(qSerie),
-    quellenSumme(sSerie) + " vs " + quellenSumme(qSerie),
-  )
-  pruefe(
     "buildSankeyOption: aufgeklappte Quelle verschwindet als Einzelknoten",
     !qSerie.data.some(
       (n) => n.name === eineQuelle.name && n.drillExpandbar,
     ),
+  )
+  pruefe(
+    "buildSankeyOption: Drill-down einer Quelle zeigt nur den gewaehlten Zweig",
+    // Nur der Mittelknoten und die Kinder der gewaehlten Quelle — keine
+    // anderen Quellen, keine Ausgabeseite.
+    qSerie.data.length >= 2 &&
+      qSerie.data.every(
+        (n) => n.drillSeite === "mitte" || n.drillKey === eineQuelle.drillKey,
+      ),
+  )
+  const quelleBetrag = sSerie.links.find(
+    (l) => l.target === "Gemeindehaushalt" && l.source === eineQuelle.name,
+  ).value
+  pruefe(
+    "buildSankeyOption: Drill-down erhaelt den Betrag der gewaehlten Quelle",
+    quellenSumme(qSerie) === Math.round(quelleBetrag),
+    quellenSumme(qSerie) + " vs " + Math.round(quelleBetrag),
   )
 
   console.log("\ndb — Persistenz-Guard ohne IndexedDB (Node-Umgebung)")
