@@ -34,6 +34,39 @@ function baseText() {
   return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
 }
 
+// Tooltip auf die Komponentensprache des Web-Design-Systems: helle Karte
+// mit Haarlinie und weichem Schatten statt der dunklen ECharts-Voreinstellung.
+// Schrift = Seitenschrift, Text im ruhigen --web-text-Ton. extra erlaubt es,
+// trigger/axisPointer je Diagramm zu ergaenzen.
+function tip(extra = {}) {
+  return {
+    backgroundColor: INK.paper,
+    borderColor: ACHSE_LINIE,
+    borderWidth: 1,
+    padding: [7, 11],
+    extraCssText: "box-shadow: 0 4px 14px rgba(31,38,28,.12); border-radius: 8px;",
+    textStyle: {
+      fontFamily: CHART_FONT,
+      color: ACHSE_TEXT,
+      fontSize: 12,
+    },
+    ...extra,
+  }
+}
+
+// Legende auf die ruhige Komponentensprache: Sekundaertext-Ton, Seitenschrift.
+function legende(extra = {}) {
+  return {
+    bottom: 0,
+    textStyle: {
+      fontFamily: CHART_FONT,
+      fontSize: 11,
+      color: ACHSE_TEXT_SOFT,
+    },
+    ...extra,
+  }
+}
+
 function catAxis(data, fontsize = 11, rotate = 0) {
   return {
     type: "category",
@@ -81,7 +114,7 @@ function bar(categories, values, color, colors = null) {
   return {
     textStyle: baseText(),
     grid: { left: 8, right: 22, top: 12, bottom: 8, containLabel: true },
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     xAxis: valAxis(),
     yAxis: { ...catAxis(categories), inverse: true },
     series: [
@@ -121,7 +154,7 @@ export function chartSankey(agg) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "item" },
+    tooltip: tip({ trigger: "item" }),
     series: [
       {
         type: "sankey",
@@ -177,11 +210,8 @@ export function chartAufwandart(agg) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "item" },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
-    },
+    tooltip: tip({ trigger: "item" }),
+    legend: legende(),
     series: [
       {
         type: "pie",
@@ -214,7 +244,7 @@ export function chartTreemap(agg) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "item" },
+    tooltip: tip({ trigger: "item" }),
     series: [
       {
         type: "treemap",
@@ -280,7 +310,7 @@ export function chartWasserfall(agg, jahr) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     grid: { left: 8, right: 18, top: 16, bottom: 8, containLabel: true },
     xAxis: catAxis(namen, 10),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
@@ -317,11 +347,8 @@ export function chartKorridor(agg) {
   const kumuliert = e.map(([, , k]) => k)
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
-    },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
     grid: { left: 8, right: 18, top: 12, bottom: 48, containLabel: true },
     xAxis: catAxis(cats, 9, 38),
     yAxis: valAxis(),
@@ -352,11 +379,8 @@ export function chartTrendEckwerte(trend) {
   const namen = reihe.map((r) => r[0])
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
-    },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
     grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
@@ -389,7 +413,7 @@ export function chartTrendKomm(trend) {
   const reihe = trend.komm
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis" },
+    tooltip: tip({ trigger: "axis" }),
     grid: { left: 8, right: 18, top: 16, bottom: 8, containLabel: true },
     xAxis: catAxis(reihe.map((r) => r[0])),
     yAxis: valAxis(),
@@ -425,11 +449,8 @@ export function chartTrendAufwand(trend) {
   ]
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
-    },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
     grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
@@ -446,12 +467,8 @@ export function chartTrendAufwand(trend) {
 function mehrjahrBasis(jahre) {
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "line" } },
-    legend: {
-      type: "scroll",
-      bottom: 0,
-      textStyle: { fontFamily: CHART_FONT, fontSize: 11 },
-    },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
+    legend: legende({ type: "scroll" }),
     grid: { left: 8, right: 22, top: 16, bottom: 56, containLabel: true },
     xAxis: catAxis(jahre, 11),
     yAxis: valAxis(),

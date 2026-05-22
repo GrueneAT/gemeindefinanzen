@@ -34,6 +34,20 @@ const INK = {
 // Diagrammschrift = Seitenschrift (Gruene-AT-DS).
 const CHART_FONT = "Barlow Semi Condensed, sans-serif"
 const ACHSE_TEXT = "#23271f"
+const ACHSE_LINIE = "#cdd2c8"
+
+// Tooltip auf die Komponentensprache: helle Karte mit Haarlinie und weichem
+// Schatten statt der dunklen ECharts-Voreinstellung — identisch zu
+// dashboard-charts.js.
+const TOOLTIP = {
+  trigger: "item",
+  backgroundColor: "#ffffff",
+  borderColor: ACHSE_LINIE,
+  borderWidth: 1,
+  padding: [7, 11],
+  extraCssText: "box-shadow: 0 4px 14px rgba(31,38,28,.12); border-radius: 8px;",
+  textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT, fontSize: 12 },
+}
 
 // Einnahmequelle eines Postens — Portierung der CASE-Logik aus
 // dashboard-data.js (sankey()), damit die Quellen-Aggregation des
@@ -240,7 +254,7 @@ export function buildSankeyOption(posten, dokId, expand) {
 
   return {
     textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT },
-    tooltip: { trigger: "item" },
+    tooltip: TOOLTIP,
     series: [
       {
         type: "sankey",
