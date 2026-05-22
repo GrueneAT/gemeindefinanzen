@@ -110,6 +110,33 @@ Ordner `/site` wählen, oder `site/index.html` per Workflow in den
 Pages-Branch publizieren. Der Ordner `site/` ist `.gitignore`-t und wird bei
 jedem `make pages` neu erzeugt.
 
+## Browser-App — VRV-PDFs ohne Server auswerten
+
+Unter `web/` liegt eine reine statische Website: Sie laden VRV-2015-PDFs per
+Drag & Drop hoch, **Textextraktion, Parsing und Auswertung laufen vollständig
+im Browser**. Kein Server, kein Upload ins Netz, keine Konten.
+
+- PDF-Extraktion über [`mupdf.js`](https://github.com/ArtifexSoftware/mupdf.js)
+  — dieselbe Engine wie PyMuPDF, deshalb identische Wort-Geometrie.
+- Der VRV-Parser und die Plausibilitätsprüfung sind nach JavaScript portiert
+  und liefern nachweislich dasselbe Ergebnis wie die Python-Pipeline.
+- Speicherung über `sqlite-wasm` (OPFS) — der Stand bleibt über einen Reload
+  erhalten. `schema.sql` und die `sql/`-Abfragen laufen unverändert.
+- Das Dashboard arbeitet auf den hochgeladenen Daten.
+
+Lokal testen:
+
+```sh
+make web-deps       # mupdf.js und sqlite-wasm installieren (einmalig)
+make web-test       # JS-Tests gegen die vier PDFs in documents/
+make web-serve      # http://localhost:8080/web/ — Upload-Oberflaeche
+```
+
+Die Seite ist ohne Build-Schritt GitHub-Pages-tauglich — der Ordner `web/`
+enthält alles (Bibliotheken vendorisiert unter `web/vendor/`). `make web-sync`
+hält `web/schema.sql` und `web/sql/` mit der Python-Quelle synchron. Details:
+[`docs/BROWSER-APP.md`](docs/BROWSER-APP.md).
+
 ## Aufbau
 
 | Pfad | Inhalt |
@@ -118,6 +145,8 @@ jedem `make pages` neu erzeugt.
 | `src/gemeindefinanzen/report/` | Dashboard-Erzeugung (data, charts, assets, html) |
 | `src/gemeindefinanzen/schema.sql` | SQLite-Schema mit Views |
 | `scripts/check_dashboard_js.py` | prüft das eingebettete Dashboard-JS mit node |
+| `web/` | statische Browser-App (clientseitiges PDF-Parsing) |
+| `tests/js/` | JS-Tests der Browser-App |
 | `sql/` | Analyse-Abfragen — eine Datei je Fragestellung |
 | `docs/` | Format-, Schema- und Analyse-Dokumentation |
 | `tests/` | Parser-Tests |
@@ -128,6 +157,7 @@ jedem `make pages` neu erzeugt.
 - [`docs/VRV-2015-FORMAT.md`](docs/VRV-2015-FORMAT.md) — Aufbau eines Voranschlags, Kontoschlüssel, Begriffe
 - [`docs/SCHEMA.md`](docs/SCHEMA.md) — Datenbankschema und Views
 - [`docs/ANALYSE-LEITFADEN.md`](docs/ANALYSE-LEITFADEN.md) — die Abfragen und die 800.000-Euro-Methodik
+- [`docs/BROWSER-APP.md`](docs/BROWSER-APP.md) — die statische Browser-App, Architektur und Deployment
 
 ## Belastbarkeit
 
