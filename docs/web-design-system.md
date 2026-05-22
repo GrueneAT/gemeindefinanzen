@@ -302,17 +302,42 @@ entfernt). Pixel-Diff der gerenderten Seite (Landing + Ueberblick mit
 Fixture-PDF, 1440px) = 0. **Tests gruen** (`npm run test:js` 61/61,
 `npm run test:e2e` 7/7).
 
-### Iteration 7 — Feinschliff (in Arbeit)
+### Iteration 7 — Feinschliff (erledigt)
 
-- **Datentabellen in `.web-panel`.** Bisher sitzen nur Diagramme in Panels,
-  Tabellen frei. Tabellen-Bloecke (`.dtable` mit ihrer `h3`) ebenfalls in
-  `.web-panel` fassen — volle Karten-Konsistenz ueber alle Tabs.
-- **Diagramm-Innenleben.** ECharts-Tooltips, Legenden und Achsen auf die
-  Komponentensprache: Tooltip als helle Karte mit Haarlinie/Schatten,
-  Legende in `--web-text-soft`, Achsbeschriftung ruhig. Schrift durchgehend
-  Barlow Semi Condensed.
-- **Landing/Empty-State.** Abstaende im Dokumentmanager (h2 dicht am Rand),
-  ruhiger Auftakt ohne Dokumente.
-- Abschliessender Abstands-/Rhythmus-Durchgang.
+Abschliessender Feinschliff — volle Karten-Konsistenz, ruhiges
+Diagramm-Innenleben, sauberer vertikaler Rhythmus.
 
-_wird nach visueller Pruefung fortgeschrieben._
+- **Datentabellen in `.web-panel`.** Alle frei stehenden `.dtable`-Bloecke
+  sitzen jetzt mit ihrer `h3` in `.web-panel`-Karten: `t-einnahmen`,
+  `t-ausgaben`, `t-investitionen`, `t-transfers`, der Ausgaben-Drill-down
+  (Brotkrumen, Summenzeile, `drill-list`) sowie die Suche-Tab-Bloecke
+  (Filterleiste + Aktionen als Panel „Filter", die Suchtabelle als Panel
+  „Detailposten"). Neue Body-Variante `.web-panel__body--table`: der
+  Innenabstand entfaellt, damit die `.dtable` mit ihren eigenen
+  Zellpolstern bis an die Kante laeuft (kein doppelter Rand); Rand-Zellen
+  einer rahmenlosen Tabelle werden auf den Panel-Innenrand ausgerichtet,
+  die letzte Zeile traegt keine baumelnde Haarlinie. Alle `#id`s und
+  Funktionsklassen (`.dtable`/`.table-scroll`/`.tab-panel` …) unveraendert.
+- **Diagramm-Innenleben.** Zwei geteilte Helfer in `dashboard-charts.js`
+  (`tip()`, `legende()`): der Tooltip ist jetzt eine helle Karte (weisser
+  Grund, `#cdd2c8`-Haarlinie, weicher Schatten, 8px-Radius, `#23271f`-Text,
+  Barlow Semi Condensed) statt der dunklen ECharts-Voreinstellung; die
+  Legende nutzt den Sekundaertext-Ton `#5e6358`. Konsistent ueber alle
+  Builder (Wasserfall, Sankey, Balken, Ring, Treemap, Linien) sowie den
+  Drill-down-Sankey in `sankey-drill.js`. Datenpalette und Farbzuordnung
+  unveraendert.
+- **Landing/Empty-State.** `.doc-manager-body` mit grosszuegigem
+  Innenabstand (`--gat-space-3/4`), damit die Abschnitts-`h2` nicht an der
+  Kante kleben; die beiden Abschnitte durch Abstand + Haarlinie getrennt.
+  Der Empty-State-Hinweis ist eine ruhige, zentrierte Karte (gestrichelte
+  Haarlinie, gesenkter Grundton) statt eines lose schwebenden Absatzes.
+- **Rhythmus-Durchgang.** Erstes/letztes Element im `.web-panel__body`
+  ohne Eigenabstand; `.doc-table-scroll`-Unterabstand auf die
+  Sektionspolsterung abgestimmt; Drill-down-Liste am Panel-Ende ohne
+  doppelten Abstand.
+
+Visuelle Pruefung mit Playwright/Chromium (1440px, Fixture-PDF
+`VA-2026-Auflage.pdf`): Landing plus alle sieben Tabs als Screenshots
+geprueft — jeder Tab liest sich als klare Panel-Sequenz, der restilte
+Tooltip erscheint beim Hover ueber dem Wasserfall als helle Karte.
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
