@@ -208,7 +208,14 @@ def parse_document(path: str) -> ParseResult:
         (rng for title, rng in sections.items() if "Detailnachweis" in title), None
     )
     if detail_section is None:
-        raise ValueError("Kein Abschnitt 'Detailnachweis' im PDF-Inhaltsverzeichnis gefunden.")
+        # Manche Gemeinden exportieren das PDF ohne Lesezeichen — dann den
+        # Abschnitt ersatzweise ueber die laufende Seitenkopfzeile suchen.
+        detail_section = extract.detailnachweis_range_by_text(doc)
+    if detail_section is None:
+        raise ValueError(
+            "Kein Detailnachweis-Abschnitt gefunden — weder in den "
+            "PDF-Lesezeichen noch ueber die Seitenkopfzeilen."
+        )
     start, end = detail_section
 
     result = ParseResult()

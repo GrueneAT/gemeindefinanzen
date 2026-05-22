@@ -57,6 +57,33 @@ def section_ranges(doc: fitz.Document) -> dict[str, tuple[int, int]]:
     return ranges
 
 
+def _laengster_lauf(seiten: list[int]) -> tuple[int, int] | None:
+    """Laengsten zusammenhaengenden Lauf aus aufsteigenden Seitenindizes.
+
+    Eine vereinzelte Erwaehnung (Inhaltsverzeichnis, Vorbericht) bildet keinen
+    Lauf und faellt so heraus. Ergebnis ``(erste, letzte)`` oder ``None``.
+    """
+    if not seiten:
+        return None
+    best = cur = (seiten[0], seiten[0])
+    for p in seiten[1:]:
+        cur = (cur[0], p) if p == cur[1] + 1 else (p, p)
+        if cur[1] - cur[0] > best[1] - best[0]:
+            best = cur
+    return best
+
+
+def detailnachweis_range_by_text(doc: fitz.Document) -> tuple[int, int] | None:
+    """Fallback, wenn ein PDF keine Lesezeichen hat.
+
+    Den Detailnachweis-Abschnitt ueber die laufende Seitenkopfzeile finden:
+    jede Seite des Abschnitts traegt im Kopf den Text ``Detailnachweis``.
+    Ergebnis ``(erste, letzte)`` (0-basiert) oder ``None``.
+    """
+    treffer = [p for p in range(doc.page_count) if "Detailnachweis" in doc[p].get_text()]
+    return _laengster_lauf(treffer)
+
+
 def page_lines(doc: fitz.Document, page_index: int, y_tol: float = 3.0) -> list[Line]:
     """Woerter einer Seite zu Zeilen gruppieren (gleiche y-Lage = gleiche Zeile)."""
     raw = doc[page_index].get_text("words")  # (x0,y0,x1,y1,text,block,line,word)
