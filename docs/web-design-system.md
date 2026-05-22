@@ -738,16 +738,46 @@ Visuelle + Code-Analyse der Gesamtseite:
 **Was wir bewusst NICHT uebernehmen:** Magenta-CTAs und vollflaechige
 Knall-Baender — fuer eine Lese-/Analyseanwendung zu unruhig (siehe Leitsatz).
 
-### Iteration 16 — Diagramm-Lesbarkeit (in Arbeit)
+### Iteration 16 — Diagramm-Lesbarkeit (erledigt)
 
 Rueckmeldung: viele aeltere Nutzer:innen — die Beschriftungen in den
-Diagrammen sind zu klein. Lesbarkeit hat Vorrang.
+Diagrammen waren zu klein. Lesbarkeit hatte Vorrang. Reine
+Schriftgroessen- und Rand-Anpassung; die entsaettigte Palette und alle
+Farb-/Serienzuordnungen bleiben unveraendert.
 
-- Achsenbeschriftungen, Legenden, Tooltips, Datenbeschriftungen (Werte an
-  Balken/Punkten) und Sankey-Knotenbeschriftungen spuerbar vergroessern
-  (Richtwert: von ~11–12px auf ~14–15px).
-- Genug Rand/Abstand, damit groessere Labels nicht abgeschnitten werden.
-- Gilt fuer alle Diagramme in `dashboard-charts.js` und `sankey-drill.js`.
-- Gegenpruefen, dass nichts ueberlappt.
+- **Gemeinsame Schriftgroessen-Konstanten.** Neu in `dashboard-charts.js`
+  zwei Konstanten in der bestehenden Helfer-Schicht (neben `tip()`,
+  `legende()`, `grid()`): `LABEL_SIZE = 15` fuer Achsenkategorien,
+  Legenden, Tooltips, Datenlabels und Sankey-Knoten; `AXIS_SIZE = 14`
+  fuer die Wertachse. `sankey-drill.js` traegt dasselbe `LABEL_SIZE = 15`.
+  Damit ist die Diagrammschrift an einer Stelle steuerbar, keine
+  verstreuten Literale mehr.
+- **Alle Textrollen vergroessert.** Vorher gestreut ~9–12px. Jetzt:
+  Kategorie-Achsen 15px (`catAxis`-Default), Wertachse 14px (`valAxis`),
+  Legende 15px (`legende`, plus `itemGap: 14`), Tooltip 15px (`tip` und
+  der `TOOLTIP`-Block in `sankey-drill.js`), Datenlabels an
+  Wasserfall-Stufen / Kommunalsteuer-Linie 15px, Ring-Beschriftung 15px,
+  Treemap-`label`/`upperLabel` 15px, Sankey-Knoten 15px (beide Module).
+- **Raender gegen Clipping geweitet.** Sankey: `right` 170 -> 300 (Platz
+  fuer die langen Aufgabengruppen-Namen), `top`/`bottom` 14 -> 16,
+  `nodeGap` 11 -> 13 — in beiden Modulen. Wasserfall: `grid.top` 18 -> 28
+  (groessere Wertlabels ueber den Saeulen). Korridor: `grid.bottom`
+  48 -> 96 plus `top: 18` fuer die gedrehten 15px-Achsenlabels und die
+  Legende darunter. Trend-Eckwerte/Trend-Aufwand: `grid.bottom` 40 -> 52.
+  Trend-Kommunalsteuer: `grid.top` 18 -> 30 fuer die groesseren
+  Punkt-Datenlabels. Mehrjahres-Basis: `grid` `top` 18 -> 30,
+  `bottom` 56 -> 64.
 
-_wird nach visueller Pruefung fortgeschrieben._
+Visuelle Pruefung mit Playwright/Chromium (Fixture-PDF
+`VA-2026-Auflage.pdf`, 1440px): Ueberblick, Einnahmen, Ausgaben und
+Sparpotenzial als Screenshots geprueft, plus Detailaufnahmen von Sankey,
+Ring, Treemap, Korridor und dem Wasserfall-Tooltip beim Hover. Alle
+Diagrammtexte sind deutlich groesser und klar lesbar; nichts ist
+abgeschnitten oder ueberlappt — die Sankey-Knotennamen stehen vollstaendig,
+die gedrehten Korridor-Labels sitzen frei ueber der Legende, der
+helle Karten-Tooltip ist klar lesbar.
+
+Gewaehlte Diagrammschrift: **15px** (Achsen, Legende, Tooltip, Datenlabels,
+Sankey-Knoten), **14px** fuer die Wertachse.
+
+**Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
