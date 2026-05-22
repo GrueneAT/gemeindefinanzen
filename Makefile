@@ -27,16 +27,6 @@ $(DB): $(DOCS) src/gemeindefinanzen/*.py src/gemeindefinanzen/schema.sql
 validate: $(DB) ## Plausibilitaetspruefung gegen PDF-Summen
 	$(GEMFIN) validate --db "$(DB)"
 
-report: $(DB) ## HTML-Dashboard erzeugen
-	@mkdir -p reports
-	$(GEMFIN) report --db "$(DB)" --out reports/dashboard.html
-	@echo "Dashboard: reports/dashboard.html"
-
-pages: $(DB) ## Dashboard nach site/index.html bauen (GitHub Pages)
-	@mkdir -p site
-	$(GEMFIN) report --db "$(DB)" --out site/index.html
-	@echo "GitHub-Pages-Seite: site/index.html"
-
 queries: $(DB) ## Alle Abfragen in sql/ ausfuehren und anzeigen
 	$(GEMFIN) query --db "$(DB)" --all
 
@@ -49,7 +39,7 @@ test: ## Tests ausfuehren
 lint: ## Code pruefen
 	ruff check src tests && mypy src
 
-all: db validate report ## Komplette Pipeline
+all: db validate ## Komplette Pipeline (DB bauen, pruefen)
 
 # --- Browser-App (web/) -----------------------------------------------------
 # Die Browser-App parst VRV-PDFs vollstaendig clientseitig (mupdf.js +
@@ -73,8 +63,7 @@ web-serve: web-sync ## web/ lokal ausliefern (node direkt, ohne Container)
 
 # Container-Variante: startet den statischen Server in einem Docker-Container
 # und veroeffentlicht den Port auf dem Host. Im Browser http://localhost:8080/web/
-# oeffnen — 'localhost' ist ein sicherer Kontext, daher funktioniert auch die
-# OPFS-Persistenz. Beenden mit Strg-C.
+# oeffnen. Beenden mit Strg-C.
 WEB_PORT  ?= 8080
 WEB_IMAGE ?= node:slim
 web-docker: web-sync ## web/ im Docker-Container ausliefern (Port veroeffentlicht)
@@ -86,7 +75,7 @@ web-docker: web-sync ## web/ im Docker-Container ausliefern (Port veroeffentlich
 test-js: web-test ## Alias fuer web-test
 
 clean: ## Generierte Artefakte loeschen
-	rm -rf data/*.db data/*.csv data/*.xlsx reports/*.html site build
+	rm -rf data/*.db data/*.csv data/*.xlsx build
 
-.PHONY: help setup db validate report pages queries export test lint all clean \
+.PHONY: help setup db validate queries export test lint all clean \
 	web-sync web-deps web-test web-serve web-docker test-js

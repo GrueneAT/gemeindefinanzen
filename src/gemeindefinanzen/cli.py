@@ -3,7 +3,6 @@
     gemfin build   <pdf> --db <db>      PDF parsen und in SQLite laden
     gemfin validate       --db <db>      Plausibilitaetspruefung
     gemfin query          --db <db>      gespeicherte Abfragen ausfuehren
-    gemfin report         --db <db>      HTML-Dashboard erzeugen
     gemfin export         --db <db>      Daten nach CSV / Excel exportieren
 """
 
@@ -103,13 +102,6 @@ def cmd_query(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_report(args: argparse.Namespace) -> int:
-    from . import report
-    pfad = report.build_report(args.db, args.out)
-    print(f"Dashboard erzeugt: {pfad}")
-    return 0
-
-
 def cmd_export(args: argparse.Namespace) -> int:
     from . import exporter
     dateien = exporter.export_all(args.db, args.dir)
@@ -138,11 +130,6 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--name", help="nur Abfragen, deren Dateiname dies enthaelt")
     sp.add_argument("--all", action="store_true", help="alle Abfragen (Standard)")
     sp.set_defaults(func=cmd_query)
-
-    sp = sub.add_parser("report", help="HTML-Dashboard erzeugen")
-    sp.add_argument("--db", default="data/gemeindefinanzen.db")
-    sp.add_argument("--out", default="reports/dashboard.html")
-    sp.set_defaults(func=cmd_report)
 
     sp = sub.add_parser("export", help="Daten nach CSV / Excel exportieren")
     sp.add_argument("--db", default="data/gemeindefinanzen.db")
