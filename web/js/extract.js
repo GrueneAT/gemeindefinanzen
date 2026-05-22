@@ -77,37 +77,49 @@ export function sectionRanges(doc) {
 }
 
 // Zeichen einer Seite einsammeln und zu Woertern rekonstruieren.
+//
+// mupdf strukturiert den Text als Baum Block -> Zeile -> Zeichen. Die
+// Wort-Rekonstruktion respektiert die Zeilengrenzen aus walk() — ein globales
+// Sortieren der Zeichen wuerde Spalten mit leicht versetzter Grundlinie
+// (Grundlinien-Jitter im PDF) ineinanderschieben. Innerhalb einer mupdf-Zeile
+// kommen die Zeichen in Lesereihenfolge; getrennt wird bei Leerzeichen oder
+// einer x-Luecke > GAP_TOL.
 function pageWords(page) {
-  const chars = []
-  page.toStructuredText().walk({
-    onChar(c, origin, font, size, quad) {
-      // quad: [ulx,uly, urx,ury, llx,lly, lrx,lry]
-      chars.push({ c, x0: quad[0], y0: quad[1], x1: quad[2], y1: quad[5] })
-    },
-  })
-  chars.sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0)
-
   const words = []
   let cur = null
-  let lastY = null
-  for (const ch of chars) {
-    const neueZeile = lastY === null || Math.abs(ch.y0 - lastY) > Y_TOL
-    const luecke = cur && ch.x0 - cur.x1 > GAP_TOL
-    if (ch.c === " " || neueZeile || luecke) {
-      if (cur) words.push(cur)
+
+  const wortAbschliessen = () => {
+    if (cur) {
+      words.push(cur)
       cur = null
     }
-    if (ch.c === " ") {
-      lastY = ch.y0
-      continue
-    }
-    if (!cur) cur = new Word("", ch.x0, ch.y0, ch.x1, ch.y1)
-    cur.text += ch.c
-    cur.x1 = ch.x1
-    cur.y1 = ch.y1
-    lastY = ch.y0
   }
-  if (cur) words.push(cur)
+
+  page.toStructuredText().walk({
+    beginLine() {
+      wortAbschliessen()
+    },
+    endLine() {
+      wortAbschliessen()
+    },
+    onChar(c, origin, font, size, quad) {
+      // quad: [ulx,uly, urx,ury, llx,lly, lrx,lry]
+      const x0 = quad[0]
+      const y0 = quad[1]
+      const x1 = quad[2]
+      const y1 = quad[5]
+      const luecke = cur && x0 - cur.x1 > GAP_TOL
+      if (c === " " || luecke) {
+        wortAbschliessen()
+      }
+      if (c === " ") return
+      if (!cur) cur = new Word("", x0, y0, x1, y1)
+      cur.text += c
+      cur.x1 = x1
+      cur.y1 = y1
+    },
+  })
+  wortAbschliessen()
   return words.filter((w) => w.text.trim() !== "")
 }
 
