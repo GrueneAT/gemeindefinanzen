@@ -196,3 +196,23 @@ Visuelle Pruefung (Screenshots Ueberblick + Ausgaben): Diagramme als klar
 abgegrenzte Karten, keine Karte-in-Karte-Optik, differenzierte
 Metric-Akzente, gruppierte Sektionskoepfe. **Tests gruen**
 (`npm run test:js`, `npm run test:e2e`).
+
+### Iteration 4 — Bedienelemente & Sekundaerflaechen (in Arbeit)
+
+Ziel: alle interaktiven Elemente auf eine konsistente, ruhige Komponenten-
+sprache bringen — gleiche Radien, gedaempfte Palette, klare aktive/Hover/
+Fokus-Zustaende.
+
+- **Tableiste** (`.tabs`/`.tab-btn`) — ruhige Reiter, aktiver Reiter klar
+  gruen markiert, deutlicher Fokusring fuer Tastatur.
+- **Dokument-Umschalter** (`.switcher`/`.switch-btn`) — als ruhige Segmente.
+- **Tabellen** (`.dtable`) — leichte Kopfzeile, weiche Zebra-/Hover-Toene,
+  gute Lesbarkeit bei vielen Zeilen.
+- **Filterleiste** (`.filterbar` Inputs/Selects) und **Suchfeld** —
+  einheitliche Feldoptik mit Fokuszustand.
+- **Mehrjahres-Overlay** (`.mj-overlay`/`.mj-dialog`) — Dialog auf
+  Komponentensprache, ruhiger Schatten.
+- **Dropzone & Dokumentverwaltung** — konsistente Flaechen/Radien.
+- **Buttons** — Primaer/Sekundaer einheitlich, sichtbarer Fokuszustand.
+
+_wird nach visueller Pruefung fortgeschrieben._
