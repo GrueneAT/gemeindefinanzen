@@ -12,6 +12,7 @@
 
 import { collect } from "./dashboard-data.js"
 import { alleCharts } from "./dashboard-charts.js"
+import { buildSankeyOption } from "./sankey-drill.js"
 
 // Das Dashboard fuer eine bereits geoeffnete Datenbank aufbauen. Liefert
 // true, wenn Dokumente vorhanden sind und das Dashboard sichtbar gemacht
@@ -31,10 +32,12 @@ export function baueDashboard(db) {
   fuelleFilter(daten)
   inhalt.hidden = false
 
-  // DATA und CFG global bereitstellen — dashboard.js (unveraendert aus dem
-  // Python-Report) liest diese beiden Namen.
+  // DATA und CFG global bereitstellen — dashboard.js liest diese Namen.
   window.DATA = daten
   window.CFG = cfg
+  // Sankey-Drill-down-Builder global bereitstellen — dashboard.js ist ein
+  // klassisches Skript und kann nicht importieren.
+  window.buildSankeyOption = buildSankeyOption
   ladeDashboardLogik()
   return true
 }

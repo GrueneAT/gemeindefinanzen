@@ -21,6 +21,12 @@ import { oeffneDb, importBytes } from "../../web/js/db.js"
 import { verarbeitePdf } from "../../web/js/pipeline.js"
 import { collect } from "../../web/js/dashboard-data.js"
 import { alleCharts } from "../../web/js/dashboard-charts.js"
+import {
+  buildSankeyOption,
+  quelleVonPosten,
+  kappen,
+  TOP_N,
+} from "../../web/js/sankey-drill.js"
 
 const WURZEL = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
 const DOCS = join(WURZEL, "documents")
@@ -219,6 +225,145 @@ async function teste() {
     Object.keys(cfg.dok_charts).length === 4,
   )
   pruefe("CFG: trend_charts vorhanden", "trend_eck" in cfg.trend_charts)
+
+  console.log("\nsankey-drill — Geldfluss-Drill-down")
+  // quelleVonPosten — Portierung der CASE-Logik aus dashboard-data.js.
+  pruefe(
+    "quelleVonPosten: 833000 -> Kommunalsteuer",
+    quelleVonPosten({ konto: "833000", mvag: "" }) === "Kommunalsteuer",
+  )
+  pruefe(
+    "quelleVonPosten: 859400 -> Ertragsanteile (Bund)",
+    quelleVonPosten({ konto: "859400", mvag: "" }) ===
+      "Ertragsanteile (Bund)",
+  )
+  pruefe(
+    "quelleVonPosten: 852xxx -> Gebuehren & Leistungen",
+    quelleVonPosten({ konto: "852100", mvag: "" }) ===
+      "Gebuehren & Leistungen",
+  )
+  pruefe(
+    "quelleVonPosten: mvag 212 -> Transfers & Zuschuesse",
+    quelleVonPosten({ konto: "999999", mvag: "212010" }) ===
+      "Transfers & Zuschuesse",
+  )
+  pruefe(
+    "quelleVonPosten: unbekannt -> Sonstige Einnahmen",
+    quelleVonPosten({ konto: "999999", mvag: "" }) === "Sonstige Einnahmen",
+  )
+  // kappen — lange Listen auf TOP_N kuerzen, Rest in Sonstige-Knoten.
+  const langeMap = new Map()
+  for (let i = 0; i < TOP_N + 5; i++) langeMap.set("K" + i, 100 - i)
+  const gekappt = kappen(langeMap, "Sonstige Konten")
+  pruefe(
+    "kappen: TOP_N Knoten plus Sonstige-Buendel",
+    gekappt.length === TOP_N + 1 &&
+      gekappt[gekappt.length - 1][0] === "Sonstige Konten",
+    JSON.stringify(gekappt.map((e) => e[0])),
+  )
+  const restBetrag = gekappt[gekappt.length - 1][1]
+  pruefe(
+    "kappen: Sonstige-Betrag ist die Summe der gebuendelten Posten",
+    restBetrag ===
+      [...langeMap.values()].slice(TOP_N).reduce((s, v) => s + v, 0),
+    String(restBetrag),
+  )
+  const kurzeMap = new Map([["A", 3], ["B", 1], ["C", 2]])
+  const ungekappt = kappen(kurzeMap, "Sonstige Konten")
+  pruefe(
+    "kappen: kurze Liste bleibt ungekappt, absteigend sortiert",
+    ungekappt.length === 3 &&
+      ungekappt[0][0] === "A" &&
+      ungekappt[2][0] === "B",
+    JSON.stringify(ungekappt.map((e) => e[0])),
+  )
+  // buildSankeyOption — gegen die echten Posten des Default-Dokuments.
+  const sDok = String(daten.meta.default_dok)
+  const sUebersicht = buildSankeyOption(daten.posten, sDok, null)
+  const sSerie = sUebersicht.series[0]
+  pruefe(
+    "buildSankeyOption: Uebersicht ist ein Sankey mit Gemeindehaushalt-Knoten",
+    sSerie.type === "sankey" &&
+      sSerie.data.some((n) => n.name === "Gemeindehaushalt"),
+  )
+  const mitte = sSerie.data.find((n) => n.name === "Gemeindehaushalt")
+  pruefe(
+    "buildSankeyOption: zentraler Knoten ist nicht aufklappbar",
+    mitte.drillSeite === "mitte" && mitte.drillExpandbar === false,
+  )
+  const quelleKnoten = sSerie.data.filter((n) => n.drillSeite === "quelle")
+  const gruppeKnoten = sSerie.data.filter((n) => n.drillSeite === "gruppe")
+  pruefe(
+    "buildSankeyOption: Uebersicht hat aufklappbare Quellen und Gruppen",
+    quelleKnoten.length > 0 &&
+      gruppeKnoten.length > 0 &&
+      quelleKnoten.every((n) => n.drillExpandbar) &&
+      gruppeKnoten.every((n) => n.drillExpandbar),
+  )
+  // Uebersicht: jede Verbindung beruehrt den zentralen Knoten.
+  pruefe(
+    "buildSankeyOption: Uebersicht — alle Links ueber Gemeindehaushalt",
+    sSerie.links.every(
+      (l) => l.source === "Gemeindehaushalt" || l.target === "Gemeindehaushalt",
+    ),
+  )
+  // Aufklappen einer Aufgabengruppe -> Ansatz-Knoten ersetzen den Gruppenknoten.
+  const eineGruppe = gruppeKnoten[0]
+  const sGruppe = buildSankeyOption(daten.posten, sDok, {
+    seite: "gruppe",
+    key: eineGruppe.drillKey,
+  })
+  const gSerie = sGruppe.series[0]
+  pruefe(
+    "buildSankeyOption: aufgeklappte Gruppe verschwindet als Einzelknoten",
+    !gSerie.data.some(
+      (n) => n.name === eineGruppe.name && n.drillExpandbar,
+    ),
+  )
+  pruefe(
+    "buildSankeyOption: andere Gruppen bleiben eingeklappt",
+    gSerie.data.filter((n) => n.drillSeite === "gruppe" && n.drillExpandbar)
+      .length ===
+      gruppeKnoten.length - 1,
+  )
+  // Betragserhalt: Summe Gruppen-Links unveraendert nach Aufklappen.
+  function gruppenSumme(serie) {
+    return Math.round(
+      serie.links
+        .filter((l) => l.source === "Gemeindehaushalt")
+        .reduce((s, l) => s + l.value, 0),
+    )
+  }
+  pruefe(
+    "buildSankeyOption: Aufklappen erhaelt die Ausgabensumme",
+    gruppenSumme(sSerie) === gruppenSumme(gSerie),
+    gruppenSumme(sSerie) + " vs " + gruppenSumme(gSerie),
+  )
+  // Aufklappen einer Einnahmequelle -> Konten-Knoten.
+  const eineQuelle = quelleKnoten[0]
+  const sQuelle = buildSankeyOption(daten.posten, sDok, {
+    seite: "quelle",
+    key: eineQuelle.drillKey,
+  })
+  const qSerie = sQuelle.series[0]
+  function quellenSumme(serie) {
+    return Math.round(
+      serie.links
+        .filter((l) => l.target === "Gemeindehaushalt")
+        .reduce((s, l) => s + l.value, 0),
+    )
+  }
+  pruefe(
+    "buildSankeyOption: Aufklappen einer Quelle erhaelt die Einnahmesumme",
+    quellenSumme(sSerie) === quellenSumme(qSerie),
+    quellenSumme(sSerie) + " vs " + quellenSumme(qSerie),
+  )
+  pruefe(
+    "buildSankeyOption: aufgeklappte Quelle verschwindet als Einzelknoten",
+    !qSerie.data.some(
+      (n) => n.name === eineQuelle.name && n.drillExpandbar,
+    ),
+  )
 
   console.log("\ndb — Persistenz-Guard ohne IndexedDB (Node-Umgebung)")
   // In Node ist `indexedDB` undefiniert; oeffneDb muss dann eine reine
