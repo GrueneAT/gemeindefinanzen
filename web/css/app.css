@@ -257,3 +257,35 @@
 [hidden] {
   display: none !important;
 }
+
+/* --- Geldfluss-Sankey: Drill-down-Leiste -------------------------------- */
+.sankey-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.1rem 0 0.4rem;
+  min-height: 1.5rem;
+}
+.sankey-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--soft);
+}
+.sankey-hint.is-visible {
+  color: var(--ink-blue);
+}
+.sankey-reset {
+  flex: none;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--hair);
+  background: var(--raised);
+  color: var(--soft);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.sankey-reset:hover {
+  border-color: var(--ink-blue);
+  color: var(--ink-blue);
+}

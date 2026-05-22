@@ -57,6 +57,7 @@
 
   function chartOption(entry) {
     if (entry.kind === "trend") return trendChart[entry.src];
+    if (entry.kind === "sankey") return sankeyOption();
     var byDok = dokChart[aktivDok] || {};
     return byDok[entry.src];
   }
@@ -423,6 +424,84 @@
     });
   }
 
+  // --- Geldfluss-Sankey mit Drill-down -------------------------------------
+  // sankeyExpand: null fuer die Uebersicht, sonst { seite, key }.
+  //   seite "quelle": eine Einnahmequelle ist in ihre Konten aufgeklappt
+  //   seite "gruppe": eine Aufgabengruppe ist in ihre Ansaetze aufgeklappt
+  // Je Seite ist hoechstens ein Knoten ausgeklappt.
+  var sankeyExpand = null;
+
+  // Liefert die ECharts-Optionen fuer das aktuelle Dokument und den
+  // aktuellen Aufklapp-Zustand. Faellt auf die vorberechnete CFG-Variante
+  // zurueck, falls der Drill-down-Builder nicht verfuegbar ist.
+  function sankeyOption() {
+    if (typeof window.buildSankeyOption === "function") {
+      return window.buildSankeyOption(posten, aktivDok, sankeyExpand);
+    }
+    var byDok = dokChart[aktivDok] || {};
+    return byDok.sankey;
+  }
+
+  function renderSankey() {
+    var entry = charts["c_sankey"];
+    if (entry) entry.inst.setOption(revive(sankeyOption()), true);
+  }
+
+  // Reset-Hinweis ueber dem Diagramm ein-/ausblenden.
+  function updateSankeyHinweis() {
+    var el = document.getElementById("sankey-hinweis");
+    if (!el) return;
+    if (sankeyExpand) {
+      el.textContent = "Aufgeklappt — Knoten erneut anklicken oder " +
+        "„Übersicht“ für die Gesamtansicht.";
+      el.classList.add("is-visible");
+    } else {
+      el.textContent = "Tipp: Aufgabengruppe oder Einnahmequelle anklicken, " +
+        "um in Ansätze bzw. Konten aufzuklappen.";
+      el.classList.remove("is-visible");
+    }
+  }
+
+  function setupSankeyDrill() {
+    var entry = charts["c_sankey"];
+    if (!entry) return;
+    entry.inst.on("click", function (params) {
+      if (!params || params.dataType !== "node") return;
+      var d = params.data || {};
+      // Mittlerer Knoten: klappt alles auf die Uebersicht zurueck.
+      if (d.drillSeite === "mitte" || !d.drillSeite) {
+        sankeyExpand = null;
+      } else if (d.drillExpandbar) {
+        // Eingeklappter Knoten -> aufklappen (ersetzt eine etwaige
+        // andere Ausklappung, es bleibt nur eine aktiv).
+        sankeyExpand = { seite: d.drillSeite, key: d.drillKey };
+      } else if (
+        sankeyExpand &&
+        sankeyExpand.seite === d.drillSeite &&
+        sankeyExpand.key === d.drillKey
+      ) {
+        // Klick in den bereits aufgeklappten Bereich -> einklappen.
+        sankeyExpand = null;
+      }
+      renderSankey();
+      updateSankeyHinweis();
+    });
+    var resetBtn = document.getElementById("sankey-reset");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        sankeyExpand = null;
+        renderSankey();
+        updateSankeyHinweis();
+      });
+    }
+    // Dokumentwechsel setzt den Sankey auf die Uebersicht zurueck.
+    onDocChange(function () {
+      sankeyExpand = null;
+      updateSankeyHinweis();
+    });
+    updateSankeyHinweis();
+  }
+
   // --- Tab 7: Suche & Daten ------------------------------------------------
   var LIMIT = 500;
 
@@ -650,7 +729,7 @@
   window.addEventListener("resize", resizeVisibleCharts);
 
   // Charts registrieren (Trend-Charts unabhaengig vom Dokument).
-  registerChart("c_sankey", "dok", "sankey");
+  registerChart("c_sankey", "sankey", "sankey");
   registerChart("c_einnahmen", "dok", "einnahmen");
   registerChart("c_aufwandart", "dok", "aufwandart");
   registerChart("c_treemap", "dok", "treemap");
@@ -667,6 +746,7 @@
   onDocChange(rerenderTables);
   setupMehrjahr();
   setupDrill();
+  setupSankeyDrill();
   setupSearch();
 
   // Initialdarstellung.
