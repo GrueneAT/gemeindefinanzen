@@ -1,10 +1,32 @@
+/* Dashboard — Steuerleiste, Tableiste, Tabellen, Drill-down und
+   Mehrjahres-Overlay.
+
+   dashboard.css laedt vor app.css und kann daher nicht auf dessen
+   --app-*-Aliase zugreifen. Es liest direkt die --web-*-Token (mit
+   Fallback-Literalen, falls app.css noch nicht da ist).
+
+   Funktionsklassen (.tab-btn/.tab-panel/.is-active, .switch-btn, .dtable,
+   .mj-*, .doc-status) sind Vertrag mit dashboard.js, index.html und den
+   Tests — Namen bleiben unveraendert.
+
+   Aufbau:
+     1. Lokale Token
+     2. Layout (Steuerleiste, Raster)
+     3. Tableiste & Dokument-Umschalter
+     4. Tabellen & Filter
+     5. Drill-down (Breadcrumbs, Liste)
+     6. Mehrjahres-Vergleich (Aktionen & Overlay) */
+
+
+/* === 1. LOKALE TOKEN ====================================================== */
 :root {
-  /* Adapterschicht: dashboard.css laedt vor app.css, kann also nicht auf
-     --app-* referenzieren. --hair/--raised werden hier direkt auf die
-     Web-Design-System-Token gespiegelt (gleiche Werte wie in app.css). */
+  /* --hair spiegelt --web-hairline; gleicher Wert als Fallback, falls
+     app.css noch nicht geladen ist. */
   --hair: var(--web-hairline, #e1e4db);
-  --raised: var(--web-surface-sunk, #f7f9f4);
 }
+
+
+/* === 2. LAYOUT ============================================================ */
 
 /* Fliesstext-Bloecke bleiben gut lesbar, statt ueber die ganze Breite zu
    laufen. Die Breitenbegrenzung von .page selbst liegt in app.css. */
@@ -16,7 +38,38 @@
   background: var(--web-bg, #f3f5f0); padding: .6rem 0 .3rem;
   border-bottom: 1px solid var(--hair); margin-bottom: 1.2rem; }
 
-/* --- Dokument-Umschalter — ruhige Segmente (Iteration 4) ------------------
+/* Zweispaltiges Diagramm-Raster — faellt unter 48rem auf eine Spalte. */
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 48rem) { .dash-grid { grid-template-columns: 1fr; } }
+
+
+/* === 3. TABLEISTE & DOKUMENT-UMSCHALTER =================================== */
+
+/* --- Tableiste — ruhige Reiter --------------------------------------------
+   Inaktive Reiter sind flach; der aktive Reiter ist klar gruen markiert
+   (gefuellte Flaeche, gruene Unterkante). Sichtbarer Tastatur-Fokus. */
+.tabs { display: flex; flex-wrap: wrap; gap: .15rem;
+  border-bottom: 1px solid var(--hair); }
+.tab-btn { font: inherit; font-size: .9rem; cursor: pointer;
+  padding: .5rem .95rem; border: 1px solid transparent; border-bottom: none;
+  background: transparent; color: var(--web-text-soft, #5e6358);
+  border-radius: var(--web-radius-control, 6px) var(--web-radius-control, 6px) 0 0;
+  margin-bottom: -1px;
+  transition: background .15s, color .15s, box-shadow .15s; }
+.tab-btn:hover { color: var(--web-text, #23271f);
+  background: color-mix(in srgb, var(--web-green, #4a8a52) 9%, transparent); }
+.tab-btn.is-active { background: var(--web-surface, #fff);
+  border-color: var(--hair); color: var(--web-green-deep, #2c6e40);
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--web-green-deep, #2c6e40); }
+.tab-btn:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
+  outline-offset: -2px;
+  border-radius: var(--web-radius-control, 6px); }
+
+.tab-panel { display: none; }
+.tab-panel.is-active { display: block; }
+
+/* --- Dokument-Umschalter — ruhige Segmente --------------------------------
    Die Buttons sitzen als zusammenhaengende Segmentleiste auf einer hellen
    Flaeche; das aktive Segment ist gruen markiert. */
 .switcher { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .55rem;
@@ -41,34 +94,10 @@
 .switch-btn:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
   outline-offset: 2px; }
 
-/* --- Tableiste — ruhige Reiter (Iteration 4) ------------------------------
-   Inaktive Reiter sind flach; der aktive Reiter ist klar gruen markiert
-   (gefuellte Flaeche, gruene Unterkante). Sichtbarer Tastatur-Fokus. */
-.tabs { display: flex; flex-wrap: wrap; gap: .15rem;
-  border-bottom: 1px solid var(--hair); }
-.tab-btn { font: inherit; font-size: .9rem; cursor: pointer;
-  padding: .5rem .95rem; border: 1px solid transparent; border-bottom: none;
-  background: transparent; color: var(--web-text-soft, #5e6358);
-  border-radius: var(--web-radius-control, 6px) var(--web-radius-control, 6px) 0 0;
-  margin-bottom: -1px;
-  transition: background .15s, color .15s, box-shadow .15s; }
-.tab-btn:hover { color: var(--web-text, #23271f);
-  background: color-mix(in srgb, var(--web-green, #4a8a52) 9%, transparent); }
-.tab-btn.is-active { background: var(--web-surface, #fff);
-  border-color: var(--hair); color: var(--web-green-deep, #2c6e40);
-  font-weight: 700;
-  box-shadow: inset 0 -3px 0 var(--web-green-deep, #2c6e40); }
-.tab-btn:focus-visible { outline: 2px solid var(--web-green-deep, #2c6e40);
-  outline-offset: -2px;
-  border-radius: var(--web-radius-control, 6px); }
 
-.tab-panel { display: none; }
-.tab-panel.is-active { display: block; }
+/* === 4. TABELLEN & FILTER ================================================= */
 
-.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
-@media (max-width: 48rem) { .dash-grid { grid-template-columns: 1fr; } }
-
-/* --- Tabellen — leichte Kopfzeile, weiche Zeilen (Iteration 4) ------------
+/* --- Tabellen — leichte Kopfzeile, weiche Zeilen -------------------------
    Die Kopfzeile bleibt sticky, traegt aber nur einen leichten Grundton und
    eine etwas kraeftigere Unterlinie als Abgrenzung. Sanfter Zeilen-Hover. */
 .dtable { width: 100%; border-collapse: collapse; font-size: .86rem; }
@@ -89,7 +118,10 @@
   outline-offset: -2px; }
 .sortable .arrow { color: var(--web-text-mute, #8b8f82); font-size: .75rem; }
 
-/* --- Filterleiste & Suche — einheitliche Feldoptik (Iteration 4) ---------- */
+th.pick, td.pick { width: 2rem; text-align: center; }
+td.pick input, th.pick input { cursor: pointer; }
+
+/* --- Filterleiste & Suche — einheitliche Feldoptik ----------------------- */
 .filterbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
   margin: .6rem 0 .8rem; }
 .filterbar label { font-size: .74rem; color: var(--web-text-soft, #5e6358);
@@ -111,15 +143,20 @@ input.search:focus-visible {
 .result-meta { font-size: .86rem; color: var(--web-text-soft, #5e6358);
   margin: .3rem 0 .5rem; }
 .result-meta strong { color: var(--web-text, #23271f); }
-.table-scroll { max-height: 70vh; overflow: auto;
-  border: 1px solid var(--hair); border-radius: var(--web-radius-card, 10px);
-  background: var(--web-surface, #fff); }
+
 /* Die breite 15-Spalten-Suchtabelle bekommt eine Mindestbreite, damit ihre
    Spalten lesbar bleiben statt zusammenzustauchen. Reicht der Platz nicht,
    scrollt .table-scroll horizontal — die Seite selbst bleibt schmal. */
+.table-scroll { max-height: 70vh; overflow: auto;
+  border: 1px solid var(--hair); border-radius: var(--web-radius-card, 10px);
+  background: var(--web-surface, #fff); }
 .table-scroll .dtable { min-width: 56rem; }
 .table-hint { font-size: .8rem; color: var(--web-text-soft, #5e6358); margin-top: .4rem; }
 
+
+/* === 5. DRILL-DOWN ======================================================== */
+
+/* Breadcrumb-Pfad — Knoepfe mit Fokusring. */
 .crumbs { font-size: .85rem; margin: .5rem 0; }
 .crumbs button { font: inherit; font-size: .85rem; cursor: pointer;
   background: none; border: none; color: var(--web-green-deep, #2c6e40);
@@ -130,6 +167,7 @@ input.search:focus-visible {
   outline-offset: 2px; border-radius: 2px; }
 .crumbs .sep { color: var(--web-text-mute, #8b8f82); margin: 0 .3rem; }
 
+/* Drill-down-Liste — klickbare Zeilen mit sanftem Hover. */
 .drill-list { list-style: none; padding: 0; margin: .3rem 0; }
 .drill-row { display: flex; justify-content: space-between; gap: 1rem;
   padding: .4rem .55rem; border-bottom: 1px solid var(--hair); }
@@ -140,8 +178,21 @@ input.search:focus-visible {
   margin-right: .4rem; font-variant-numeric: tabular-nums; }
 .drill-row .betrag { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .drill-row .chev { color: var(--web-text-mute, #8b8f82); margin-left: .5rem; }
+.drill-row .mj-drill { font: inherit; font-size: .76rem; cursor: pointer;
+  padding: .12rem .5rem; border: 1px solid var(--hair);
+  background: var(--web-surface, #fff); color: var(--web-green-deep, #2c6e40);
+  border-radius: var(--web-radius-control, 6px);
+  margin-left: .5rem; white-space: nowrap;
+  transition: background .15s, border-color .15s; }
+.drill-row .mj-drill:hover { border-color: var(--web-green, #4a8a52);
+  background: var(--web-green-tint, #e7efe3); }
+.drill-row .mj-drill:focus-visible {
+  outline: 2px solid var(--web-green-deep, #2c6e40); outline-offset: 2px; }
 
-/* --- Mehrjahres-Vergleich — Aktionsleiste & Buttons (Iteration 4) ---------
+
+/* === 6. MEHRJAHRES-VERGLEICH ============================================== */
+
+/* --- Aktionsleiste & Buttons ----------------------------------------------
    Sekundaerbuttons als Umriss auf heller Flaeche, Primaerbutton gruen
    gefuellt; einheitliche Radien und sichtbarer Tastatur-Fokus. */
 .mj-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
@@ -170,21 +221,7 @@ input.search:focus-visible {
   color: var(--gat-color-weiss, #fff); }
 .mj-count { font-size: .8rem; color: var(--web-text-soft, #5e6358); }
 
-.drill-row .mj-drill { font: inherit; font-size: .76rem; cursor: pointer;
-  padding: .12rem .5rem; border: 1px solid var(--hair);
-  background: var(--web-surface, #fff); color: var(--web-green-deep, #2c6e40);
-  border-radius: var(--web-radius-control, 6px);
-  margin-left: .5rem; white-space: nowrap;
-  transition: background .15s, border-color .15s; }
-.drill-row .mj-drill:hover { border-color: var(--web-green, #4a8a52);
-  background: var(--web-green-tint, #e7efe3); }
-.drill-row .mj-drill:focus-visible {
-  outline: 2px solid var(--web-green-deep, #2c6e40); outline-offset: 2px; }
-
-th.pick, td.pick { width: 2rem; text-align: center; }
-td.pick input, th.pick input { cursor: pointer; }
-
-/* --- Mehrjahres-Overlay — Dialog auf Komponentensprache (Iteration 4) -----
+/* --- Overlay — Dialog auf Komponentensprache ------------------------------
    Ruhig abgedunkelter Hintergrund, Dialog als Karte mit Kartenradius und
    weichem Schatten; Schliessen-Knopf mit sichtbarem Fokus. */
 .mj-overlay { position: fixed; inset: 0; z-index: 60; display: none;
