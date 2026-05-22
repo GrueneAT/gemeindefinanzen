@@ -579,3 +579,22 @@ Gewaehlte `.page`-`max-width`: **`min(2040px, 94vw)`** (Token
 `--web-page-max`).
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 13 — Einheitliche Panel-Breite (in Arbeit)
+
+Befund nach Iteration 12: `.web-panel--breit` deckelt grosse Einzel-Charts
+auf 1180px und zentriert sie — sie schweben als Insel zwischen vollbreiten
+Metric-Cards und vollbreitem Sankey. Inkonsistente Kanten, wirkt unfertig.
+
+- **Alle Panels nutzen die volle Containerbreite** — durchgehend gleiche
+  linke und rechte Kante (Metric-Cards, Charts, Tabellen, Sankey). Eine
+  einzelne zentrierte Insel gibt es nicht mehr. `.web-panel--breit`
+  (zentrierte Deckelung) entfernen.
+- Damit Einzel-Diagramme bei grosser Breite **nicht leer/flach** wirken:
+  Diagramm-Hoehen angemessen anheben und `barMaxWidth` je Diagramm sinnvoll
+  waehlen (3-Balken-Wasserfall braucht breitere Balken als ein
+  Viele-Posten-Balkendiagramm) — die Diagramme sollen bei 2560px bewusst
+  gefuellt aussehen, nicht als duenne Striche in einer leeren Flaeche.
+- Gegenpruefen 2560 / 1440 / 390px.
+
+_wird nach visueller Pruefung fortgeschrieben._
