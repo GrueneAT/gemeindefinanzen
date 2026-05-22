@@ -1,0 +1,16 @@
+{
+  "name": "gemeindefinanzen-web",
+  "version": "1.0.0",
+  "description": "Statisches Browser-Dashboard fuer VRV-2015-Gemeindefinanzen mit clientseitigem PDF-Parsing.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:js": "node tests/js/run.mjs",
+    "poc": "node scripts/mupdf-geometrie.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.50.1-build1",
+    "mupdf": "^1.26.0"
+  }
+}
