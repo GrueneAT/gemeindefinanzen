@@ -126,12 +126,12 @@ legen, `make db` erneut ausführen.
 
 ## Das interaktive Dashboard
 
-`make report` (bzw. `make pages` für GitHub Pages) erzeugt eine einzelne
-HTML-Seite, die alle Posten aller Dokumente eingebettet trägt — meetingtauglich
-und ohne Server bedienbar.
+Die Browser-App unter `web/` (siehe [`BROWSER-APP.md`](BROWSER-APP.md)) wertet
+die hochgeladenen PDFs vollständig clientseitig aus und zeigt sie als
+interaktives Dashboard — meetingtauglich, ohne Server.
 
 - **Themen-Tabs** gliedern die Auswertung: Überblick, Einnahmen, Ausgaben,
-  Investitionen, Transfers & Umlagen, 800k-Analyse, Suche & Daten.
+  Investitionen, Transfers & Umlagen, Sparpotenzial, Suche & Daten.
 - Der **Jahr-/Dokument-Umschalter** über den Tabs stellt die sechs
   dokumentbezogenen Tabs auf RA 2024, RA 2025, VA 2025 inkl. NVA oder VA 2026
   um. So lässt sich dieselbe Kennzahl direkt über die Dokumente vergleichen.

@@ -1,0 +1,130 @@
+:root { --hair: var(--rule-hair, #cdc4b4); --raised: var(--paper-raised, #faf6ee); }
+
+/* Das Design System begrenzt .page auf Notebook-Lesebreite (72rem) — fuer ein
+   Dashboard mit breiten Tabellen und Diagrammen zu schmal. Hier auf die volle
+   Bildschirmbreite oeffnen (mit etwas Rand auf sehr breiten Displays). */
+.page { max-width: min(2400px, 95vw); }
+/* Fliesstext-Bloecke bleiben gut lesbar, statt ueber die ganze Breite zu laufen. */
+.masthead-sub, .lead, .tab-panel > p, .callout { max-width: 70rem; }
+
+.dash-controls { position: sticky; top: 0; z-index: 20;
+  background: var(--paper, #F4EFE6); padding: .6rem 0 .3rem;
+  border-bottom: 1px solid var(--hair); margin-bottom: 1.2rem; }
+
+.switcher { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .55rem;
+  align-items: baseline; }
+.switcher-label { font-size: .72rem; letter-spacing: .09em;
+  text-transform: uppercase; color: #5b5650; margin-right: .35rem; }
+.switch-btn { font: inherit; font-size: .82rem; cursor: pointer;
+  padding: .26rem .7rem; border: 1px solid var(--hair);
+  background: var(--raised); color: #2b2825; border-radius: 3px;
+  line-height: 1.2; }
+.switch-btn:hover { border-color: #9a8f78; }
+.switch-btn.is-active { background: #1F4A6D; border-color: #1F4A6D;
+  color: #F4EFE6; font-weight: 600; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--hair); }
+.tab-btn { font: inherit; font-size: .9rem; cursor: pointer;
+  padding: .5rem .95rem; border: 1px solid transparent; border-bottom: none;
+  background: transparent; color: #5b5650; border-radius: 3px 3px 0 0;
+  margin-bottom: -1px; }
+.tab-btn:hover { color: #2b2825; }
+.tab-btn.is-active { background: var(--raised); border-color: var(--hair);
+  color: #2b2825; font-weight: 600; }
+
+.tab-panel { display: none; }
+.tab-panel.is-active { display: block; }
+
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 860px) { .dash-grid { grid-template-columns: 1fr; } }
+
+.dtable { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.dtable th, .dtable td { padding: .32rem .5rem;
+  border-bottom: 1px solid #e6dfd0; text-align: left; }
+.dtable thead th { border-bottom: 1px solid var(--hair);
+  background: var(--raised); position: sticky; top: 0; }
+.dtable td.num, .dtable th.num { text-align: right;
+  font-variant-numeric: tabular-nums; }
+.dtable tbody tr:hover { background: rgba(31,74,109,0.06); }
+
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: #1F4A6D; }
+.sortable .arrow { color: #9a8f78; font-size: .75rem; }
+
+.filterbar { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center;
+  margin: .6rem 0 .8rem; }
+.filterbar label { font-size: .74rem; color: #5b5650; display: flex;
+  flex-direction: column; gap: .14rem; }
+.filterbar input, .filterbar select { font: inherit; font-size: .84rem;
+  padding: .26rem .4rem; border: 1px solid var(--hair);
+  background: #fff; color: #2b2825; border-radius: 3px; }
+.filterbar input.search { min-width: 16rem; }
+.filterbar input.betrag { width: 7rem; }
+
+.result-meta { font-size: .86rem; color: #5b5650; margin: .3rem 0 .5rem; }
+.result-meta strong { color: #2b2825; }
+.table-scroll { max-height: 70vh; overflow: auto;
+  border: 1px solid var(--hair); border-radius: 3px; }
+.table-hint { font-size: .8rem; color: #9a4a1c; margin-top: .4rem; }
+
+.crumbs { font-size: .85rem; margin: .5rem 0; }
+.crumbs button { font: inherit; font-size: .85rem; cursor: pointer;
+  background: none; border: none; color: #1F4A6D;
+  text-decoration: underline; padding: 0; }
+.crumbs button:disabled { color: #5b5650; text-decoration: none;
+  cursor: default; }
+.crumbs .sep { color: #9a8f78; margin: 0 .3rem; }
+
+.drill-list { list-style: none; padding: 0; margin: .3rem 0; }
+.drill-row { display: flex; justify-content: space-between; gap: 1rem;
+  padding: .4rem .55rem; border-bottom: 1px solid #e6dfd0; }
+.drill-row.is-clickable { cursor: pointer; }
+.drill-row.is-clickable:hover { background: rgba(31,74,109,0.06); }
+.drill-row .label { flex: 1; }
+.drill-row .label .code { color: #9a8f78; font-size: .8rem;
+  margin-right: .4rem; font-variant-numeric: tabular-nums; }
+.drill-row .betrag { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.drill-row .chev { color: #9a8f78; margin-left: .5rem; }
+
+/* Mehrjahres-Vergleich — Auswahl, Aktionsleiste und Overlay. */
+.mj-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  margin: .6rem 0 .4rem; }
+.mj-btn { font: inherit; font-size: .82rem; cursor: pointer;
+  padding: .3rem .8rem; border: 1px solid var(--hair);
+  background: var(--raised); color: #2b2825; border-radius: 3px;
+  line-height: 1.2; }
+.mj-btn:hover { border-color: #9a8f78; }
+.mj-btn.is-primary { background: #1F4A6D; border-color: #1F4A6D;
+  color: #F4EFE6; font-weight: 600; }
+.mj-btn:disabled { opacity: .5; cursor: default; }
+.mj-btn.is-primary:disabled { background: #9aa6af; border-color: #9aa6af; }
+.mj-count { font-size: .8rem; color: #5b5650; }
+
+.drill-row .mj-drill { font: inherit; font-size: .76rem; cursor: pointer;
+  padding: .12rem .5rem; border: 1px solid var(--hair);
+  background: var(--raised); color: #1F4A6D; border-radius: 3px;
+  margin-left: .5rem; white-space: nowrap; }
+.drill-row .mj-drill:hover { border-color: #9a8f78; }
+
+th.pick, td.pick { width: 2rem; text-align: center; }
+td.pick input, th.pick input { cursor: pointer; }
+
+.mj-overlay { position: fixed; inset: 0; z-index: 60; display: none;
+  background: rgba(43,40,37,0.55); }
+.mj-overlay.is-open { display: flex; align-items: center;
+  justify-content: center; }
+.mj-dialog { background: var(--paper, #F4EFE6); border: 1px solid var(--hair);
+  border-radius: 4px; width: min(880px, 94vw); max-height: 92vh;
+  overflow: auto; padding: 1.1rem 1.3rem 1.3rem;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.mj-dialog-head { display: flex; justify-content: space-between;
+  align-items: baseline; gap: 1rem; }
+.mj-dialog-head h3 { margin: 0; }
+.mj-close { font: inherit; font-size: 1.3rem; line-height: 1; cursor: pointer;
+  background: none; border: none; color: #5b5650; padding: .1rem .3rem; }
+.mj-close:hover { color: #2b2825; }
+.mj-sub { font-size: .85rem; color: #5b5650; margin: .3rem 0 .2rem; }
+.mj-chart { height: 420px; margin-top: .4rem;
+  border: 1px solid var(--hair); border-radius: 3px;
+  background: var(--paper-raised, #faf6ee); padding: 6px; }
+.mj-empty { font-size: .85rem; color: #9a4a1c; margin: .5rem 0; }

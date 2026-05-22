@@ -18,3 +18,9 @@ __pycache__/
 .ruff_cache/
 
 # Quelldokumente bleiben im Repo (klein, versionswuerdig) — bei Bedarf hier ausnehmen
+
+# JavaScript / Browser-App
+/node_modules/
+
+# macOS
+.DS_Store

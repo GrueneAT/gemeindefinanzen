@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemeindefinanzen — VRV-2015-PDFs im Browser auswerten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="./vendor/dashboard/dashboard.css">
+<link rel="stylesheet" href="./css/app.css">
+<style>
+.boot-banner { background: #8E2F2A; color: #F4EFE6; padding: .9rem 1.1rem;
+  font-family: Inter, system-ui, sans-serif; font-size: .95rem; line-height: 1.5; }
+.boot-banner strong { color: #fff; }
+.dashboard-leer { margin: 2rem 0; color: #5b5650; }
+/* Diagramm-Container im Stil von _chart_div() aus html.py. */
+.dash-chart {
+  margin: .8rem 0;
+  border: 1px solid var(--rule-hair, #cdc4b4);
+  border-radius: 3px;
+  background: var(--paper-raised, #faf6ee);
+  padding: 6px;
+}
+</style>
+</head>
+<body>
+<script src="./js/boot-guard.js"></script>
+<div class="page">
+
+  <header class="row">
+    <div class="margin">
+      <p class="kicker"><span class="kicker-num">00</span>Browser-App</p>
+      <p class="margin-note">Extraktion, Parsing und Auswertung laufen
+        vollstaendig im Browser. Kein Server, kein Upload ins Netz.</p>
+    </div>
+    <div class="body">
+      <h1 class="masthead-title">Gemeindefinanzen</h1>
+      <p class="masthead-sub app-intro">VRV-2015-Voranschlaege,
+        Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen —
+        der Detailnachweis wird clientseitig geparst, geprueft, in einer
+        lokalen Datenbank gespeichert und direkt auf dieser Seite
+        ausgewertet.</p>
+    </div>
+  </header>
+
+  <div id="toast-box"></div>
+
+  <!-- Dokumentverwaltung — einklappbar, oberhalb des Dashboards. Ohne
+       geladene Dokumente offen (Upload-Aufforderung sichtbar), mit
+       geladenen Dokumenten zugeklappt, damit das Dashboard im Fokus
+       steht. app.js steuert den Offen-/Zu-Zustand ueber die Dokumentzahl. -->
+  <details class="doc-manager" id="doc-manager" open>
+    <summary class="doc-manager-summary">
+      <span class="doc-manager-title">Dokumente verwalten</span>
+      <span class="doc-manager-count" id="doc-manager-count"></span>
+    </summary>
+    <div class="doc-manager-body">
+      <section>
+        <h2>PDFs hinzufuegen</h2>
+        <div class="dropzone" id="dropzone">
+          <p class="dropzone-title">PDF-Dateien hierher ziehen</p>
+          <p class="dropzone-hint">VRV-2015-Voranschlag, Nachtragsvoranschlag
+            oder Rechnungsabschluss — mehrere Dateien auf einmal moeglich.</p>
+          <button class="dropzone-btn" id="pick-btn" type="button">
+            Dateien auswaehlen</button>
+          <input type="file" id="file-input" accept="application/pdf,.pdf"
+            multiple>
+        </div>
+        <ul class="progress-list" id="progress-list"></ul>
+      </section>
+
+      <section>
+        <h2>Geladene Dokumente</h2>
+        <p class="persist-note" id="persist-note">wird geladen ...</p>
+        <p class="doc-empty" id="doc-empty" hidden>Noch keine Dokumente
+          geladen.</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Dokument</th>
+              <th>Quelldatei</th>
+              <th class="num">Detailposten</th>
+              <th>Pruefstatus</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="doc-tbody"></tbody>
+        </table>
+      </section>
+    </div>
+  </details>
+
+  <!-- Empty-State-Hinweis: sichtbar, solange kein Dokument geladen ist. -->
+  <div class="dashboard-leer" id="dashboard-leer" hidden>
+    <p>Sobald ein Dokument geladen ist, erscheint hier das Finanz-Dashboard
+      mit Tabs, Dokument-Umschalter, Suche und Diagrammen.</p>
+  </div>
+
+  <!-- Finanz-Dashboard — sichtbar, sobald mindestens ein Dokument geladen ist. -->
+  <div id="dashboard-inhalt" hidden>
+    <div class="dash-controls">
+      <div class="switcher"><span class="switcher-label">Dokument</span>
+        <span id="switcher-buttons"></span></div>
+      <div class="tabs">
+        <button class="tab-btn" data-tab="ueberblick">Ueberblick</button>
+        <button class="tab-btn" data-tab="einnahmen">Einnahmen</button>
+        <button class="tab-btn" data-tab="ausgaben">Ausgaben</button>
+        <button class="tab-btn" data-tab="investitionen">Investitionen</button>
+        <button class="tab-btn" data-tab="transfers">Transfers &amp; Umlagen</button>
+        <button class="tab-btn" data-tab="sparpotenzial">Sparpotenzial</button>
+        <button class="tab-btn" data-tab="suche">Suche &amp; Daten</button>
+      </div>
+    </div>
+
+    <section class="tab-panel" data-panel="ueberblick">
+      <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
+      <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
+        <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Der
+        Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
+        Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
+        Ausgaben und Spielraeume weiter auf.</p>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="st-ertraege"></div>
+          <div class="stat-label">Ertraege</div></div>
+        <div class="stat"><div class="stat-num" id="st-aufwand"></div>
+          <div class="stat-label">Aufwendungen</div></div>
+        <div class="stat"><div class="stat-num" id="st-netto"></div>
+          <div class="stat-label">Nettoergebnis</div></div>
+        <div class="stat"><div class="stat-num is-orange" id="st-komm-anteil">
+          </div><div class="stat-label">Kommunalsteuer-Anteil</div></div>
+      </div>
+      <div class="dash-grid" style="margin-top:1.2rem">
+        <div><h3>Ergebnis als Wasserfall</h3>
+          <div id="c_wasserfall" class="dash-chart" style="height:340px"></div></div>
+        <div><h3>Geldfluss</h3>
+          <div id="c_sankey" class="dash-chart" style="height:420px"></div></div>
+      </div>
+      <h3>Entwicklung ueber alle Dokumente</h3>
+      <p>Ertraege, Aufwendungen und Nettoergebnis je eingelesenem Dokument —
+        dieser Vergleich ist dokumentuebergreifend und aendert sich nicht mit
+        dem Umschalter.</p>
+      <div id="c_trend_eck" class="dash-chart" style="height:320px"></div>
+    </section>
+
+    <section class="tab-panel" data-panel="einnahmen">
+      <h2>Einnahmestruktur</h2>
+      <p>Die groessten Ertragsposten des gewaehlten Dokuments. Die
+        <span class="mark mark-green">Kommunalsteuer</span> ist nach den
+        Bundes-Ertragsanteilen die zweitgroesste Quelle.</p>
+      <div class="dash-grid">
+        <div><h3>Groesste Ertragsposten</h3>
+          <div id="c_einnahmen" class="dash-chart" style="height:360px"></div></div>
+        <div><h3>Kommunalsteuer im Zeitverlauf</h3>
+          <div id="c_trend_komm" class="dash-chart" style="height:360px"></div></div>
+      </div>
+      <h3>Tabelle der groessten Ertragsposten</h3>
+      <table class="dtable" id="t-einnahmen">
+        <thead><tr><th>Posten</th><th class="num">Betrag</th></tr></thead>
+        <tbody id="tbl-einnahmen"></tbody></table>
+    </section>
+
+    <section class="tab-panel" data-panel="ausgaben">
+      <h2>Wofuer das Geld ausgegeben wird</h2>
+      <p>Der Aufwand nach Art (Ring) und nach Aufgabenbereich (Treemap).
+        Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
+        Ermessensspielraum steckt im Sachaufwand.</p>
+      <div class="dash-grid">
+        <div><h3>Aufwand nach Art</h3>
+          <div id="c_aufwandart" class="dash-chart" style="height:340px"></div></div>
+        <div><h3>Aufwand nach Aufgabenbereich</h3>
+          <div id="c_treemap" class="dash-chart" style="height:340px"></div></div>
+      </div>
+      <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
+      <p>Klick auf eine Zeile blendet die naechste Ebene auf; ueber die
+        Brotkrumen geht es wieder zurueck. Die Schaltflaeche
+        &bdquo;ueber die Jahre&ldquo; je Gruppe oder Ansatz zeigt deren
+        Entwicklung ueber alle Dokumente als Liniendiagramm.</p>
+      <div class="crumbs" id="drill-crumbs"></div>
+      <p class="result-meta" id="drill-sum"></p>
+      <ul class="drill-list" id="drill-list"></ul>
+      <h3 style="margin-top:1.4rem">Groesste Aufwandssteigerungen</h3>
+      <table class="dtable" id="t-ausgaben">
+        <thead><tr><th>Posten</th><th class="num">Steigerung</th></tr></thead>
+        <tbody id="tbl-ausgaben"></tbody></table>
+    </section>
+
+    <section class="tab-panel" data-panel="investitionen">
+      <h2>Investive Vorhaben</h2>
+      <p>Die groessten investiven Auszahlungen des gewaehlten Dokuments —
+        Vorhaben ausserhalb des laufenden Betriebs.</p>
+      <div id="c_investitionen" class="dash-chart" style="height:380px"></div>
+      <h3>Tabelle der groessten Investitionen</h3>
+      <table class="dtable" id="t-investitionen">
+        <thead><tr><th>Posten</th><th>Ansatz</th>
+          <th class="num">Betrag</th></tr></thead>
+        <tbody id="tbl-investitionen"></tbody></table>
+    </section>
+
+    <section class="tab-panel" data-panel="transfers">
+      <h2>Transfers &amp; Umlagen</h2>
+      <p>Der Transferaufwand mit Kennzeichnung, ob es sich um eine weitgehend
+        gesetzlich gebundene <span class="mark mark-red">Pflichtumlage</span>
+        oder um freiwillige bzw. sonstige Transfers handelt.</p>
+      <h3>Transferaufwand im Detail</h3>
+      <table class="dtable" id="t-transfers">
+        <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
+          <th class="num">Vergleich</th></tr></thead>
+        <tbody id="tbl-transfers"></tbody></table>
+      <h3 style="margin-top:1.4rem">Aufwand nach Art im Zeitverlauf</h3>
+      <p>Der <span class="mark mark-red">Transferaufwand</span> waechst
+        strukturell am staerksten — dokumentuebergreifend.</p>
+      <div id="c_trend_auf" class="dash-chart" style="height:340px"></div>
+    </section>
+
+    <section class="tab-panel" data-panel="sparpotenzial">
+      <h2>Sparpotenzial</h2>
+      <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
+        Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
+        zusammen welche Betraege ausmachen.</p>
+      <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
+      <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
+      <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, nach
+        Betrag sortiert und kumuliert. Die Linie zeigt, wie viele Posten
+        zusammen welche Summe ergeben.</p>
+      <div id="c_korridor" class="dash-chart" style="height:400px"></div>
+      <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
+      <div id="c_treiber" class="dash-chart" style="height:360px"></div>
+      <div class="callout is-risk" style="margin-top:1rem;">
+        <p class="callout-label">Wichtige Einordnung</p>
+        <p>Diese Auswertung ist eine
+          <strong>Suchhilfe, keine Empfehlung</strong>. Sie zeigt, wo im
+          Budget Betraege welcher Groessenordnung ueberhaupt liegen. Ob ein
+          Posten kuerzbar ist, ist eine fachliche und politische
+          Entscheidung — jede Zeile braucht eine eigene Bewertung.</p>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="suche" id="such-box">
+      <h2>Suche &amp; Daten</h2>
+      <p>Alle Detailposten aller Dokumente — durchsuchbar, filterbar,
+        sortierbar. Suche und Filter laufen vollstaendig im Browser. Einzelne
+        Posten oder die gesamte gefilterte Menge lassen sich ueber die Jahre
+        als Liniendiagramm vergleichen.</p>
+      <div class="filterbar">
+        <label>Volltextsuche
+          <input type="search" class="search" id="f-such"
+            placeholder="Bezeichnung, Konto, Ansatz ..."></label>
+        <label>Dokument
+          <select id="f-dok"><option value="">alle</option></select></label>
+        <label>Aufgabengruppe
+          <select id="f-gruppe"><option value="">alle</option></select></label>
+        <label>Richtung
+          <select id="f-richtung"><option value="">alle</option>
+            <option value="einnahme">Einnahme</option>
+            <option value="ausgabe">Ausgabe</option></select></label>
+        <label>Gebarung
+          <select id="f-gebarung"><option value="">alle</option>
+            <option value="operativ">operativ</option>
+            <option value="investiv">investiv</option>
+            <option value="finanzierung">finanzierung</option>
+            <option value="ruecklage">ruecklage</option></select></label>
+        <label>Betrag ab
+          <input type="number" class="betrag" id="f-min"
+            placeholder="min"></label>
+        <label>Betrag bis
+          <input type="number" class="betrag" id="f-max"
+            placeholder="max"></label>
+      </div>
+      <p class="result-meta" id="such-meta"></p>
+      <div class="mj-actions">
+        <button class="mj-btn is-primary" id="mj-selected" disabled>
+          Ausgewaehlte Posten ueber die Jahre</button>
+        <button class="mj-btn" id="mj-group" disabled>
+          Gefilterte Menge als Gruppe</button>
+        <span class="mj-count" id="mj-count">keine Zeile gewaehlt</span>
+      </div>
+      <div class="table-scroll">
+        <table class="dtable">
+          <thead><tr>
+            <th class="pick" title="Zeile fuer den Mehrjahres-Vergleich waehlen">
+              <input type="checkbox" id="such-pickall"></th>
+            <th class="sortable" data-key="dok">Dokument
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="richtung">Richtung
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="gruppe">Gruppe
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="ansatz">Ansatz
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="konto">Konto
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="bezeichnung">Bezeichnung
+              <span class="arrow"></span></th>
+            <th class="sortable num" data-key="ew">EH wert
+              <span class="arrow"></span></th>
+            <th class="sortable num" data-key="ev">EH vergl.
+              <span class="arrow"></span></th>
+            <th class="sortable num" data-key="ed">EH dritte
+              <span class="arrow"></span></th>
+            <th class="sortable num" data-key="fw">FH wert
+              <span class="arrow"></span></th>
+            <th class="sortable num" data-key="fv">FH vergl.
+              <span class="arrow"></span></th>
+            <th class="sortable num" data-key="fd">FH dritte
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="mvag">MVAG
+              <span class="arrow"></span></th>
+            <th class="sortable" data-key="qu">QU
+              <span class="arrow"></span></th>
+          </tr></thead>
+          <tbody id="such-tbody"></tbody>
+        </table>
+      </div>
+      <p class="table-hint" id="such-hint"></p>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <span id="fuss-quelle">VRV 2015 — Detailnachweis</span>
+    <span>Verarbeitung clientseitig, Daten lokal im Browser</span>
+  </footer>
+
+</div>
+
+<div class="mj-overlay" id="mj-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="mj-titel">
+  <div class="mj-dialog">
+    <div class="mj-dialog-head">
+      <h3 id="mj-titel">Vergleich ueber die Jahre</h3>
+      <button class="mj-close" id="mj-close"
+        aria-label="Schliessen">&times;</button>
+    </div>
+    <p class="mj-sub" id="mj-sub"></p>
+    <p class="mj-empty" id="mj-empty"></p>
+    <div class="mj-chart" id="mj-chart"></div>
+    <p class="table-hint" id="mj-hint"></p>
+  </div>
+</div>
+
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
