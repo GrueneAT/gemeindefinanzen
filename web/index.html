@@ -13,23 +13,24 @@
 </head>
 <body>
 <script src="./js/boot-guard.js"></script>
+<header class="gat-header">
+  <div class="gat-header__inner">
+    <a class="gat-header__logo" href="."><span class="gat-header__logo-mark"></span></a>
+    <nav class="gat-nav">
+      <span class="gat-nav__link gat-nav__link--active">Gemeindefinanzen</span>
+    </nav>
+  </div>
+</header>
+
 <div class="page">
 
-  <header class="row">
-    <div class="margin">
-      <p class="kicker"><span class="kicker-num">00</span>Browser-App</p>
-      <p class="margin-note">Extraktion, Parsing und Auswertung laufen
-        vollstaendig im Browser. Kein Server, kein Upload ins Netz.</p>
-    </div>
-    <div class="body">
-      <h1 class="masthead-title">Gemeindefinanzen</h1>
-      <p class="masthead-sub app-intro">VRV-2015-Voranschlaege,
-        Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen —
-        der Detailnachweis wird clientseitig geparst, geprueft, in einer
-        lokalen Datenbank gespeichert und direkt auf dieser Seite
-        ausgewertet.</p>
-    </div>
-  </header>
+  <h1 class="gat-headline">Gemeindefinanzen</h1>
+  <p class="app-intro gat-fliesstext">VRV-2015-Voranschlaege,
+    Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen —
+    der Detailnachweis wird clientseitig geparst, geprueft, in einer
+    lokalen Datenbank gespeichert und direkt auf dieser Seite
+    ausgewertet. Extraktion, Parsing und Auswertung laufen vollstaendig
+    im Browser. Kein Server, kein Upload ins Netz.</p>
 
   <div id="toast-box"></div>
 
@@ -107,19 +108,23 @@
     <section class="tab-panel" data-panel="ueberblick">
       <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
       <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
-        <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Der
+        <span class="mark-neutral" id="kennzahl-netto"></span> aus. Der
         Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
         Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
         Ausgaben und Spielraeume weiter auf.</p>
-      <div class="stats">
-        <div class="stat"><div class="stat-num" id="st-ertraege"></div>
-          <div class="stat-label">Ertraege</div></div>
-        <div class="stat"><div class="stat-num" id="st-aufwand"></div>
-          <div class="stat-label">Aufwendungen</div></div>
-        <div class="stat"><div class="stat-num" id="st-netto"></div>
-          <div class="stat-label">Nettoergebnis</div></div>
-        <div class="stat"><div class="stat-num is-orange" id="st-komm-anteil">
-          </div><div class="stat-label">Kommunalsteuer-Anteil</div></div>
+      <div class="stats gat-grid gat-grid--3">
+        <div class="stat gat-card gat-card--secondary">
+          <div class="stat-num gat-card__title" id="st-ertraege"></div>
+          <div class="stat-label gat-card__body">Ertraege</div></div>
+        <div class="stat gat-card gat-card--secondary">
+          <div class="stat-num gat-card__title" id="st-aufwand"></div>
+          <div class="stat-label gat-card__body">Aufwendungen</div></div>
+        <div class="stat gat-card gat-card--secondary">
+          <div class="stat-num gat-card__title" id="st-netto"></div>
+          <div class="stat-label gat-card__body">Nettoergebnis</div></div>
+        <div class="stat gat-card gat-card--primary">
+          <div class="stat-num gat-card__title" id="st-komm-anteil"></div>
+          <div class="stat-label gat-card__body">Kommunalsteuer-Anteil</div></div>
       </div>
       <h3 style="margin-top:1.2rem">Ergebnis als Wasserfall</h3>
       <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
@@ -139,7 +144,7 @@
     <section class="tab-panel" data-panel="einnahmen">
       <h2>Einnahmestruktur</h2>
       <p>Die groessten Ertragsposten des gewaehlten Dokuments. Die
-        <span class="mark mark-green">Kommunalsteuer</span> ist nach den
+        <span class="mark-positiv">Kommunalsteuer</span> ist nach den
         Bundes-Ertragsanteilen die zweitgroesste Quelle.</p>
       <div class="dash-grid">
         <div><h3>Groesste Ertragsposten</h3>
@@ -197,7 +202,7 @@
     <section class="tab-panel" data-panel="transfers">
       <h2>Transfers &amp; Umlagen</h2>
       <p>Der Transferaufwand mit Kennzeichnung, ob es sich um eine weitgehend
-        gesetzlich gebundene <span class="mark mark-red">Pflichtumlage</span>
+        gesetzlich gebundene <span class="mark-risiko">Pflichtumlage</span>
         oder um freiwillige bzw. sonstige Transfers handelt.</p>
       <h3>Transferaufwand im Detail</h3>
       <table class="dtable" id="t-transfers">
@@ -205,7 +210,7 @@
           <th class="num">Vergleich</th></tr></thead>
         <tbody id="tbl-transfers"></tbody></table>
       <h3 style="margin-top:1.4rem">Aufwand nach Art im Zeitverlauf</h3>
-      <p>Der <span class="mark mark-red">Transferaufwand</span> waechst
+      <p>Der <span class="mark-risiko">Transferaufwand</span> waechst
         strukturell am staerksten — dokumentuebergreifend.</p>
       <div id="c_trend_auf" class="dash-chart" style="height:340px"></div>
     </section>
@@ -223,9 +228,9 @@
       <div id="c_korridor" class="dash-chart" style="height:400px"></div>
       <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
       <div id="c_treiber" class="dash-chart" style="height:360px"></div>
-      <div class="callout is-risk" style="margin-top:1rem;">
-        <p class="callout-label">Wichtige Einordnung</p>
-        <p>Diese Auswertung ist eine
+      <div class="callout gat-card gat-card--primary" style="margin-top:1rem;">
+        <div class="callout-label gat-card__title">Wichtige Einordnung</div>
+        <p class="gat-card__body">Diese Auswertung ist eine
           <strong>Suchhilfe, keine Empfehlung</strong>. Sie zeigt, wo im
           Budget Betraege welcher Groessenordnung ueberhaupt liegen. Ob ein
           Posten kuerzbar ist, ist eine fachliche und politische

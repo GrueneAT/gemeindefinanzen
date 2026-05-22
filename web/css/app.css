@@ -58,6 +58,37 @@ input, select { font-family: var(--gat-font-copy); }
   max-width: 70rem;
 }
 
+/* Seitentitel im Inhaltsbereich — Abstand zum Header. */
+.gat-headline {
+  margin: var(--gat-space-5) 0 var(--gat-space-2);
+}
+
+/* --- Ueberblick-Kennzahlen als DS-Karten ----------------------------------
+   Die Kennzahlen-Karten nutzen .gat-card/.gat-grid; .stat-num traegt den
+   grossen Wert, .stat-label die Beschriftung. */
+.stats {
+  margin: var(--gat-space-4) 0;
+}
+.stat-num {
+  font-size: var(--gat-text-h3);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: var(--gat-text-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* --- Callout "Wichtige Einordnung" ----------------------------------------
+   Als .gat-card--primary umgesetzt; nur Leseweite begrenzen. */
+.callout {
+  max-width: 70rem;
+}
+.callout p {
+  margin: var(--gat-space-2) 0 0;
+}
+
 /* Vorspann-Absatz unter dem Header. */
 .app-intro {
   color: var(--app-soft);
