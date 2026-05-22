@@ -191,11 +191,19 @@ function aggregateDok(db, did) {
      WHERE richtung='ausgabe' AND eh_wert>0 AND dokument_id=${did}
      GROUP BY gruppe_text, ansatz_text`,
   )
-  const treiber = rows(
+  // Zweiseitig (diverging): die groessten Anstiege UND die groessten
+  // Rueckgaenge. Frueher nur eh_delta>0 — Einsparungen blieben unsichtbar.
+  const treiberAnstieg = rows(
     db,
     `SELECT bezeichnung, eh_delta FROM v_detail
      WHERE richtung='ausgabe' AND eh_delta>0 AND dokument_id=${did}
-     ORDER BY eh_delta DESC LIMIT 12`,
+     ORDER BY eh_delta DESC LIMIT 8`,
+  )
+  const treiberRueckgang = rows(
+    db,
+    `SELECT bezeichnung, eh_delta FROM v_detail
+     WHERE richtung='ausgabe' AND eh_delta<0 AND dokument_id=${did}
+     ORDER BY eh_delta ASC LIMIT 8`,
   )
   const korridor = rows(
     db,
@@ -248,7 +256,13 @@ function aggregateDok(db, did) {
       a || "ohne Ansatz",
       round(v),
     ]),
-    treiber: treiber.map(([b, v]) => [b, round(v)]),
+    // Anstiege absteigend, danach Rueckgaenge (bereits aufsteigend, also
+    // vom staerksten Minus zum schwaechsten) — eine durchgehend nach
+    // eh_delta absteigend sortierte Liste fuer das zweiseitige Diagramm.
+    treiber: [...treiberAnstieg, ...treiberRueckgang].map(([b, v]) => [
+      b,
+      round(v),
+    ]),
     korridor: korridor.map(([b, v, k]) => [b, round(v), round(k)]),
     transfers: transfers.map(([b, v, vg]) => [b, round(v), round(vg || 0)]),
     investitionen: investitionen.map(([b, a, v]) => [b, a || "", round(v)]),
@@ -258,15 +272,18 @@ function aggregateDok(db, did) {
 }
 
 function trend(db) {
+  // Der Dokumenttyp (RA = Ist, VA/NVA = Plan) wird je Datenpunkt
+  // mitgefuehrt, damit die Trend-Diagramme Plan und Ist optisch
+  // unterscheiden koennen (siehe dashboard-charts.js).
   const eckwerte = rows(
     db,
     `SELECT spalte_wert, ROUND(ertraege), ROUND(aufwand),
-            ROUND(nettoergebnis)
+            ROUND(nettoergebnis), typ
      FROM v_eckwerte ORDER BY finanzjahr, ${ORDER}`,
   )
   const komm = rows(
     db,
-    `SELECT dokument, ROUND(eh_wert) FROM v_zeitreihe
+    `SELECT dokument, ROUND(eh_wert), typ FROM v_zeitreihe
      WHERE konto='833000' ORDER BY finanzjahr, typ`,
   )
   const aufwand = rows(
@@ -279,14 +296,18 @@ function trend(db) {
             ROUND(SUM(CASE WHEN substr(mvag_eh,1,3)='223'
                       THEN eh_wert ELSE 0 END)),
             ROUND(SUM(CASE WHEN substr(mvag_eh,1,3)='224'
-                      THEN eh_wert ELSE 0 END))
+                      THEN eh_wert ELSE 0 END)),
+            typ
      FROM v_detail WHERE richtung='ausgabe'
      GROUP BY dokument_id ORDER BY finanzjahr, ${ORDER}`,
   )
   return {
-    eckwerte: eckwerte.map((r) => [r[0], r[1], r[2], r[3]]),
-    komm: komm.map((r) => [r[0], r[1]]),
-    aufwand: aufwand.map((r) => [r[0], r[1], r[2], r[3], r[4]]),
+    // [label, ertraege, aufwand, netto, typ]
+    eckwerte: eckwerte.map((r) => [r[0], r[1], r[2], r[3], r[4]]),
+    // [label, betrag, typ]
+    komm: komm.map((r) => [r[0], r[1], r[2]]),
+    // [label, personal, sach, transfer, finanz, typ]
+    aufwand: aufwand.map((r) => [r[0], r[1], r[2], r[3], r[4], r[5]]),
   }
 }
 

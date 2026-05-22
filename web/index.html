@@ -4,45 +4,45 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gemeindefinanzen — VRV-2015-PDFs im Browser auswerten</title>
+<meta name="description" content="VRV-2015-Voranschlaege, Nachtragsvoranschlaege und Rechnungsabschluesse als PDF clientseitig auswerten — Parsing, Pruefung und Diagramme vollstaendig im Browser, ohne Server.">
+<meta name="theme-color" content="#2c6e40">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+<link rel="stylesheet" href="https://grueneat.github.io/design-system/design-system.css">
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <link rel="stylesheet" href="./vendor/dashboard/dashboard.css">
 <link rel="stylesheet" href="./css/app.css">
-<style>
-.boot-banner { background: #8E2F2A; color: #F4EFE6; padding: .9rem 1.1rem;
-  font-family: Inter, system-ui, sans-serif; font-size: .95rem; line-height: 1.5; }
-.boot-banner strong { color: #fff; }
-.dashboard-leer { margin: 2rem 0; color: #5b5650; }
-/* Diagramm-Container im Stil von _chart_div() aus html.py. */
-.dash-chart {
-  margin: .8rem 0;
-  border: 1px solid var(--rule-hair, #cdc4b4);
-  border-radius: 3px;
-  background: var(--paper-raised, #faf6ee);
-  padding: 6px;
-}
-</style>
 </head>
 <body>
 <script src="./js/boot-guard.js"></script>
+<header class="gat-header web-brandbar">
+  <div class="gat-header__inner">
+    <a class="gat-header__logo web-brandbar__brand" href=".">
+      <img class="web-brandbar__logo" src="https://grueneat.github.io/design-system/assets/gruene-logo.svg"
+        alt="Die Gruenen" width="150" height="132">
+      <span class="web-brandbar__wordmark">Gemeindefinanzen</span>
+    </a>
+    <!-- Navigationszone: heute nur der App-Kontext. Als <nav>-Liste
+         strukturiert, damit hier spaeter Links zu weiteren Gruene-Tools
+         eingehaengt werden koennen. -->
+    <nav class="gat-nav web-brandbar__nav" aria-label="Werkzeuge">
+      <ul class="web-brandbar__nav-list">
+        <li><span class="web-brandbar__nav-current">VRV-2015-Analyse</span></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
 <div class="page">
 
-  <header class="row">
-    <div class="margin">
-      <p class="kicker"><span class="kicker-num">00</span>Browser-App</p>
-      <p class="margin-note">Extraktion, Parsing und Auswertung laufen
-        vollstaendig im Browser. Kein Server, kein Upload ins Netz.</p>
-    </div>
-    <div class="body">
-      <h1 class="masthead-title">Gemeindefinanzen</h1>
-      <p class="masthead-sub app-intro">VRV-2015-Voranschlaege,
-        Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen —
-        der Detailnachweis wird clientseitig geparst, geprueft, in einer
-        lokalen Datenbank gespeichert und direkt auf dieser Seite
-        ausgewertet.</p>
-    </div>
+  <header class="web-hero">
+    <h1 class="gat-headline web-hero__title">Gemeindebudget auswerten</h1>
+    <p class="app-intro gat-fliesstext web-hero__intro">VRV-2015-Voranschlaege,
+      Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen und
+      direkt auf dieser Seite auswerten. Extraktion, Parsing, Pruefung und
+      Auswertung laufen vollstaendig im Browser — kein Server, kein Upload
+      ins Netz.</p>
   </header>
 
   <div id="toast-box"></div>
@@ -63,7 +63,7 @@
           <p class="dropzone-title">PDF-Dateien hierher ziehen</p>
           <p class="dropzone-hint">VRV-2015-Voranschlag, Nachtragsvoranschlag
             oder Rechnungsabschluss — mehrere Dateien auf einmal moeglich.</p>
-          <button class="dropzone-btn" id="pick-btn" type="button">
+          <button class="gat-btn gat-btn--secondary dropzone-btn" id="pick-btn" type="button">
             Dateien auswaehlen</button>
           <input type="file" id="file-input" accept="application/pdf,.pdf"
             multiple>
@@ -76,20 +76,22 @@
         <p class="persist-note" id="persist-note">wird geladen ...</p>
         <p class="doc-empty" id="doc-empty" hidden>Noch keine Dokumente
           geladen.</p>
-        <table class="doc-table">
-          <thead>
-            <tr>
-              <th>Dokument</th>
-              <th>Quelldatei</th>
-              <th class="num">Detailposten</th>
-              <th>Pruefstatus</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="doc-tbody"></tbody>
-        </table>
+        <div class="doc-table-scroll">
+          <table class="doc-table">
+            <thead>
+              <tr>
+                <th>Dokument</th>
+                <th>Quelldatei</th>
+                <th class="num">Detailposten</th>
+                <th>Pruefstatus</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="doc-tbody"></tbody>
+          </table>
+        </div>
         <p class="doc-clear-zeile">
-          <button type="button" class="doc-clear-btn" id="doc-clear-all" hidden>
+          <button type="button" class="gat-btn gat-btn--secondary doc-clear-btn" id="doc-clear-all" hidden>
             Alle Dokumente entfernen</button>
         </p>
       </section>
@@ -119,127 +121,235 @@
     </div>
 
     <section class="tab-panel" data-panel="ueberblick">
-      <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
-      <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
-        <span class="mark mark-blue" id="kennzahl-netto"></span> aus. Der
-        Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
-        Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
-        Ausgaben und Spielraeume weiter auf.</p>
+      <div class="web-section-head">
+        <h2>Lagebild — <span id="kennzahl-dok"></span></h2>
+        <p class="lead">Das gewaehlte Dokument weist ein Nettoergebnis von
+          <span class="mark-neutral" id="kennzahl-netto"></span> aus. Der
+          Wasserfall zeigt, wie sich Ertraege und Aufwendungen zu diesem
+          Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
+          Ausgaben und Spielraeume weiter auf.</p>
+      </div>
       <div class="stats">
-        <div class="stat"><div class="stat-num" id="st-ertraege"></div>
-          <div class="stat-label">Ertraege</div></div>
-        <div class="stat"><div class="stat-num" id="st-aufwand"></div>
-          <div class="stat-label">Aufwendungen</div></div>
-        <div class="stat"><div class="stat-num" id="st-netto"></div>
-          <div class="stat-label">Nettoergebnis</div></div>
-        <div class="stat"><div class="stat-num is-orange" id="st-komm-anteil">
-          </div><div class="stat-label">Kommunalsteuer-Anteil</div></div>
+        <div class="stat metric-card metric-card--ertrag">
+          <div class="stat-label">Ertraege</div>
+          <div class="stat-num" id="st-ertraege"></div></div>
+        <div class="stat metric-card metric-card--aufwand">
+          <div class="stat-label">Aufwendungen</div>
+          <div class="stat-num" id="st-aufwand"></div></div>
+        <div class="stat metric-card metric-card--netto">
+          <div class="stat-label">Nettoergebnis</div>
+          <div class="stat-num" id="st-netto"></div></div>
+        <div class="stat metric-card metric-card--hero">
+          <div class="stat-label">Kommunalsteuer-Anteil</div>
+          <div class="stat-num" id="st-komm-anteil"></div></div>
       </div>
-      <h3 style="margin-top:1.2rem">Ergebnis als Wasserfall</h3>
-      <div id="c_wasserfall" class="dash-chart" style="height:340px"></div>
-      <h3>Geldfluss</h3>
-      <div class="sankey-bar">
-        <p class="sankey-hint" id="sankey-hinweis"></p>
-        <button type="button" class="sankey-reset" id="sankey-reset">Übersicht</button>
-      </div>
-      <div id="c_sankey" class="dash-chart" style="height:520px"></div>
-      <h3>Entwicklung ueber alle Dokumente</h3>
-      <p>Ertraege, Aufwendungen und Nettoergebnis je eingelesenem Dokument —
-        dieser Vergleich ist dokumentuebergreifend und aendert sich nicht mit
-        dem Umschalter.</p>
-      <div id="c_trend_eck" class="dash-chart" style="height:320px"></div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
+        <div class="web-panel__body">
+          <div id="c_wasserfall" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Mittelherkunft und -verwendung</h3>
+          <p class="web-panel__note">Zeigt die operativen Ertraege und
+            Aufwendungen des Ergebnishaushalts — woher die Mittel kommen
+            und wofuer sie verwendet werden. Es ist keine
+            Cashflow-Darstellung und kein Finanzierungshaushalt.</p>
+          <div class="sankey-bar">
+            <p class="sankey-hint" id="sankey-hinweis"></p>
+            <button type="button" class="gat-btn gat-btn--secondary sankey-reset" id="sankey-reset">Übersicht</button>
+          </div>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_sankey" class="dash-chart" style="height:520px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Entwicklung ueber alle Dokumente</h3>
+          <p class="web-panel__note">Ertraege, Aufwendungen und Nettoergebnis
+            je eingelesenem Dokument — dieser Vergleich ist
+            dokumentuebergreifend und aendert sich nicht mit dem Umschalter.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_trend_eck" class="dash-chart" style="height:440px"></div>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="einnahmen">
-      <h2>Einnahmestruktur</h2>
-      <p>Die groessten Ertragsposten des gewaehlten Dokuments. Die
-        <span class="mark mark-green">Kommunalsteuer</span> ist nach den
-        Bundes-Ertragsanteilen die zweitgroesste Quelle.</p>
-      <div class="dash-grid">
-        <div><h3>Groesste Ertragsposten</h3>
-          <div id="c_einnahmen" class="dash-chart" style="height:360px"></div></div>
-        <div><h3>Kommunalsteuer im Zeitverlauf</h3>
-          <div id="c_trend_komm" class="dash-chart" style="height:360px"></div></div>
+      <div class="web-section-head">
+        <h2>Einnahmestruktur</h2>
+        <p>Die groessten Ertragsposten des gewaehlten Dokuments. Die
+          <span class="mark-positiv">Kommunalsteuer</span> ist nach den
+          Bundes-Ertragsanteilen die zweitgroesste Quelle.</p>
       </div>
-      <h3>Tabelle der groessten Ertragsposten</h3>
-      <table class="dtable" id="t-einnahmen">
-        <thead><tr><th>Posten</th><th class="num">Betrag</th></tr></thead>
-        <tbody id="tbl-einnahmen"></tbody></table>
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Groesste Ertragsposten</h3></div>
+          <div class="web-panel__body">
+            <div id="c_einnahmen" class="dash-chart" style="height:360px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Kommunalsteuer im Zeitverlauf</h3></div>
+          <div class="web-panel__body">
+            <div id="c_trend_komm" class="dash-chart" style="height:360px"></div>
+          </div>
+        </section>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Tabelle der groessten Ertragsposten</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-einnahmen">
+            <thead><tr><th>Posten</th><th class="num">Betrag</th></tr></thead>
+            <tbody id="tbl-einnahmen"></tbody></table>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="ausgaben">
-      <h2>Wofuer das Geld ausgegeben wird</h2>
-      <p>Der Aufwand nach Art (Ring) und nach Aufgabenbereich (Treemap).
-        Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
-        Ermessensspielraum steckt im Sachaufwand.</p>
-      <div class="dash-grid">
-        <div><h3>Aufwand nach Art</h3>
-          <div id="c_aufwandart" class="dash-chart" style="height:340px"></div></div>
-        <div><h3>Aufwand nach Aufgabenbereich</h3>
-          <div id="c_treemap" class="dash-chart" style="height:340px"></div></div>
+      <div class="web-section-head">
+        <h2>Wofuer das Geld ausgegeben wird</h2>
+        <p>Der Aufwand nach Art (Ring) und nach Aufgabenbereich (Treemap).
+          Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
+          Ermessensspielraum steckt im Sachaufwand.</p>
       </div>
-      <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
-      <p>Klick auf eine Zeile blendet die naechste Ebene auf; ueber die
-        Brotkrumen geht es wieder zurueck. Die Schaltflaeche
-        &bdquo;ueber die Jahre&ldquo; je Gruppe oder Ansatz zeigt deren
-        Entwicklung ueber alle Dokumente als Liniendiagramm.
-        Drill-down und &bdquo;ueber die Jahre&ldquo; zeigen die
-        <strong>operativen Ausgaben</strong> des Ergebnishaushalts
-        (laufender Betrieb) — investive Vorhaben stehen im Tab
-        &bdquo;Investitionen&ldquo;.</p>
-      <div class="crumbs" id="drill-crumbs"></div>
-      <p class="result-meta" id="drill-sum"></p>
-      <ul class="drill-list" id="drill-list"></ul>
-      <h3 style="margin-top:1.4rem">Groesste Aufwandssteigerungen</h3>
-      <table class="dtable" id="t-ausgaben">
-        <thead><tr><th>Posten</th><th class="num">Steigerung</th></tr></thead>
-        <tbody id="tbl-ausgaben"></tbody></table>
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Aufwand nach Art</h3></div>
+          <div class="web-panel__body">
+            <div id="c_aufwandart" class="dash-chart" style="height:340px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head"><h3>Aufwand nach Aufgabenbereich</h3></div>
+          <div class="web-panel__body">
+            <div id="c_treemap" class="dash-chart" style="height:340px"></div>
+          </div>
+        </section>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Drill-down: Aufgabengruppe &rsaquo; Ansatz &rsaquo; Posten</h3>
+          <p class="web-panel__note">Klick auf eine Zeile blendet die naechste
+            Ebene auf; ueber die Brotkrumen geht es wieder zurueck. Die
+            Schaltflaeche &bdquo;ueber die Jahre&ldquo; je Gruppe oder Ansatz
+            zeigt deren Entwicklung ueber alle Dokumente als Liniendiagramm.
+            Drill-down und &bdquo;ueber die Jahre&ldquo; zeigen die
+            <strong>operativen Ausgaben</strong> des Ergebnishaushalts
+            (laufender Betrieb) — investive Vorhaben stehen im Tab
+            &bdquo;Investitionen&ldquo;.</p>
+        </div>
+        <div class="web-panel__body">
+          <div class="crumbs" id="drill-crumbs"></div>
+          <p class="result-meta" id="drill-sum"></p>
+          <ul class="drill-list" id="drill-list"></ul>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Groesste Aufwandssteigerungen</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-ausgaben">
+            <thead><tr><th>Posten</th><th class="num">Steigerung</th></tr></thead>
+            <tbody id="tbl-ausgaben"></tbody></table>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="investitionen">
-      <h2>Investive Vorhaben</h2>
-      <p>Die groessten investiven Auszahlungen des gewaehlten Dokuments —
-        Vorhaben ausserhalb des laufenden Betriebs.</p>
-      <div id="c_investitionen" class="dash-chart" style="height:380px"></div>
-      <h3>Tabelle der groessten Investitionen</h3>
-      <table class="dtable" id="t-investitionen">
-        <thead><tr><th>Posten</th><th>Ansatz</th>
-          <th class="num">Betrag</th></tr></thead>
-        <tbody id="tbl-investitionen"></tbody></table>
+      <div class="web-section-head">
+        <h2>Investive Vorhaben</h2>
+        <p>Die groessten investiven Auszahlungen des gewaehlten Dokuments —
+          Vorhaben ausserhalb des laufenden Betriebs.</p>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Groesste investive Auszahlungen</h3></div>
+        <div class="web-panel__body">
+          <div id="c_investitionen" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Tabelle der groessten Investitionen</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-investitionen">
+            <thead><tr><th>Posten</th><th>Ansatz</th>
+              <th class="num">Betrag</th></tr></thead>
+            <tbody id="tbl-investitionen"></tbody></table>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="transfers">
-      <h2>Transfers &amp; Umlagen</h2>
-      <p>Der Transferaufwand mit Kennzeichnung, ob es sich um eine weitgehend
-        gesetzlich gebundene <span class="mark mark-red">Pflichtumlage</span>
-        oder um freiwillige bzw. sonstige Transfers handelt.</p>
-      <h3>Transferaufwand im Detail</h3>
-      <table class="dtable" id="t-transfers">
-        <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
-          <th class="num">Vergleich</th></tr></thead>
-        <tbody id="tbl-transfers"></tbody></table>
-      <h3 style="margin-top:1.4rem">Aufwand nach Art im Zeitverlauf</h3>
-      <p>Der <span class="mark mark-red">Transferaufwand</span> waechst
-        strukturell am staerksten — dokumentuebergreifend.</p>
-      <div id="c_trend_auf" class="dash-chart" style="height:340px"></div>
+      <div class="web-section-head">
+        <h2>Transfers &amp; Umlagen</h2>
+        <p>Der Transferaufwand mit Kennzeichnung, ob es sich um eine weitgehend
+          gesetzlich gebundene <span class="mark-risiko">Pflichtumlage</span>
+          oder um freiwillige bzw. sonstige Transfers handelt.</p>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Transferaufwand im Detail</h3></div>
+        <div class="web-panel__body web-panel__body--table">
+          <table class="dtable" id="t-transfers">
+            <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
+              <th class="num">Vergleich</th></tr></thead>
+            <tbody id="tbl-transfers"></tbody></table>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Aufwand nach Art im Zeitverlauf</h3>
+          <p class="web-panel__note">Der
+            <span class="mark-risiko">Transferaufwand</span> waechst
+            strukturell am staerksten — dokumentuebergreifend.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_trend_auf" class="dash-chart" style="height:440px"></div>
+        </div>
+      </section>
     </section>
 
     <section class="tab-panel" data-panel="sparpotenzial">
-      <h2>Sparpotenzial</h2>
-      <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
-        Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
-        zusammen welche Betraege ausmachen.</p>
-      <div id="c_wasserfall_sp" class="dash-chart" style="height:340px"></div>
-      <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
-      <p>Der zahlungswirksame Sachaufwand mit Ermessensspielraum, nach
-        Betrag sortiert und kumuliert. Die Linie zeigt, wie viele Posten
-        zusammen welche Summe ergeben.</p>
-      <div id="c_korridor" class="dash-chart" style="height:400px"></div>
-      <h3>Kostentreiber gegenueber dem Vergleichswert</h3>
-      <div id="c_treiber" class="dash-chart" style="height:360px"></div>
-      <div class="callout is-risk" style="margin-top:1rem;">
-        <p class="callout-label">Wichtige Einordnung</p>
-        <p>Diese Auswertung ist eine
+      <div class="web-section-head">
+        <h2>Sparpotenzial</h2>
+        <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
+          Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
+          zusammen welche Betraege ausmachen.</p>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
+        <div class="web-panel__body">
+          <div id="c_wasserfall_sp" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
+          <p class="web-panel__note">Der zahlungswirksame Sachaufwand mit
+            Ermessensspielraum, nach Betrag sortiert und kumuliert. Die Linie
+            zeigt, wie viele Posten zusammen welche Summe ergeben.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_korridor" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Groesste Veraenderungen gegenueber dem Vergleichswert</h3>
+          <p class="web-panel__note">Was der Vergleichswert bedeutet, haengt
+            vom Dokumenttyp ab: Bei einem Voranschlag ist es der Plan des
+            Vorjahres (Budgetwachstum), bei einem Rechnungsabschluss das
+            Soll laut Voranschlag (Ist-minus-Soll-Abweichung). Gezeigt
+            werden die groessten Anstiege und die groessten Rueckgaenge.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_treiber" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+      <div class="callout gat-card gat-card--primary">
+        <div class="callout-label gat-card__title">Wichtige Einordnung</div>
+        <p class="gat-card__body">Diese Auswertung ist eine
           <strong>Suchhilfe, keine Empfehlung</strong>. Sie zeigt, wo im
           Budget Betraege welcher Groessenordnung ueberhaupt liegen. Ob ein
           Posten kuerzbar ist, ist eine fachliche und politische
@@ -248,11 +358,16 @@
     </section>
 
     <section class="tab-panel" data-panel="suche" id="such-box">
-      <h2>Suche &amp; Daten</h2>
-      <p>Alle Detailposten aller Dokumente — durchsuchbar, filterbar,
-        sortierbar. Suche und Filter laufen vollstaendig im Browser. Einzelne
-        Posten oder die gesamte gefilterte Menge lassen sich ueber die Jahre
-        als Liniendiagramm vergleichen.</p>
+      <div class="web-section-head">
+        <h2>Suche &amp; Daten</h2>
+        <p>Alle Detailposten aller Dokumente — durchsuchbar, filterbar,
+          sortierbar. Suche und Filter laufen vollstaendig im Browser. Einzelne
+          Posten oder die gesamte gefilterte Menge lassen sich ueber die Jahre
+          als Liniendiagramm vergleichen.</p>
+      </div>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Filter</h3></div>
+        <div class="web-panel__body">
       <div class="filterbar">
         <label>Volltextsuche
           <input type="search" class="search" id="f-such"
@@ -280,12 +395,17 @@
       </div>
       <p class="result-meta" id="such-meta"></p>
       <div class="mj-actions">
-        <button class="mj-btn is-primary" id="mj-selected" disabled>
+        <button class="gat-btn gat-btn--primary mj-btn is-primary" id="mj-selected" disabled>
           Ausgewaehlte Posten ueber die Jahre</button>
-        <button class="mj-btn" id="mj-group" disabled>
+        <button class="gat-btn gat-btn--secondary mj-btn" id="mj-group" disabled>
           Gefilterte Menge als Gruppe</button>
         <span class="mj-count" id="mj-count">keine Zeile gewaehlt</span>
       </div>
+        </div>
+      </section>
+      <section class="web-panel">
+        <div class="web-panel__head"><h3>Detailposten</h3></div>
+        <div class="web-panel__body">
       <div class="table-scroll">
         <table class="dtable">
           <thead><tr>
@@ -324,6 +444,8 @@
         </table>
       </div>
       <p class="table-hint" id="such-hint"></p>
+        </div>
+      </section>
     </section>
   </div>
 

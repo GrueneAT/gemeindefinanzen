@@ -18,14 +18,39 @@ const MITTE = "Gemeindehaushalt"
 // Hoechstzahl Detailknoten je ausgeklapptem Bereich; der Rest wird gebuendelt.
 export const TOP_N = 8
 
-// Die vier Tinten des Design Systems — semantisch eingesetzt, identisch zu
-// dashboard-charts.js.
+// Entsaettigte Diagramm-Palette des Web-Design-Systems — semantisch
+// eingesetzt, identisch zu dashboard-charts.js (siehe
+// docs/web-design-system.md). green=Ertraege/positiv,
+// blue=Personal/neutral-kuehl (Teal), orange=Sachaufwand (Gold),
+// red=Aufwand/Risiko (Clay), soft=Sonstige/Restgruppe (Sage).
 const INK = {
-  red: "#8E2F2A",
-  blue: "#1F4A6D",
-  orange: "#9A4A1C",
-  green: "#2F6149",
-  soft: "#5b5650",
+  green: "#3f7d4f",
+  blue: "#4f93a0",
+  orange: "#c9a24b",
+  red: "#b9744f",
+  soft: "#8a8f7d",
+}
+
+// Diagrammschrift = Seitenschrift (Gruene-AT-DS).
+const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const ACHSE_TEXT = "#23271f"
+const ACHSE_LINIE = "#cdd2c8"
+
+// Gemeinsame Diagramm-Schriftgroesse (Iteration 16) — identisch zu
+// dashboard-charts.js. Spuerbar groesser fuer aeltere Nutzer:innen.
+const LABEL_SIZE = 15
+
+// Tooltip auf die Komponentensprache: helle Karte mit Haarlinie und weichem
+// Schatten statt der dunklen ECharts-Voreinstellung — identisch zu
+// dashboard-charts.js.
+const TOOLTIP = {
+  trigger: "item",
+  backgroundColor: "#ffffff",
+  borderColor: ACHSE_LINIE,
+  borderWidth: 1,
+  padding: [7, 11],
+  extraCssText: "box-shadow: 0 4px 14px rgba(31,38,28,.12); border-radius: 8px;",
+  textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT, fontSize: LABEL_SIZE },
 }
 
 // Einnahmequelle eines Postens — Portierung der CASE-Logik aus
@@ -232,21 +257,21 @@ export function buildSankeyOption(posten, dokId, expand) {
   })
 
   return {
-    textStyle: { fontFamily: "Inter, sans-serif", color: "#2b2825" },
-    tooltip: { trigger: "item" },
+    textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT },
+    tooltip: TOOLTIP,
     series: [
       {
         type: "sankey",
         left: 8,
-        right: 170,
-        top: 14,
-        bottom: 14,
-        nodeGap: 11,
+        right: 300,
+        top: 16,
+        bottom: 16,
+        nodeGap: 13,
         nodeWidth: 26,
         label: {
-          fontFamily: "Inter, sans-serif",
-          fontSize: 11,
-          color: "#2b2825",
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
+          color: ACHSE_TEXT,
         },
         lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
         emphasis: { focus: "adjacency" },

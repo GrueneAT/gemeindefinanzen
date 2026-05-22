@@ -6,32 +6,107 @@
 // eingebettet und clientseitig von dashboard.js per revive() in echte
 // Funktionen zurueckverwandelt.
 
-// Die vier Tinten des Design Systems — semantisch eingesetzt.
+// Entsaettigte Diagramm-Palette des Web-Design-Systems (siehe
+// docs/web-design-system.md). ECharts liest keine CSS-Variablen — die
+// Hex-Werte werden hier gespiegelt und muessen mit den --web-chart-*-Token
+// in app.css uebereinstimmen. Semantik der Schluessel:
+// green=Ertraege/positiv, blue=Personal/neutral-kuehl (Teal),
+// orange=Sachaufwand (Gold), red=Aufwand/Risiko (Clay),
+// soft=Sonstige/Restgruppe (Sage), paper=Diagramm-Flaeche.
 const INK = {
-  red: "#8E2F2A",
-  blue: "#1F4A6D",
-  orange: "#9A4A1C",
-  green: "#2F6149",
-  soft: "#5b5650",
-  paper: "#F4EFE6",
+  green: "#3f7d4f",
+  blue: "#4f93a0",
+  orange: "#c9a24b",
+  red: "#b9744f",
+  soft: "#8a8f7d",
+  paper: "#ffffff",
 }
+
+// Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsen-/Linientoene weich
+// gehalten, abgestimmt auf den ruhigen Web-Grundton (web-design-system.md).
+const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const ACHSE_TEXT = "#23271f"
+const ACHSE_TEXT_SOFT = "#5e6358"
+const ACHSE_LINIE = "#cdd2c8"
+const ACHSE_SPLIT = "#e7eae2"
+
+// Gemeinsame Diagramm-Schriftgroessen (Iteration 16). Die App hat viele
+// aeltere Nutzer:innen — die fruehere Skala (~10-12px) war zu klein. Ein
+// Wert je Textrolle, damit Achsen, Legenden, Tooltips und Datenlabels in
+// allen Buildern konsistent gross sind.
+// LABEL_SIZE = Achsenlabels, Legende, Tooltip, Datenlabels, Sankey-Knoten.
+// AXIS_SIZE  = Wertachse (etwas kleiner, bleibt klar lesbar).
+const LABEL_SIZE = 15
+const AXIS_SIZE = 14
 
 function baseText() {
-  return { fontFamily: "Inter, sans-serif", color: "#2b2825" }
+  return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
 }
 
-function catAxis(data, fontsize = 11, rotate = 0) {
+// Balkenbreiten-Deckelung je Datendichte. Auf den jetzt vollbreiten Panels
+// (~2000px auf einem 4K-Schirm) wuerde ein globaler schmaler Deckel
+// kategorienarme Diagramme zu duennen Strichen verkommen lassen. Daher zwei
+// Stufen: BAR_MAX_DICHT fuer Diagramme mit vielen Kategorien (horizontale
+// Balkenlisten, Korridor), BAR_MAX_WEIT fuer kategorienarme Saeulendiagramme
+// (Wasserfall mit 3 Saeulen, Trend ueber wenige Dokumente) — dort sollen die
+// Saeulen substanziell wirken statt als Slivers in leerer Flaeche.
+const BAR_MAX_DICHT = 56
+const BAR_MAX_WEIT = 130
+
+// Gemeinsame, ruhige Grid-Raender — jedes Diagramm nutzt seine Panel-
+// flaeche gleichmaessig. containLabel haelt Achsenbeschriftungen drin;
+// bottom wird je Diagramm erhoeht, wenn Legende oder gedrehte Labels
+// zusaetzlichen Platz brauchen.
+function grid(extra = {}) {
+  return { left: 10, right: 18, top: 14, bottom: 10, containLabel: true, ...extra }
+}
+
+// Tooltip auf die Komponentensprache des Web-Design-Systems: helle Karte
+// mit Haarlinie und weichem Schatten statt der dunklen ECharts-Voreinstellung.
+// Schrift = Seitenschrift, Text im ruhigen --web-text-Ton. extra erlaubt es,
+// trigger/axisPointer je Diagramm zu ergaenzen.
+function tip(extra = {}) {
+  return {
+    backgroundColor: INK.paper,
+    borderColor: ACHSE_LINIE,
+    borderWidth: 1,
+    padding: [7, 11],
+    extraCssText: "box-shadow: 0 4px 14px rgba(31,38,28,.12); border-radius: 8px;",
+    textStyle: {
+      fontFamily: CHART_FONT,
+      color: ACHSE_TEXT,
+      fontSize: LABEL_SIZE,
+    },
+    ...extra,
+  }
+}
+
+// Legende auf die ruhige Komponentensprache: Sekundaertext-Ton, Seitenschrift.
+function legende(extra = {}) {
+  return {
+    bottom: 0,
+    itemGap: 14,
+    textStyle: {
+      fontFamily: CHART_FONT,
+      fontSize: LABEL_SIZE,
+      color: ACHSE_TEXT_SOFT,
+    },
+    ...extra,
+  }
+}
+
+function catAxis(data, fontsize = LABEL_SIZE, rotate = 0) {
   return {
     type: "category",
     data,
     axisLabel: {
-      fontFamily: "Inter, sans-serif",
+      fontFamily: CHART_FONT,
       fontSize: fontsize,
-      color: "#2b2825",
+      color: ACHSE_TEXT,
       rotate,
       interval: 0,
     },
-    axisLine: { lineStyle: { color: "#cdc4b4" } },
+    axisLine: { lineStyle: { color: ACHSE_LINIE } },
   }
 }
 
@@ -39,12 +114,12 @@ function valAxis(formatter = "(v)=>(v/1000).toLocaleString('de')+'k'") {
   return {
     type: "value",
     axisLabel: {
-      fontFamily: "Inter, sans-serif",
-      fontSize: 10,
-      color: "#5b5650",
+      fontFamily: CHART_FONT,
+      fontSize: AXIS_SIZE,
+      color: ACHSE_TEXT_SOFT,
       formatter,
     },
-    splitLine: { lineStyle: { color: "#e6dfd0" } },
+    splitLine: { lineStyle: { color: ACHSE_SPLIT } },
   }
 }
 
@@ -57,7 +132,7 @@ function round(x) {
   return ab % 2 === 0 ? ab : ab + 1
 }
 
-function bar(categories, values, color, colors = null) {
+function bar(categories, values, color, colors = null, barMax = BAR_MAX_DICHT) {
   const data = colors
     ? values.map((v, i) => ({
         value: round(v),
@@ -66,8 +141,8 @@ function bar(categories, values, color, colors = null) {
     : values.map((v) => round(v))
   return {
     textStyle: baseText(),
-    grid: { left: 8, right: 22, top: 12, bottom: 8, containLabel: true },
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    grid: grid(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     xAxis: valAxis(),
     yAxis: { ...catAxis(categories), inverse: true },
     series: [
@@ -75,6 +150,7 @@ function bar(categories, values, color, colors = null) {
         type: "bar",
         data,
         barWidth: "62%",
+        barMaxWidth: barMax,
         itemStyle: { color, borderRadius: 2 },
       },
     ],
@@ -107,20 +183,20 @@ export function chartSankey(agg) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "item" },
+    tooltip: tip({ trigger: "item" }),
     series: [
       {
         type: "sankey",
         left: 8,
-        right: 170,
-        top: 14,
-        bottom: 14,
-        nodeGap: 11,
+        right: 300,
+        top: 16,
+        bottom: 16,
+        nodeGap: 13,
         nodeWidth: 26,
         label: {
-          fontFamily: "Inter, sans-serif",
-          fontSize: 11,
-          color: "#2b2825",
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
+          color: ACHSE_TEXT,
         },
         lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
         emphasis: { focus: "adjacency" },
@@ -141,16 +217,26 @@ export function chartEinnahmen(agg) {
   return bar(cats, vals, INK.blue, cols)
 }
 
+// Kostentreiber und Investitionen sitzen seit Iteration 13 in vollbreiten
+// Einzel-Chart-Panels. Haben sie nur wenige Posten, blieben die liegenden
+// Balken bei knappem Deckel duenne Streifen in viel Hoehe — daher der
+// weitere BAR_MAX_WEIT-Deckel statt des dichten.
+//
+// Zweiseitiges (diverging) Diagramm: agg.treiber enthaelt die groessten
+// Anstiege (positives Delta) UND die groessten Rueckgaenge (negatives
+// Delta). Anstiege in der Risiko-Farbe (Clay), Rueckgaenge in Gruen —
+// konsistent mit der Farbsemantik des Design-Systems.
 export function chartTreiber(agg) {
   const cats = agg.treiber.map(([b]) => b.slice(0, 34)).reverse()
   const vals = agg.treiber.map(([, d]) => d).reverse()
-  return bar(cats, vals, INK.red)
+  const cols = vals.map((v) => (v >= 0 ? INK.red : INK.green))
+  return bar(cats, vals, INK.red, cols, BAR_MAX_WEIT)
 }
 
 export function chartInvestitionen(agg) {
   const cats = agg.investitionen.map(([b]) => b.slice(0, 36)).reverse()
   const vals = agg.investitionen.map(([, , v]) => v).reverse()
-  return bar(cats, vals, INK.orange)
+  return bar(cats, vals, INK.orange, null, BAR_MAX_WEIT)
 }
 
 export function chartAufwandart(agg) {
@@ -159,15 +245,12 @@ export function chartAufwandart(agg) {
     Sachaufwand: INK.orange,
     Transfers: INK.red,
     Finanz: INK.soft,
-    Sonstige: "#b7ad99",
+    Sonstige: INK.soft,
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "item" },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
-    },
+    tooltip: tip({ trigger: "item" }),
+    legend: legende(),
     series: [
       {
         type: "pie",
@@ -176,8 +259,8 @@ export function chartAufwandart(agg) {
         padAngle: 2,
         itemStyle: { borderRadius: 3 },
         label: {
-          fontFamily: "Inter, sans-serif",
-          fontSize: 11,
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
           // ECharts deutet '\n' im Formatter selbst als Zeilenumbruch — der
           // String enthaelt daher Backslash + n als zwei Zeichen.
           formatter: "{b}\\n{d}%",
@@ -200,7 +283,7 @@ export function chartTreemap(agg) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "item" },
+    tooltip: tip({ trigger: "item" }),
     series: [
       {
         type: "treemap",
@@ -218,14 +301,14 @@ export function chartTreemap(agg) {
         levels: [
           {
             itemStyle: {
-              borderColor: "#F4EFE6",
+              borderColor: INK.paper,
               borderWidth: 3,
               gapWidth: 3,
             },
           },
           {
             itemStyle: {
-              borderColor: "#F4EFE6",
+              borderColor: INK.paper,
               borderWidth: 1,
               gapWidth: 1,
             },
@@ -233,12 +316,12 @@ export function chartTreemap(agg) {
           },
         ],
         color: [INK.orange, INK.blue, INK.green, INK.red, INK.soft],
-        label: { fontFamily: "Inter, sans-serif", fontSize: 11 },
+        label: { fontFamily: CHART_FONT, fontSize: LABEL_SIZE },
         upperLabel: {
           show: true,
-          height: 20,
-          fontFamily: "Inter, sans-serif",
-          fontSize: 11,
+          height: 24,
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
         },
       },
     ],
@@ -247,10 +330,13 @@ export function chartTreemap(agg) {
 
 export function chartWasserfall(agg, jahr) {
   const e = agg.eckwerte
+  // Nettoergebnis nach Vorzeichen einfaerben: Ueberschuss gruen, Defizit
+  // in der Risiko-Farbe (Clay) — konsistent mit der Kennzahlen-Karte.
+  const nettoFarbe = e.netto >= 0 ? INK.green : INK.red
   const schritte = [
     ["Ertraege", e.ertraege, INK.green],
     ["Aufwendungen", -e.aufwand, INK.red],
-    [`Nettoergebnis ${jahr}`, e.netto, INK.blue],
+    [`Nettoergebnis ${jahr}`, e.netto, nettoFarbe],
   ]
   const namen = schritte.map((s) => s[0])
   const sockel = []
@@ -266,9 +352,9 @@ export function chartWasserfall(agg, jahr) {
   }
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    grid: { left: 8, right: 18, top: 16, bottom: 8, containLabel: true },
-    xAxis: catAxis(namen, 10),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    grid: grid({ top: 28 }),
+    xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: [
       {
@@ -277,18 +363,40 @@ export function chartWasserfall(agg, jahr) {
         itemStyle: { color: "transparent" },
         data: sockel,
         silent: true,
+        barWidth: "45%",
+        barMaxWidth: BAR_MAX_WEIT,
       },
       {
         type: "bar",
         stack: "w",
         data: sichtbar,
-        barWidth: "55%",
+        barWidth: "45%",
+        barMaxWidth: BAR_MAX_WEIT,
         itemStyle: { borderRadius: 2 },
+        // Ruhige Verbindungslinie zwischen den Wasserfall-Stufen — eine
+        // duenne Haarlinie macht den Treppen-Verlauf ablesbar, ohne den
+        // entsaettigten Charakter zu stoeren.
+        markLine: {
+          symbol: "none",
+          silent: true,
+          lineStyle: { color: ACHSE_LINIE, width: 1, type: "dashed" },
+          label: { show: false },
+          data: [
+            [
+              { coord: [0, round(e.ertraege)] },
+              { coord: [1, round(e.ertraege)] },
+            ],
+            [
+              { coord: [1, round(e.ertraege - e.aufwand)] },
+              { coord: [2, round(e.ertraege - e.aufwand)] },
+            ],
+          ],
+        },
         label: {
           show: true,
           position: "top",
-          fontFamily: "Inter, sans-serif",
-          fontSize: 10,
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
           formatter: "(p)=>(p.value/1000).toLocaleString('de')+'k'",
         },
       },
@@ -303,13 +411,10 @@ export function chartKorridor(agg) {
   const kumuliert = e.map(([, , k]) => k)
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
-    },
-    grid: { left: 8, right: 18, top: 12, bottom: 48, containLabel: true },
-    xAxis: catAxis(cats, 9, 38),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
+    grid: grid({ bottom: 96, top: 18 }),
+    xAxis: catAxis(cats, LABEL_SIZE, 38),
     yAxis: valAxis(),
     series: [
       {
@@ -318,6 +423,7 @@ export function chartKorridor(agg) {
         data: einzeln,
         itemStyle: { color: INK.orange, borderRadius: 2 },
         barWidth: "52%",
+        barMaxWidth: BAR_MAX_DICHT,
       },
       {
         name: "kumuliert",
@@ -333,40 +439,86 @@ export function chartKorridor(agg) {
 }
 
 // --- Zeitreihen-Diagramme ------------------------------------------------- //
+// Plan (VA/NVA) und Ist (RA) sind fachlich verschiedene Groessen. In den
+// Trend-Diagrammen werden sie deshalb optisch getrennt: RA-Datenpunkte
+// voll gefuellt, VA/NVA-Datenpunkte mit einem leichten Schraffur-Decal.
+// `typ` kommt je Datenpunkt aus dashboard-data.js (trend()).
+const VA_DECAL = {
+  symbol: "rect",
+  color: "rgba(255,255,255,0.55)",
+  dashArrayX: [1, 0],
+  dashArrayY: [3, 4],
+  rotation: -Math.PI / 4,
+}
+
+// Balkendatenpunkt mit typabhaengigem itemStyle: RA solide, VA/NVA mit
+// Decal-Schraffur. Wert und Grundfarbe wie bisher.
+function trendBalken(wert, typ, farbe) {
+  const stil = { color: farbe, borderRadius: 2 }
+  if (typ !== "RA") stil.decal = VA_DECAL
+  return { value: wert, itemStyle: stil }
+}
+
+// Unsichtbare Hilfsserien nur fuer die Legende: erklaeren Plan vs. Ist,
+// ohne selbst Daten beizutragen.
+function planIstLegende() {
+  return [
+    {
+      name: "Ist (RA)",
+      type: "bar",
+      data: [],
+      itemStyle: { color: ACHSE_TEXT_SOFT },
+    },
+    {
+      name: "Plan (VA/NVA)",
+      type: "bar",
+      data: [],
+      itemStyle: { color: ACHSE_TEXT_SOFT, decal: VA_DECAL },
+    },
+  ]
+}
+
 export function chartTrendEckwerte(trend) {
   const reihe = trend.eckwerte
   const namen = reihe.map((r) => r[0])
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
-    },
-    grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
+    aria: { enabled: true, decal: { show: true } },
+    grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
     series: [
       {
         name: "Ertraege",
         type: "bar",
-        data: reihe.map((r) => r[1]),
-        itemStyle: { color: INK.green, borderRadius: 2 },
+        data: reihe.map((r) => trendBalken(r[1], r[4], INK.green)),
+        barMaxWidth: BAR_MAX_WEIT,
+        // Serien-Grundfarbe nur fuer die Legenden-Swatch — die Balken
+        // selbst tragen ihre Farbe je Datenpunkt aus trendBalken().
+        itemStyle: { color: INK.green },
       },
       {
         name: "Aufwendungen",
         type: "bar",
-        data: reihe.map((r) => r[2]),
-        itemStyle: { color: INK.red, borderRadius: 2 },
+        data: reihe.map((r) => trendBalken(r[2], r[4], INK.red)),
+        barMaxWidth: BAR_MAX_WEIT,
+        itemStyle: { color: INK.red },
       },
       {
         name: "Nettoergebnis",
         type: "line",
         symbolSize: 7,
-        data: reihe.map((r) => r[3]),
+        // Plan-Punkte als Ring, Ist-Punkte als gefuellter Kreis.
+        data: reihe.map((r) => ({
+          value: r[3],
+          symbol: r[4] === "RA" ? "circle" : "emptyCircle",
+        })),
         itemStyle: { color: INK.blue },
         lineStyle: { color: INK.blue, width: 2 },
       },
+      ...planIstLegende(),
     ],
   }
 }
@@ -375,26 +527,52 @@ export function chartTrendKomm(trend) {
   const reihe = trend.komm
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis" },
-    grid: { left: 8, right: 18, top: 16, bottom: 8, containLabel: true },
+    tooltip: tip({ trigger: "axis" }),
+    legend: legende(),
+    grid: grid({ top: 30, bottom: 36 }),
     xAxis: catAxis(reihe.map((r) => r[0])),
     yAxis: valAxis(),
     series: [
       {
+        name: "Kommunalsteuer",
         type: "line",
         smooth: true,
-        symbolSize: 8,
-        data: reihe.map((r) => r[1]),
+        symbolSize: 9,
+        // Ist-Punkte gefuellt, Plan-Punkte als Ring — Plan/Ist sichtbar
+        // getrennt (typ je Datenpunkt aus dashboard-data.js).
+        data: reihe.map((r) => ({
+          value: r[1],
+          symbol: r[2] === "RA" ? "circle" : "emptyCircle",
+        })),
         itemStyle: { color: INK.green },
         lineStyle: { color: INK.green, width: 2.5 },
-        areaStyle: { color: "rgba(47,97,73,0.10)" },
+        areaStyle: { color: "rgba(63,125,79,0.10)" },
         label: {
           show: true,
           position: "top",
-          fontFamily: "Inter, sans-serif",
-          fontSize: 10,
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
           formatter: "(p)=>(p.value/1e6).toLocaleString('de')+' Mio'",
         },
+      },
+      // Legendenhinweise: Punktform erklaert Plan vs. Ist.
+      {
+        name: "Ist (RA)",
+        type: "line",
+        data: [],
+        symbol: "circle",
+        symbolSize: 9,
+        itemStyle: { color: ACHSE_TEXT_SOFT },
+        lineStyle: { opacity: 0 },
+      },
+      {
+        name: "Plan (VA/NVA)",
+        type: "line",
+        data: [],
+        symbol: "emptyCircle",
+        symbolSize: 9,
+        itemStyle: { color: ACHSE_TEXT_SOFT },
+        lineStyle: { opacity: 0 },
       },
     ],
   }
@@ -403,6 +581,7 @@ export function chartTrendKomm(trend) {
 export function chartTrendAufwand(trend) {
   const reihe = trend.aufwand
   const namen = reihe.map((r) => r[0])
+  // typ-Index ist die letzte Spalte je Zeile.
   const reihen = [
     ["Personal", 1, INK.blue],
     ["Sachaufwand", 2, INK.orange],
@@ -411,52 +590,55 @@ export function chartTrendAufwand(trend) {
   ]
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
-    },
-    grid: { left: 8, right: 18, top: 14, bottom: 40, containLabel: true },
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
+    aria: { enabled: true, decal: { show: true } },
+    grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
     yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
-    series: reihen.map(([name, idx, col]) => ({
-      name,
-      type: "bar",
-      stack: "a",
-      data: reihe.map((r) => r[idx]),
-      itemStyle: { color: col },
-    })),
+    series: [
+      ...reihen.map(([name, idx, col]) => ({
+        name,
+        type: "bar",
+        stack: "a",
+        // Plan-Stapel (VA/NVA) mit Decal-Schraffur, Ist-Stapel (RA) solide.
+        data: reihe.map((r) => trendBalken(r[idx], r[5], col)),
+        barMaxWidth: BAR_MAX_WEIT,
+        // Serien-Grundfarbe nur fuer die Legenden-Swatch.
+        itemStyle: { color: col },
+      })),
+      ...planIstLegende(),
+    ],
   }
 }
 
 function mehrjahrBasis(jahre) {
   return {
     textStyle: baseText(),
-    tooltip: { trigger: "axis", axisPointer: { type: "line" } },
-    legend: {
-      type: "scroll",
-      bottom: 0,
-      textStyle: { fontFamily: "Inter, sans-serif", fontSize: 11 },
-    },
-    grid: { left: 8, right: 22, top: 16, bottom: 56, containLabel: true },
-    xAxis: catAxis(jahre, 11),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
+    legend: legende({ type: "scroll" }),
+    grid: grid({ top: 30, bottom: 64 }),
+    xAxis: catAxis(jahre),
     yAxis: valAxis(),
     series: [],
   }
 }
 
-// Reihenfolge der Tinten fuer die Linien des Mehrjahres-Vergleichs.
+// 10-stufige kategoriale Palette fuer den Mehrjahres-Vergleich: die acht
+// entsaettigten Diagrammtoene des Web-Design-Systems plus zwei weiche Tints.
+// Reihenfolge so, dass aufeinanderfolgende Serien in Farbton oder Helligkeit
+// deutlich kontrastieren; durchgehend niedrige Saettigung.
 const MEHRJAHR_PALETTE = [
-  INK.blue,
-  INK.orange,
-  INK.green,
-  INK.red,
-  INK.soft,
-  "#b7ad99",
-  "#3d6f8e",
-  "#bf6a3a",
-  "#4a8068",
-  "#a85852",
+  "#3f7d4f", // chart-green
+  "#c9a24b", // chart-gold
+  "#4f93a0", // chart-teal
+  "#b9744f", // chart-clay
+  "#6ba368", // chart-leaf
+  "#9c5b7d", // chart-plum
+  "#5d6b8a", // chart-slate
+  "#8a8f7d", // chart-sage
+  "#a7c4a3", // weicher Gruen-Tint
+  "#c9a98c", // weicher Clay-Tint
 ]
 
 // Vorberechnete ECharts-Optionen je Dokument plus Zeitreihen.

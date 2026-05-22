@@ -49,10 +49,146 @@ async function init() {
       "uneingeschraenkt."
 
   verdrahteUpload()
+  verdrahteOverlayFokus()
   zeichneDokumentliste()
   zeichneDashboard()
+  verdrahteVollbild()
   window.__appBereit = true
   zeigeBuildStempel()
+}
+
+// --- Mehrjahres-Overlay: Fokusverwaltung --------------------------------- //
+// Das Overlay traegt role="dialog"/aria-modal; Schliessen per Esc und
+// Klick auf den Hintergrund regelt dashboard.js. Was dort fehlt, ist die
+// Tastatur-Fokusfuehrung: Fokus beim Oeffnen in den Dialog setzen, Tab im
+// Dialog fangen (Fokusfalle) und beim Schliessen auf das ausloesende
+// Element zuruecksetzen. Das wird hier ergaenzt, ohne dashboard.js
+// anzufassen — beobachtet wird allein die is-open-Klasse des Overlays.
+function verdrahteOverlayFokus() {
+  const overlay = document.getElementById("mj-overlay")
+  if (!overlay || !("MutationObserver" in window)) return
+  let zuletztFokussiert = null
+
+  const fokussierbar = () =>
+    [...overlay.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )].filter((el) => !el.disabled && el.offsetParent !== null)
+
+  // Tab innerhalb des Dialogs halten, solange er offen ist.
+  overlay.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Tab") return
+    const ziele = fokussierbar()
+    if (ziele.length === 0) return
+    const erstes = ziele[0]
+    const letztes = ziele[ziele.length - 1]
+    if (ev.shiftKey && document.activeElement === erstes) {
+      ev.preventDefault()
+      letztes.focus()
+    } else if (!ev.shiftKey && document.activeElement === letztes) {
+      ev.preventDefault()
+      erstes.focus()
+    }
+  })
+
+  const beobachter = new MutationObserver(() => {
+    const offen = overlay.classList.contains("is-open")
+    if (offen && document.activeElement !== overlay
+        && !overlay.contains(document.activeElement)) {
+      // Frisch geoeffnet — Ausloeser merken, Fokus in den Dialog setzen.
+      zuletztFokussiert = document.activeElement
+      const schliessen = document.getElementById("mj-close")
+      const ziel = schliessen || fokussierbar()[0]
+      if (ziel) ziel.focus()
+    } else if (!offen && zuletztFokussiert) {
+      // Geschlossen — Fokus auf das ausloesende Element zuruecksetzen.
+      if (typeof zuletztFokussiert.focus === "function") {
+        zuletztFokussiert.focus()
+      }
+      zuletztFokussiert = null
+    }
+  })
+  beobachter.observe(overlay, {
+    attributes: true,
+    attributeFilter: ["class"],
+  })
+}
+
+// --- Vollbild je Diagramm-Panel ------------------------------------------ //
+// Jedes Diagramm-Panel bekommt im Kopf einen ruhigen "Vergroessern"-Knopf.
+// Ein Klick legt das Panel ueber die native Fullscreen-API auf den ganzen
+// Schirm — gerade fuer die interaktiven Diagramme und fuer aeltere
+// Nutzer:innen eine deutlich bessere Lesbarkeit. Esc oder ein erneuter Klick
+// fuehren zurueck. Im Vollbild ist der .dash-chart-Div nicht mehr an seine
+// feste Inline-Hoehe gebunden (CSS .web-panel:fullscreen); damit ECharts die
+// neue Flaeche fuellt, wird auf fullscreenchange ein window-resize-Event
+// ausgeloest — dashboard.js hoert darauf (resizeVisibleCharts) und passt
+// alle sichtbaren Diagramme an. dashboard.js bleibt unangetastet.
+function verdrahteVollbild() {
+  // Fehlt die Fullscreen-API, wird gar kein Knopf eingehaengt — die App
+  // bleibt ohne ihn voll funktionsfaehig.
+  if (!document.fullscreenEnabled) return
+
+  // Nur Panels mit einem echten Diagramm (.dash-chart) — Tabellen-Panels
+  // profitieren nicht von einer Vollbildansicht.
+  const panels = document.querySelectorAll(
+    ".web-panel:has(.dash-chart)",
+  )
+  for (const panel of panels) {
+    const kopf = panel.querySelector(".web-panel__head")
+    const titel = kopf && kopf.querySelector("h3")
+    if (!kopf || !titel) continue
+
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "web-panel__fs-btn"
+    btn.textContent = "Vergroessern"
+    setzeVollbildLabel(btn, false)
+    btn.addEventListener("click", () => {
+      if (document.fullscreenElement === panel) {
+        document.exitFullscreen()
+      } else {
+        // Etwaiges anderes Vollbild-Panel wird vom Browser automatisch
+        // ersetzt, wenn requestFullscreen auf einem neuen Element laeuft.
+        panel.requestFullscreen().catch(() => {})
+      }
+    })
+
+    // Titel und Knopf in eine gemeinsame Kopfzeile setzen — der Knopf sitzt
+    // rechts neben dem Titel, ueber einer etwaigen Notiz/Sankey-Leiste.
+    const reihe = document.createElement("div")
+    reihe.className = "web-panel__head-row"
+    kopf.insertBefore(reihe, titel)
+    reihe.appendChild(titel)
+    reihe.appendChild(btn)
+  }
+
+  // Vollbildwechsel: Knopf-Label/aria umstellen und ECharts neu vermessen.
+  document.addEventListener("fullscreenchange", () => {
+    const aktiv = document.fullscreenElement
+    for (const btn of document.querySelectorAll(".web-panel__fs-btn")) {
+      const panel = btn.closest(".web-panel")
+      setzeVollbildLabel(btn, panel != null && panel === aktiv)
+    }
+    // ECharts kennt die neue Flaeche erst nach dem Layout — ein
+    // window-resize loest das in dashboard.js bereits gebuendelte
+    // resizeVisibleCharts aus. Ein zusaetzlicher verzoegerter Stoss faengt
+    // Browser ab, die die Vollbild-Geometrie erst spaet melden.
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"))
+    })
+    setTimeout(() => window.dispatchEvent(new Event("resize")), 120)
+  })
+}
+
+// Knopfbeschriftung und Hilfstext je nach Vollbildzustand setzen.
+function setzeVollbildLabel(btn, imVollbild) {
+  btn.textContent = imVollbild ? "Verkleinern" : "Vergroessern"
+  btn.setAttribute(
+    "aria-label",
+    imVollbild
+      ? "Diagramm wieder verkleinern"
+      : "Diagramm auf Vollbild vergroessern",
+  )
 }
 
 // Build-Commit aus version.json in die Fusszeile schreiben. Fehlt die Datei
