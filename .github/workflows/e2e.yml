@@ -1,0 +1,43 @@
+# Fuehrt die headless Browser-e2e-Tests der Web-App (web/) aus.
+# Bewusst getrennt vom Pages-Deploy-Workflow (pages.yml).
+name: Browser-Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v6
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhaengigkeiten installieren
+        run: npm ci
+
+      - name: Chromium installieren
+        run: npx playwright install --with-deps chromium
+
+      - name: schema.sql und sql/ synchronisieren
+        run: make web-sync
+
+      - name: Browser-Tests ausfuehren
+        run: npx playwright test
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+
+      - name: Playwright-Report sichern
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
