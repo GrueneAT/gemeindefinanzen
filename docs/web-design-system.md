@@ -228,3 +228,20 @@ Alle Bedienelemente von den `--gat-*`-Tokens auf die `--web-*`-Schicht
 umgestellt, Funktionsklassen/-IDs unveraendert, `dashboard.js` nicht
 angefasst. **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e`
 7/7).
+
+### Iteration 5 — Responsives Verhalten (in Arbeit)
+
+Ziel: die App nutzt die volle Bandbreite vom Smartphone bis zum breiten
+Desktop ordentlich — nicht nur eine zusammengestauchte Druckseite.
+
+- Pruefbreiten: ~390px (Smartphone), ~760px (Tablet), ~1440px (Desktop).
+- Metric-Raster: 4 -> 2 -> 1 Spalten sauber.
+- Tableiste: bei schmaler Breite umbrechen oder horizontal scrollbar,
+  ohne zu zerfallen.
+- Diagramm-Panels und `.dash-grid` (2-spaltig) -> 1-spaltig.
+- Breite Suchtabelle: horizontal scrollbar, Seite bricht nicht.
+- Header, Steuerleiste, Filterleiste, Overlay-Dialog bei schmaler Breite
+  benutzbar; Seitenraender greifen ueber `clamp()`.
+- Keine horizontale Seiten-Scrollbar auf Mobilbreite.
+
+_wird nach visueller Pruefung fortgeschrieben._
