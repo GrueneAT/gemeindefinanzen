@@ -129,3 +129,108 @@ Keine.
 
 **Completed:** 2026-05-22
 **Commits:** 8 Task-Commits (dd1f821 .. c4f8c68) plus dieser Doku-Commit
+
+---
+
+# T9 — Einseitige App mit IndexedDB-Persistenz
+
+**Started:** 2026-05-22
+**Status:** complete
+
+## Problem
+
+Die Browser-App bestand aus zwei getrennten Dokumenten: `index.html`
+(Upload) und `dashboard.html` (Dashboard). Getrennte Seiten koennen sich
+keine In-Memory-Datenbank teilen — Daten wandern nur ueber Persistenz von
+Seite zu Seite. Die OPFS-Persistenz schlug beim Nutzer auch ueber
+`http://localhost` fehl ("Missing required OPFS APIs"); Uploads landeten in
+einer In-Memory-DB, und die Dashboard-Seite oeffnete leer.
+
+## Was geaendert wurde
+
+- **Einseitige App.** Alles in `web/index.html` zusammengefuehrt:
+  Header, immer sichtbare Dokumentverwaltung (Dropzone, Fortschritt,
+  Dokumenttabelle mit Entfernen-Buttons), darunter das vollstaendige
+  Dashboard (`#dashboard-inhalt` mit Umschalter, 7 Tabs, allen
+  `tab-panel`-Sektionen) plus `mj-overlay`. Das Dashboard ist sichtbar,
+  sobald ein Dokument geladen ist; sonst ein kurzer Empty-State-Hinweis.
+  `web/dashboard.html` wurde geloescht.
+- **Persistenz auf IndexedDB umgestellt.** `web/js/db.js` neu geschrieben:
+  `oeffneDb()` erzeugt eine In-Memory-SQLite-DB und stellt einen zuvor in
+  IndexedDB gesicherten Stand ueber `sqlite3_deserialize` wieder her. Neue
+  Methode `Datenbank.sichern()` exportiert die DB-Bytes
+  (`sqlite3_js_db_export`) und schreibt sie unter einem festen Schluessel
+  nach IndexedDB. Der `installOpfsSAHPoolVfs`-Pfad und alle OPFS-Kommentare
+  sind entfernt. Ist `indexedDB` undefiniert (Node-Testumgebung), arbeitet
+  die DB als reine In-Memory-DB ohne Fehler; `Datenbank.persistent` ist
+  dann `false`.
+- **Seiten-Controller `web/js/app.js`.** Oeffnet beim Laden die DB
+  (Wiederherstellung aus IndexedDB), zeichnet die Dokumentliste und baut
+  das Dashboard, falls Dokumente vorhanden sind — sonst der Empty-State.
+  Nach erfolgreichem Upload und nach dem Entfernen eines Dokuments wird
+  `sichern()` aufgerufen und die Seite mit `location.reload()` neu
+  aufgebaut (Daten liegen sicher in IndexedDB).
+- **`dashboard-app.js` refaktoriert.** Exportiert jetzt `baueDashboard(db)`,
+  die das Dashboard fuer eine bereits geoeffnete DB rendert (kein eigenes
+  `oeffneDb` mehr). `app.js` ruft sie mit derselben DB-Instanz auf.
+  `web/vendor/dashboard/dashboard.js` ist unveraendert (verbatim
+  Python-Report, liest globale `DATA`/`CFG`).
+- **boot-guard.** `web/js/boot-guard.js` samt `<script>`/`<style>` in
+  `index.html` unveraendert erhalten; `app.js` setzt weiterhin
+  `window.__appBereit = true`.
+- **persist-note.** Bei aktiver IndexedDB-Persistenz: Daten werden lokal im
+  Browser gespeichert und beim naechsten Besuch wiederhergestellt; sonst
+  ehrlicher Hinweis, dass der Stand nur fuer die Sitzung gilt.
+- **Doku/Tooling.** `docs/BROWSER-APP.md`, `README.md` und der
+  Kopfkommentar von `scripts/serve.mjs` auf eine Seite (`web/index.html`)
+  und IndexedDB statt OPFS aktualisiert.
+- **Test.** `tests/js/run.mjs` um einen Persistenz-Guard-Test ergaenzt:
+  `oeffneDb` ohne IndexedDB liefert `persistent=false`, `sichern()` ist
+  folgenlos.
+
+## Commits
+
+- cac6c: Browser-App auf eine Seite mit IndexedDB-Persistenz umstellen
+
+## Verification Results
+
+- **JS-Tests (`npm run test:js`):** 28 bestanden, 0 fehlgeschlagen
+  (26 bisherige plus 2 neue Persistenz-Guard-Pruefungen).
+- **Python-Tests (`pytest -q`):** 28 passed.
+- **ruff check src tests:** All checks passed.
+- **mypy src:** Success, no issues in 13 source files.
+- **node --check:** `web/js/db.js`, `web/js/app.js`,
+  `web/js/dashboard-app.js` syntaktisch ok.
+- **Asset-Check:** `web/` ueber `node scripts/serve.mjs` ausgeliefert;
+  `index.html` und alle 18 referenzierten bzw. transitiv geladenen Assets
+  (CSS, alle `js/`-Module, `vendor/dashboard/dashboard.js`, `schema.sql`,
+  `vendor/mupdf/mupdf.js`, `vendor/sqlite-wasm/sqlite3.mjs`) liefern
+  HTTP 200. Keine Referenz auf `dashboard.html` mehr im Browser-App-Code.
+
+## Decisions
+
+- **D3 revidiert — Persistenz ueber IndexedDB statt OPFS.** OPFS (auch der
+  SAH-Pool-VFS) ist beim Nutzer selbst ueber `http://localhost`
+  fehlgeschlagen. IndexedDB ist in jedem Kontext verfuegbar — keine
+  OPFS-API, keine COOP/COEP-Header, kein besonderer sicherer Kontext noetig.
+  Der DB-Inhalt wird als Byte-Array dort abgelegt; das ist robust und
+  deckungsgleich mit der bisherigen `exportBytes`/`importBytes`-Logik.
+- **Seitenaufbau nach Schreibvorgang.** Statt eines in-place Re-Render des
+  Dashboards (dashboard.js laeuft als klassisches Skript nur einmal) wird
+  nach `sichern()` `location.reload()` aufgerufen. Die Daten liegen sicher
+  in IndexedDB; der Reload ist der einfachste, robuste Weg zu einem sauberen
+  Dashboard-Aufbau.
+- **Dokumentverwaltung ist kein Tab.** Sie bleibt eine immer sichtbare
+  Sektion oberhalb der Dashboard-Tabs, damit Upload und Auswertung ohne
+  Umschalten nebeneinanderliegen.
+
+## Self-Check
+
+- [x] `web/index.html` ist die einzige Seite; `web/dashboard.html` geloescht
+- [x] Alle Assets liefern HTTP 200, keine `dashboard.html`-Referenz
+- [x] Volle Pruefung gruen: JS 28, Python 28, ruff/mypy sauber, node --check
+- [x] Keine Stubs/TODOs/Platzhalter, kein Debug-Code (nur bewusstes
+      `console.warn` bei Lesefehler der gesicherten DB)
+- **Result:** PASSED
+
+**Completed:** 2026-05-22

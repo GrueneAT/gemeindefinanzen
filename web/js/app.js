@@ -1,13 +1,16 @@
-// Browser-App — Upload-Oberflaeche und Dokumentverwaltung.
+// Browser-App — einseitige App: Dokumentverwaltung und Dashboard.
 //
 // Drag & Drop bzw. Dateiauswahl, Mehrfach-Upload, Fortschritt je PDF,
 // persistente Dokumentliste. Extraktion, Parsing, Validierung und
-// Datenhaltung laufen vollstaendig clientseitig.
+// Datenhaltung laufen vollstaendig clientseitig. Unterhalb der
+// Dokumentverwaltung baut diese Seite das Finanz-Dashboard direkt auf
+// derselben geoeffneten Datenbank auf — kein Seitenwechsel noetig.
 
 import * as mupdf from "../vendor/mupdf/mupdf.js"
 import sqlite3InitModule from "../vendor/sqlite-wasm/sqlite3.mjs"
 import { oeffneDb, dokumente, dokumentEntfernen } from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
+import { baueDashboard } from "./dashboard-app.js"
 
 const STUFEN = {
   extraktion: "Text wird extrahiert",
@@ -37,17 +40,29 @@ async function init() {
 
   const note = document.getElementById("persist-note")
   note.textContent = db.persistent
-    ? "Daten werden lokal im Browser gespeichert (OPFS) — beim naechsten " +
-      "Besuch ist der Stand wieder da."
-    : "Hinweis: dauerhafte Speicherung (OPFS) ist hier nicht aktiv — die " +
-      "Daten gelten nur fuer diese Sitzung. OPFS braucht einen sicheren " +
-      "Kontext: die Seite ueber http://localhost oder die veroeffentlichte " +
-      "HTTPS-Adresse oeffnen, dann bleibt der Stand erhalten. Die Analyse " +
-      "funktioniert auch ohne Persistenz uneingeschraenkt."
+    ? "Daten werden lokal im Browser gespeichert (IndexedDB) — beim " +
+      "naechsten Besuch ist der Stand wieder da."
+    : "Hinweis: dauerhafte Speicherung ist hier nicht aktiv — die Daten " +
+      "gelten nur fuer diese Sitzung. Die Analyse funktioniert dennoch " +
+      "uneingeschraenkt."
 
   verdrahteUpload()
   zeichneDokumentliste()
+  zeichneDashboard()
   window.__appBereit = true
+}
+
+// Dashboard aufbauen, wenn Dokumente vorhanden sind; sonst Empty-State.
+function zeichneDashboard() {
+  const leer = document.getElementById("dashboard-leer")
+  const hatDokumente = dokumente(db).length > 0
+  if (hatDokumente) {
+    leer.hidden = true
+    baueDashboard(db)
+  } else {
+    leer.hidden = false
+    document.getElementById("dashboard-inhalt").hidden = true
+  }
 }
 
 // --- Dokumentliste -------------------------------------------------------- //
@@ -71,12 +86,16 @@ function zeichneDokumentliste() {
     tbody.appendChild(tr)
   }
   for (const btn of tbody.querySelectorAll(".doc-remove")) {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true
       dokumentEntfernen(db, Number(btn.dataset.id))
-      zeichneDokumentliste()
+      // Stand sichern, dann die Seite frisch aufbauen. Die Daten liegen
+      // sicher in IndexedDB — ein Reload ist der robusteste Weg, das
+      // Dashboard sauber neu zu rendern (dashboard.js laeuft nur einmal).
+      await db.sichern()
+      location.reload()
     })
   }
-  aktualisiereDashboardLink(rows.length)
 }
 
 // Pruefstatus eines Dokuments aus der DB rekonstruieren (SU-21/22/33/34).
@@ -166,12 +185,20 @@ async function verarbeiteDateien(dateien) {
     toast(`${verworfen} Datei(en) uebersprungen — nur PDF wird verarbeitet.`,
       "fehl")
   }
+  let erfolg = 0
   for (const datei of pdfs) {
-    await verarbeiteEine(datei)
+    if (await verarbeiteEine(datei)) erfolg++
   }
   zeichneDokumentliste()
+  if (erfolg > 0) {
+    // Erfolgreich verarbeitete Dokumente sichern und die Seite neu
+    // aufbauen — das Dashboard arbeitet danach mit dem aktuellen Stand.
+    await db.sichern()
+    location.reload()
+  }
 }
 
+// Eine PDF verarbeiten. Liefert true bei Erfolg, false bei einem Fehler.
 async function verarbeiteEine(datei) {
   const item = neuerFortschritt(datei.name)
   try {
@@ -186,8 +213,10 @@ async function verarbeiteEine(datei) {
       (s) => setzeStufe(item, s),
     )
     abschliessen(item, res.status)
+    return true
   } catch (e) {
     fehler(item, e.message || String(e))
+    return false
   }
 }
 
@@ -236,11 +265,6 @@ function fehler(item, nachricht) {
 }
 
 // --- Hilfen --------------------------------------------------------------- //
-function aktualisiereDashboardLink(anzahl) {
-  const link = document.getElementById("dashboard-link")
-  if (link) link.hidden = anzahl === 0
-}
-
 function toast(text, art) {
   const box = document.getElementById("toast-box")
   const div = document.createElement("div")

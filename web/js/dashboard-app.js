@@ -1,28 +1,28 @@
-// Dashboard-Bootstrap.
+// Dashboard-Aufbau.
 //
-// Oeffnet die Browser-Datenbank, baut ueber dashboard-data.js/dashboard-
-// charts.js dieselben DATA-/CFG-Objekte wie die Python-Pipeline, ergaenzt die
-// dokumentabhaengigen Bedienelemente (Dokument-Umschalter, Filter-Auswahl)
-// und laedt dann die unveraenderte Dashboard-Logik aus
-// web/vendor/dashboard/dashboard.js.
+// baueDashboard(db) baut ueber dashboard-data.js/dashboard-charts.js dieselben
+// DATA-/CFG-Objekte wie die Python-Pipeline, ergaenzt die dokumentabhaengigen
+// Bedienelemente (Dokument-Umschalter, Filter-Auswahl) und laedt dann die
+// unveraenderte Dashboard-Logik aus web/vendor/dashboard/dashboard.js.
+//
+// Die Datenbank wird hereingereicht — dieses Modul oeffnet selbst keine DB.
+// app.js oeffnet die DB einmal und ruft baueDashboard mit derselben Instanz
+// auf, sodass Upload-Oberflaeche und Dashboard auf einer Seite dieselben
+// Daten teilen.
 
-import sqlite3InitModule from "../vendor/sqlite-wasm/sqlite3.mjs"
-import { oeffneDb } from "./db.js"
 import { collect } from "./dashboard-data.js"
 import { alleCharts } from "./dashboard-charts.js"
 
-async function start() {
-  const schema = await fetch("./schema.sql").then((r) => r.text())
-  const db = await oeffneDb(sqlite3InitModule)
-  db.schemaAnwenden(schema)
-
+// Das Dashboard fuer eine bereits geoeffnete Datenbank aufbauen. Liefert
+// true, wenn Dokumente vorhanden sind und das Dashboard sichtbar gemacht
+// wurde; false, wenn keine Dokumente geladen sind.
+export function baueDashboard(db) {
   const daten = collect(db)
-  const leer = document.getElementById("dashboard-leer")
   const inhalt = document.getElementById("dashboard-inhalt")
 
   if (daten.meta.dok_anzahl === 0) {
-    leer.hidden = false
-    return
+    inhalt.hidden = true
+    return false
   }
 
   const cfg = alleCharts(daten)
@@ -36,20 +36,12 @@ async function start() {
   window.DATA = daten
   window.CFG = cfg
   ladeDashboardLogik()
+  return true
 }
 
 function fuelleKopf(daten) {
   const m = daten.meta
-  document.getElementById("kopf-note").textContent =
-    `${m.posten_anzahl.toLocaleString("de-DE")} Haushaltsstellen aus ` +
-    `${m.dok_anzahl} Dokument(en) — clientseitig erfasst und geprueft.`
-  document.getElementById("kopf-sub").textContent =
-    `${m.gemeinde} — Voranschlaege und Rechnungsabschluesse interaktiv. ` +
-    "Tabs fuer die Themen, ein Umschalter fuer das Dokument, Volltextsuche " +
-    "ueber alle Posten."
-  document.getElementById("fuss-quelle").textContent =
-    `Quelle: ${m.dok_anzahl} Dokument(e), ${m.gemeinde}`
-  document.title = `Finanz-Dashboard — ${m.gemeinde}`
+  document.title = `Gemeindefinanzen — ${m.gemeinde}`
 }
 
 // Dokument-Umschalter — entspricht _switcher() aus html.py.
@@ -68,6 +60,9 @@ function baueSwitcher(daten) {
 // Dokument- und Aufgabengruppen-Auswahl im Suche-Tab fuellen.
 function fuelleFilter(daten) {
   const dokSel = document.getElementById("f-dok")
+  // Vorhandene Optionen ausser "alle" entfernen — baueDashboard kann nach
+  // einem Upload erneut laufen.
+  while (dokSel.options.length > 1) dokSel.remove(1)
   for (const d of daten.dokumente) {
     dokSel.appendChild(neueOption(String(d.id), d.label))
   }
@@ -78,6 +73,7 @@ function fuelleFilter(daten) {
     .filter((g) => g[0])
     .sort((a, b) => a[0].localeCompare(b[0]))
   const grpSel = document.getElementById("f-gruppe")
+  while (grpSel.options.length > 1) grpSel.remove(1)
   for (const [code, text] of gruppen) {
     grpSel.appendChild(neueOption(code, `${code} — ${text}`))
   }
@@ -97,11 +93,3 @@ function ladeDashboardLogik() {
   s.src = "./vendor/dashboard/dashboard.js"
   document.body.appendChild(s)
 }
-
-start().catch((e) => {
-  document.getElementById("dashboard-leer").hidden = false
-  document.getElementById("dashboard-leer").innerHTML =
-    `<p>Dashboard konnte nicht geladen werden: ${
-      (e && e.message) || String(e)
-    }</p>`
-})

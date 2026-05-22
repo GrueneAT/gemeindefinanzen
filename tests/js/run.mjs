@@ -153,6 +153,13 @@ async function teste() {
     Object.keys(cfg.dok_charts).length === 4,
   )
   pruefe("CFG: trend_charts vorhanden", "trend_eck" in cfg.trend_charts)
+
+  console.log("\ndb — Persistenz-Guard ohne IndexedDB (Node-Umgebung)")
+  // In Node ist `indexedDB` undefiniert; oeffneDb muss dann eine reine
+  // In-Memory-DB liefern (persistent=false) und sichern() darf nicht werfen.
+  pruefe("oeffneDb ohne IndexedDB: persistent=false", db.persistent === false)
+  const gesichert = await db.sichern()
+  pruefe("sichern() ohne IndexedDB ist folgenlos", gesichert === false)
   db.close()
 
   // Optionaler Abgleich mit einer Python-Referenzdatei, falls vorhanden.

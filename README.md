@@ -112,17 +112,20 @@ jedem `make pages` neu erzeugt.
 
 ## Browser-App — VRV-PDFs ohne Server auswerten
 
-Unter `web/` liegt eine reine statische Website: Sie laden VRV-2015-PDFs per
-Drag & Drop hoch, **Textextraktion, Parsing und Auswertung laufen vollständig
-im Browser**. Kein Server, kein Upload ins Netz, keine Konten.
+Unter `web/` liegt eine reine statische Website mit einer einzigen Seite
+(`web/index.html`): Sie laden VRV-2015-PDFs per Drag & Drop hoch,
+**Textextraktion, Parsing und Auswertung laufen vollständig im Browser**.
+Kein Server, kein Upload ins Netz, keine Konten.
 
 - PDF-Extraktion über [`mupdf.js`](https://github.com/ArtifexSoftware/mupdf.js)
   — dieselbe Engine wie PyMuPDF, deshalb identische Wort-Geometrie.
 - Der VRV-Parser und die Plausibilitätsprüfung sind nach JavaScript portiert
   und liefern nachweislich dasselbe Ergebnis wie die Python-Pipeline.
-- Speicherung über `sqlite-wasm` (OPFS) — der Stand bleibt über einen Reload
-  erhalten. `schema.sql` und die `sql/`-Abfragen laufen unverändert.
-- Das Dashboard arbeitet auf den hochgeladenen Daten.
+- Speicherung über `sqlite-wasm` mit IndexedDB-Persistenz — der Stand bleibt
+  über einen Reload erhalten. `schema.sql` und die `sql/`-Abfragen laufen
+  unverändert.
+- Dokumentverwaltung und Finanz-Dashboard liegen auf derselben Seite: die
+  Verwaltung oben, darunter das Dashboard mit den hochgeladenen Daten.
 
 Lokal testen:
 

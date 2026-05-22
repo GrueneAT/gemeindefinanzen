@@ -1,9 +1,15 @@
 # Browser-App — VRV-PDFs clientseitig auswerten
 
-Unter `web/` liegt eine reine statische Website. Der Nutzer laedt
-VRV-2015-PDFs per Drag & Drop hoch; Textextraktion, Parsing, Validierung und
-Auswertung laufen vollstaendig im Browser. Es gibt keinen Server, kein
-Backend, keine Konten — die PDFs verlassen den Rechner nicht.
+Unter `web/` liegt eine reine statische Website mit einer einzigen Seite
+(`web/index.html`). Der Nutzer laedt VRV-2015-PDFs per Drag & Drop hoch;
+Textextraktion, Parsing, Validierung und Auswertung laufen vollstaendig im
+Browser. Es gibt keinen Server, kein Backend, keine Konten — die PDFs
+verlassen den Rechner nicht.
+
+Dokumentverwaltung (Upload, geladene Dokumente) und Finanz-Dashboard liegen
+auf derselben Seite: die Verwaltung oben, darunter das Dashboard. Beide
+teilen sich dieselbe geoeffnete In-Memory-Datenbank — es gibt keinen
+Seitenwechsel.
 
 Die bestehende Python-Pipeline (`src/`, `report/`, `sql/`, `tests/`) bleibt
 unveraendert die Referenz. Die Browser-App ist additiv.
@@ -17,10 +23,11 @@ PDF (Drag & Drop)
    │  validate.js  Detailposten gegen die PDF-Summen geprueft
    │  db.js        sqlite-wasm — schema.sql + sql/-Abfragen unveraendert
    ▼
-OPFS (lokale Persistenz im Browser)
+IndexedDB (lokale Persistenz im Browser)
    │  dashboard-data.js / dashboard-charts.js  -> DATA + CFG
    ▼
-dashboard.html   Tabs, Umschalter, Suche, Drill-down, Charts
+index.html   Dokumentverwaltung + Dashboard (Tabs, Umschalter, Suche,
+             Drill-down, Charts) auf einer Seite
 ```
 
 ### Module unter `web/js/`
@@ -36,8 +43,8 @@ dashboard.html   Tabs, Umschalter, Suche, Drill-down, Charts
 | `pipeline.js` | — | bindet die Schritte zu einem Durchlauf zusammen |
 | `dashboard-data.js` | `report/data.py` | DATA-Objekt aus der DB sammeln |
 | `dashboard-charts.js` | `report/charts.py` | ECharts-Optionen (CFG) bauen |
-| `app.js` | — | Upload-Oberflaeche, Dokumentverwaltung |
-| `dashboard-app.js` | `report/html.py` | Dashboard-Bootstrap |
+| `app.js` | — | Seiten-Controller: Dokumentverwaltung + Dashboard |
+| `dashboard-app.js` | `report/html.py` | `baueDashboard(db)` — Dashboard aufbauen |
 
 `web/vendor/dashboard/dashboard.css` und `dashboard.js` sind die **verbatim**
 aus dem Python-Report (`report/assets.py`) uebernommenen Darstellungs-Assets.
@@ -59,12 +66,17 @@ wird deshalb in Node gegen den Python-Parser geprueft:
 
 ## Datenhaltung
 
-`@sqlite.org/sqlite-wasm` mit dem **OPFS-SAH-Pool-VFS**: echte Persistenz im
-Haupt-Thread, ohne Web-Worker-Promiser und ohne Cross-Origin-Isolation
-(COOP/COEP). Das ist entscheidend, weil GitHub Pages keine solchen Header
-setzen kann. Steht OPFS nicht zur Verfuegung, nutzt die App eine
-In-Memory-Datenbank; `db.exportBytes()` / `importBytes()` erlauben dann das
-Sichern und Wiederherstellen.
+`@sqlite.org/sqlite-wasm` als In-Memory-Datenbank mit **IndexedDB-Persistenz**:
+der Datenbank-Inhalt wird als Byte-Array (`sqlite3_js_db_export`) nach
+IndexedDB gesichert und beim naechsten Oeffnen ueber `sqlite3_deserialize`
+wiederhergestellt. `db.sichern()` schreibt den Stand nach jedem Upload und
+nach jedem Entfernen eines Dokuments.
+
+IndexedDB ist in jedem Kontext verfuegbar — es braucht weder OPFS noch
+Cross-Origin-Isolation (COOP/COEP) noch einen besonderen sicheren Kontext.
+Damit funktioniert die Persistenz zuverlaessig ueber `http://localhost` und
+auf GitHub Pages. In Node (Testumgebung) ist `indexedDB` undefiniert — dann
+arbeitet die App ohne Fehler als reine In-Memory-DB.
 
 ## Bibliotheken
 

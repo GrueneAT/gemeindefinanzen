@@ -3,7 +3,7 @@
 // Lauf:  node scripts/serve.mjs [port]
 // Dann:  http://localhost:8080/web/
 //
-// Setzt KEINE COOP/COEP-Header — die App nutzt den OPFS-SAH-Pool-VFS, der
+// Setzt KEINE COOP/COEP-Header — die App speichert ueber IndexedDB, das
 // ohne Cross-Origin-Isolation auskommt (genau wie GitHub Pages).
 
 import { createServer } from "node:http"
