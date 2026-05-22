@@ -168,3 +168,20 @@ ueberschrieben. **Tests gruen.**
 Verbleibende Befunde fuer die naechsten Runden:
 - Metric-Card-Akzentbalken alle gruen — keine semantische Unterscheidung.
 - Diagramm-Container (`.dash-chart`) noch nicht als `.web-panel` umgesetzt.
+
+### Iteration 3 — Chart-Panels, Sektionsstruktur, Metric-Akzente (in Arbeit)
+
+Ziel: echte Komponentenstruktur statt frei schwebender Ueberschriften.
+
+- **`.web-panel` als Diagramm-Komponente.** Jedes Diagramm sitzt mit seiner
+  `h3`-Ueberschrift (und ggf. Kurzbeschreibung) in einer Karte:
+  `.web-panel` > `.web-panel__head` (h3) > `.web-panel__body` (Chart).
+  Die frei stehenden `<h3>` ueber `.dash-chart`-Containern entfallen.
+- **`.metric-card`-Akzente semantisch.** Modifier je Kennzahl: Ertraege
+  gruen (`--web-chart-green`), Aufwendungen Ton (`--web-chart-clay`),
+  Nettoergebnis Schiefer (`--web-chart-slate`), Kommunalsteuer-Anteil als
+  Hero (gruener Tint). Der Akzentbalken nimmt die jeweilige Farbe.
+- **Sektionskopf.** `h2`-Abschnitte bekommen einen ruhigen, konsistenten
+  Kopf (Titel + einleitender Absatz als Einheit), klare Trennung der Tabs.
+
+_wird nach visueller Pruefung fortgeschrieben._
