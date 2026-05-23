@@ -273,6 +273,48 @@ function aggregateDok(db, did) {
      GROUP BY gruppe, gruppe_text ORDER BY gruppe`,
   )
 
+  // R2 — Finanzierungstaetigkeit (gebarung='finanzierung'): Aufnahme und
+  // Tilgung als Skalare. Zinsen aus operativem Aufwand MVAG-224 separat —
+  // Schuldendienst = Tilgung + Zinsen.
+  const finAufnahme = scalar(
+    db,
+    `SELECT SUM(fh_wert) FROM v_detail
+     WHERE gebarung='finanzierung' AND richtung='einnahme'
+       AND dokument_id=${did}`,
+  )
+  const finTilgung = scalar(
+    db,
+    `SELECT SUM(fh_wert) FROM v_detail
+     WHERE gebarung='finanzierung' AND richtung='ausgabe'
+       AND dokument_id=${did}`,
+  )
+  const finZinsen = scalar(
+    db,
+    `SELECT SUM(eh_wert) FROM v_detail
+     WHERE richtung='ausgabe' AND gebarung='operativ'
+       AND substr(mvag_eh,1,3)='224' AND dokument_id=${did}`,
+  )
+  const schuldendienst = finTilgung + finZinsen
+
+  // R12 — Investitions-Finanzierung. Foerderung = investive Einnahmen,
+  // Darlehen = Netto-Neuverschuldung (Aufnahme - Tilgung, gedeckelt auf 0),
+  // Eigen = Rest des Investitionsvolumens. Heuristische Aufteilung; im
+  // Panel mit Disclaimer kommuniziert.
+  const foerderung = scalar(
+    db,
+    `SELECT SUM(fh_wert) FROM v_detail
+     WHERE gebarung='investiv' AND richtung='einnahme'
+       AND dokument_id=${did}`,
+  )
+  const investAus = scalar(
+    db,
+    `SELECT SUM(fh_wert) FROM v_detail
+     WHERE gebarung='investiv' AND richtung='ausgabe'
+       AND dokument_id=${did}`,
+  )
+  const investDarlehen = Math.max(0, finAufnahme - finTilgung)
+  const investEigen = Math.max(0, investAus - foerderung - investDarlehen)
+
   return {
     eckwerte: {
       ertraege: round(ertraege),
@@ -305,6 +347,9 @@ function aggregateDok(db, did) {
       aufwand_pk: ew(aufwand),
       netto_pk: ew(netto),
       komm_pk: ew(komm),
+      // R2 — Schuldendienst (Tilgung + Zinsen) inkl. Pro-Kopf.
+      schuldendienst: round(schuldendienst),
+      schuldendienst_pk: ew(schuldendienst),
     },
     einnahmen: (() => {
       // R10: Anteil am Gesamtertrag mitgeben. Gesamtertrag = Summe ALLER
@@ -335,6 +380,18 @@ function aggregateDok(db, did) {
     investitionen: investitionen.map(([b, a, v]) => [b, a || "", round(v)]),
     gruppen: gruppen.map(([g, gt, v]) => [g || "", gt || "", round(v)]),
     sankey: sankey(db, did),
+    // R2 — Aufnahme/Tilgung/Schuldendienst je Dokument.
+    finanzierung: {
+      aufnahme: round(finAufnahme),
+      tilgung: round(finTilgung),
+      schuldendienst: round(schuldendienst),
+    },
+    // R12 — Investitions-Finanzierung. Eigen = Rest, mit Disclaimer.
+    investFinanzierung: {
+      foerderung: round(foerderung),
+      darlehen: round(investDarlehen),
+      eigen: round(investEigen),
+    },
   }
 }
 
@@ -368,6 +425,28 @@ function trend(db) {
      FROM v_detail WHERE richtung='ausgabe'
      GROUP BY dokument_id ORDER BY finanzjahr, ${ORDER}`,
   )
+  // R2 — Schuldenstand-Trend: pro Dokument die Bewegung aus Aufnahme und
+  // Tilgung (gebarung='finanzierung'), zusammen mit dem KUMULATIVEN Stand
+  // ueber alle Dokumente in chronologischer Reihenfolge. Der absolute
+  // Stand zum Bilanzstichtag ist NICHT modelliert — nur die kumulative
+  // Bewegung aus den eingelesenen Dokumenten.
+  const finPro = rows(
+    db,
+    `SELECT spalte_wert,
+            SUM(CASE WHEN richtung='einnahme' THEN fh_wert ELSE 0 END),
+            SUM(CASE WHEN richtung='ausgabe'  THEN fh_wert ELSE 0 END),
+            typ
+     FROM v_detail WHERE gebarung='finanzierung'
+     GROUP BY dokument_id ORDER BY finanzjahr, ${ORDER}`,
+  )
+  let schuldenKum = 0
+  const schuldenstand = finPro.map(([label, auf, til, typ]) => {
+    const a = auf || 0
+    const t = til || 0
+    schuldenKum += a - t
+    return [label, round(a), round(t), round(schuldenKum), typ]
+  })
+
   return {
     // [label, ertraege, aufwand, netto, typ]
     eckwerte: eckwerte.map((r) => [r[0], r[1], r[2], r[3], r[4]]),
@@ -375,6 +454,8 @@ function trend(db) {
     komm: komm.map((r) => [r[0], r[1], r[2]]),
     // [label, personal, sach, transfer, finanz, typ]
     aufwand: aufwand.map((r) => [r[0], r[1], r[2], r[3], r[4], r[5]]),
+    // R2 — [label, aufnahme, tilgung, kum_stand, typ]
+    schuldenstand,
   }
 }
 

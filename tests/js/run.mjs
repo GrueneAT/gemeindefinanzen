@@ -356,6 +356,69 @@ async function teste() {
     String(eckOhneEW.ertraege_pk),
   )
 
+  // R2 — Finanzierung-Block und Schuldendienst.
+  const fin = datenPK.aggregate[String(datenPK.meta.default_dok)]
+    .finanzierung
+  pruefe(
+    "agg.finanzierung hat Aufnahme/Tilgung/Schuldendienst",
+    fin && typeof fin.aufnahme === "number" &&
+      typeof fin.tilgung === "number" &&
+      typeof fin.schuldendienst === "number",
+    JSON.stringify(fin),
+  )
+  pruefe(
+    "agg.eckwerte.schuldendienst ist eine Zahl",
+    typeof eckMitEW.schuldendienst === "number",
+    String(eckMitEW.schuldendienst),
+  )
+  // R2 — trend.schuldenstand: Array, kumulativ konsistent.
+  const stand = datenPK.trend.schuldenstand
+  pruefe(
+    "trend.schuldenstand ist ein Array",
+    Array.isArray(stand) && stand.length > 0,
+    String(stand && stand.length),
+  )
+  let kumOk = true
+  let kum = 0
+  for (const [, auf, til, st] of stand) {
+    kum += (auf || 0) - (til || 0)
+    if (Math.abs(kum - st) > 1) { kumOk = false; break }
+  }
+  pruefe(
+    "trend.schuldenstand: kumulierter Stand entspricht Aufnahme - Tilgung",
+    kumOk, "Drift in einer Zeile",
+  )
+
+  // R12 — Investitions-Finanzierung: Foerderung + Darlehen + Eigen >= 0.
+  const invFin = datenPK.aggregate[String(datenPK.meta.default_dok)]
+    .investFinanzierung
+  pruefe(
+    "agg.investFinanzierung hat Foerderung/Darlehen/Eigen",
+    invFin && typeof invFin.foerderung === "number" &&
+      typeof invFin.darlehen === "number" &&
+      typeof invFin.eigen === "number",
+    JSON.stringify(invFin),
+  )
+  pruefe(
+    "agg.investFinanzierung: alle Komponenten >= 0",
+    invFin.foerderung >= 0 && invFin.darlehen >= 0 && invFin.eigen >= 0,
+    JSON.stringify(invFin),
+  )
+
+  // Neue Charts sind in alleCharts() registriert.
+  const cfg2 = alleCharts(datenPK)
+  const ersterDokSchluessel = Object.keys(cfg2.dok_charts)[0]
+  const ersterDok = cfg2.dok_charts[ersterDokSchluessel]
+  pruefe(
+    "CFG: dok_charts hat fin_saeulen, fin_combo, investfin_a, investfin_b",
+    "fin_saeulen" in ersterDok && "fin_combo" in ersterDok &&
+      "investfin_a" in ersterDok && "investfin_b" in ersterDok,
+  )
+  pruefe(
+    "CFG: trend_charts hat schuldenstand",
+    "schuldenstand" in cfg2.trend_charts,
+  )
+
   console.log("\nsankey-drill — Geldfluss-Drill-down")
   // quelleVonPosten — Portierung der CASE-Logik aus dashboard-data.js.
   pruefe(

@@ -174,6 +174,10 @@
     setPk("st-aufwand-pk",  e.aufwand_pk);
     setPk("st-netto-pk",    e.netto_pk);
     setPk("st-komm-pk",     e.komm_pk);
+
+    // R2 — Schuldendienst-Karte im Schulden-Tab.
+    fillText("st-schuldendienst", euro(e.schuldendienst || 0, true));
+    setPk("st-schuldendienst-pk", e.schuldendienst_pk);
   }
 
   // --- Tabellen je Dokument ------------------------------------------------
@@ -807,6 +811,13 @@
   registerChart("c_trend_eck", "trend", "trend_eck");
   registerChart("c_trend_komm", "trend", "trend_komm");
   registerChart("c_trend_auf", "trend", "trend_auf");
+  // R2 — Schulden & Finanzierung (Variante A + B)
+  registerChart("c_fin_saeulen", "dok", "fin_saeulen");
+  registerChart("c_schuldenstand", "trend", "schuldenstand");
+  registerChart("c_fin_combo", "dok", "fin_combo");
+  // R12 — Investitions-Finanzierung (Variante A + B)
+  registerChart("c_investfin_a", "dok", "investfin_a");
+  registerChart("c_investfin_b", "dok", "investfin_b");
 
   onDocChange(rerenderStats);
   onDocChange(rerenderTables);

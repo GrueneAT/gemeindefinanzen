@@ -116,6 +116,7 @@
         <button class="tab-btn" data-tab="ausgaben">Ausgaben</button>
         <button class="tab-btn" data-tab="investitionen">Investitionen</button>
         <button class="tab-btn" data-tab="transfers">Transfers &amp; Umlagen</button>
+        <button class="tab-btn" data-tab="schulden">Schulden &amp; Finanzierung</button>
         <button class="tab-btn" data-tab="sparpotenzial">Sparpotenzial</button>
         <button class="tab-btn" data-tab="suche">Suche &amp; Daten</button>
       </div>
@@ -321,6 +322,89 @@
           <div id="c_trend_auf" class="dash-chart" style="height:440px"></div>
         </div>
       </section>
+    </section>
+
+    <section class="tab-panel" data-panel="schulden">
+      <div class="web-section-head">
+        <h2>Schulden &amp; Finanzierung</h2>
+        <p>Wie viel Kredit nimmt die Gemeinde auf, wie viel tilgt sie? Wie
+          teuer ist der Schuldendienst (Tilgung + Zinsen)? Diese Sicht nutzt
+          erstmals die Daten zur <strong>Finanzierungstaetigkeit</strong>
+          (<code>gebarung = "finanzierung"</code>) und kumuliert ueber alle
+          eingelesenen Dokumente.</p>
+      </div>
+      <div class="stats stats--einspalt">
+        <div class="stat metric-card metric-card--aufwand">
+          <div class="stat-label">Schuldendienst (Tilgung + Zinsen)</div>
+          <div class="stat-num" id="st-schuldendienst"></div>
+          <div class="stat-pk" id="st-schuldendienst-pk" hidden></div>
+        </div>
+      </div>
+
+      <!-- R2 Variante A: drei separate Panels (Aufnahme/Tilgung, Stand-Linie) -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Variante A · Aufnahme vs. Tilgung (Saeulen)</h3>
+          <p class="web-panel__note">Saeulen fuer das gewaehlte Dokument:
+            Darlehensaufnahme (Einnahme) und Tilgung (Ausgabe) aus
+            <code>gebarung = "finanzierung"</code>.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_fin_saeulen" class="dash-chart" style="height:440px"></div>
+        </div>
+      </section>
+
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Variante A · Schuldenstand kumuliert (Linie)</h3>
+          <p class="web-panel__note">Kumulierte Netto-Veraenderung
+            (Aufnahme &minus; Tilgung) ueber alle Dokumente.
+            <strong>Kein Bilanzstichtags-Stand</strong> — nur die kumulative
+            Bewegung aus den eingelesenen Dokumenten.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_schuldenstand" class="dash-chart" style="height:440px"></div>
+        </div>
+      </section>
+
+      <!-- R2 Variante B: Combo-Chart Saeulen + Linie auf zwei y-Achsen -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Variante B · Aufnahme/Tilgung + Stand (Combo)</h3>
+          <p class="web-panel__note">Saeulen Aufnahme/Tilgung pro Dokument,
+            Linie kumulierter Stand auf zweiter y-Achse — alles in einem
+            Chart.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_fin_combo" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+
+      <!-- R12 — Investitions-Finanzierung: Variante A + B nebeneinander -->
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Investitions-Finanzierung (Stapel)</h3>
+            <p class="web-panel__note">Gestapelter Balken: Foerderungen,
+              Darlehen (Aufnahme minus Tilgung, gedeckelt auf 0),
+              Eigenmittel (Restgroesse). <strong>Eigenmittel als
+              Restgroesse abgeleitet</strong> — Heuristik mit Disclaimer.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_investfin_a" class="dash-chart" style="height:380px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Investitions-Finanzierung (Mini-Sankey)</h3>
+            <p class="web-panel__note">Quellen links, Investitionen rechts —
+              eine vereinfachte Sankey-Darstellung derselben Daten.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_investfin_b" class="dash-chart" style="height:380px"></div>
+          </div>
+        </section>
+      </div>
     </section>
 
     <section class="tab-panel" data-panel="sparpotenzial">

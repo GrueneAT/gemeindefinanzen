@@ -315,6 +315,11 @@ input, select { font-family: var(--gat-font-copy); }
   grid-template-columns: repeat(4, 1fr);
   gap: var(--gat-space-3);
 }
+/* Einspaltige Variante fuer einzelne Kennzahlen (z. B. Schuldendienst-Karte
+   im Schulden-Tab) — eine Karte oben, volle Breite auf Tablet/Smartphone. */
+.stats--einspalt {
+  grid-template-columns: minmax(0, 22rem);
+}
 /* Lagebild-Raster: 4 Spalten (Desktop) -> 2 (Tablet) -> 1 (Smartphone).
    Breakpoints aus dem Design-System (48rem/36rem). */
 @media (max-width: 48rem) {

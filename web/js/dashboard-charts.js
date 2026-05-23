@@ -691,6 +691,273 @@ export function chartTrendAufwand(trend) {
   }
 }
 
+// --- R2 — Schulden & Finanzierung -----------------------------------------
+// Gemeinsame Empty-State-Grafik fuer Charts, die je nach Dokumenttyp leer
+// sein koennen (z. B. ein VA ohne Finanzierungsposten).
+function leerHinweis(text) {
+  return {
+    type: "text",
+    left: "center",
+    top: "middle",
+    style: {
+      text,
+      fontFamily: CHART_FONT,
+      fontSize: LABEL_SIZE,
+      fill: ACHSE_TEXT_SOFT,
+    },
+  }
+}
+
+// R2 Variante A.1: Aufnahme vs. Tilgung als zwei Saeulen fuer das
+// aktuelle Dokument. Wenn beide Werte 0, einen dezenten Hinweistext
+// im `graphic`-Block einblenden.
+export function chartFinanzierung(agg) {
+  const f = agg.finanzierung || { aufnahme: 0, tilgung: 0 }
+  const namen = ["Darlehensaufnahme", "Tilgung"]
+  const werte = [f.aufnahme || 0, f.tilgung || 0]
+  const farben = [INK.green, INK.red]
+  const opt = {
+    textStyle: baseText(),
+    grid: grid({ top: 28 }),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    xAxis: catAxis(namen),
+    yAxis: valAxis(),
+    series: [
+      {
+        type: "bar",
+        data: werte.map((v, i) => ({
+          value: round(v),
+          itemStyle: { color: farben[i] },
+        })),
+        barWidth: "45%",
+        barMaxWidth: BAR_MAX_WEIT,
+        label: {
+          show: true,
+          position: "top",
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
+          formatter:
+            "(p)=>(p.value/1e6).toLocaleString('de-AT'," +
+            "{minimumFractionDigits:1,maximumFractionDigits:1})+' Mio'",
+        },
+        itemStyle: { borderRadius: 2 },
+      },
+    ],
+  }
+  if ((f.aufnahme || 0) === 0 && (f.tilgung || 0) === 0) {
+    opt.graphic = [
+      leerHinweis("Keine Finanzierungs-Posten in diesem Dokument."),
+    ]
+  }
+  return opt
+}
+
+// R2 Variante A.2: Schuldenstand kumuliert als Liniendiagramm ueber alle
+// Dokumente. Plan-Punkte hohl, Ist-Punkte voll — analog zu chartTrendKomm.
+export function chartSchuldenstand(trend) {
+  const reihe = (trend && trend.schuldenstand) || []
+  const labels = reihe.map((r) => r[0])
+  const kum = reihe.map((r) => ({
+    value: r[3],
+    symbol: r[4] === "RA" ? "circle" : "emptyCircle",
+  }))
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
+    legend: legende(),
+    grid: grid({ bottom: 52, top: 30 }),
+    xAxis: catAxis(labels),
+    yAxis: valAxis(),
+    series: [
+      {
+        name: "Schuldenstand (kumulativ aus eingelesenen Dokumenten)",
+        type: "line",
+        data: kum,
+        smooth: true,
+        symbolSize: 9,
+        itemStyle: { color: INK.red },
+        lineStyle: { color: INK.red, width: 2.5 },
+        areaStyle: { color: "rgba(185,116,79,0.10)" },
+      },
+      // Legendenhinweise: Punktform erklaert Plan vs. Ist (analog Komm).
+      {
+        name: "Ist (RA)",
+        type: "line",
+        data: [],
+        symbol: "circle",
+        symbolSize: 9,
+        itemStyle: { color: ACHSE_TEXT_SOFT },
+        lineStyle: { opacity: 0 },
+      },
+      {
+        name: "Plan (VA/NVA)",
+        type: "line",
+        data: [],
+        symbol: "emptyCircle",
+        symbolSize: 9,
+        itemStyle: { color: ACHSE_TEXT_SOFT },
+        lineStyle: { opacity: 0 },
+      },
+    ],
+  }
+}
+
+// R2 Variante B: Combo-Chart — Saeulen Aufnahme/Tilgung pro Dokument,
+// Linie kumulierter Stand auf zweiter y-Achse.
+export function chartSchuldenCombo(_agg, trend) {
+  const reihe = (trend && trend.schuldenstand) || []
+  const labels = reihe.map((r) => r[0])
+  const auf = reihe.map((r) => r[1] || 0)
+  const til = reihe.map((r) => r[2] || 0)
+  const kum = reihe.map((r) => r[3])
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
+    grid: grid({ bottom: 56, top: 30, right: 60 }),
+    xAxis: catAxis(labels),
+    yAxis: [
+      // links: Aufnahme/Tilgung in Mio EUR
+      valAxis(),
+      // rechts: kumulierter Stand in Mio EUR (eigene Achse, weil Linie und
+      // Saeulen sonst optisch zusammenfallen)
+      {
+        type: "value",
+        position: "right",
+        axisLabel: {
+          fontFamily: CHART_FONT,
+          fontSize: AXIS_SIZE,
+          color: ACHSE_TEXT_SOFT,
+          formatter:
+            "(v)=>(v/1e6).toLocaleString('de-AT'," +
+            "{minimumFractionDigits:1,maximumFractionDigits:1})+' Mio'",
+        },
+        splitLine: { show: false },
+      },
+    ],
+    series: [
+      {
+        name: "Aufnahme",
+        type: "bar",
+        yAxisIndex: 0,
+        data: auf.map((v) => ({
+          value: round(v),
+          itemStyle: { color: INK.green, borderRadius: 2 },
+        })),
+        barMaxWidth: BAR_MAX_WEIT,
+        itemStyle: { color: INK.green },
+      },
+      {
+        name: "Tilgung",
+        type: "bar",
+        yAxisIndex: 0,
+        data: til.map((v) => ({
+          value: round(v),
+          itemStyle: { color: INK.red, borderRadius: 2 },
+        })),
+        barMaxWidth: BAR_MAX_WEIT,
+        itemStyle: { color: INK.red },
+      },
+      {
+        name: "kumulierter Stand",
+        type: "line",
+        yAxisIndex: 1,
+        data: kum,
+        smooth: true,
+        symbolSize: 8,
+        itemStyle: { color: INK.blue },
+        lineStyle: { color: INK.blue, width: 2.5 },
+      },
+    ],
+  }
+}
+
+// R12 Variante A: Investitions-Finanzierung als ein einzelner gestapelter
+// horizontaler Balken — Foerderung, Darlehen, Eigenmittel.
+export function chartInvestFinanzierungStapel(agg) {
+  const f = agg.investFinanzierung || { foerderung: 0, darlehen: 0, eigen: 0 }
+  const segmente = [
+    ["Foerderung / Kapitaltransfer", f.foerderung || 0, INK.green],
+    ["Darlehen (netto)", f.darlehen || 0, INK.blue],
+    ["Eigenmittel (Restgroesse)", f.eigen || 0, INK.soft],
+  ]
+  const total = segmente.reduce((s, [, v]) => s + v, 0) || 1
+  const opt = {
+    textStyle: baseText(),
+    tooltip: tip({
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter:
+        "(arr)=>arr.map(p=>p.seriesName+': '+(p.value/1e3).toLocaleString" +
+        "('de-AT')+' k EUR ('+Math.round(100*p.value/" + (total || 1) +
+        ")+' %)').join('<br>')+'<br><br><em>Eigenmittel als Restgroesse abgeleitet.</em>'",
+    }),
+    legend: legende(),
+    grid: grid({ left: 16, right: 16, top: 32, bottom: 56 }),
+    xAxis: valAxis(),
+    yAxis: catAxis(["Investitionsvolumen"]),
+    series: segmente.map(([name, wert, farbe]) => ({
+      name,
+      type: "bar",
+      stack: "inv",
+      data: [round(wert)],
+      itemStyle: { color: farbe },
+      barWidth: "55%",
+      barMaxWidth: BAR_MAX_WEIT,
+    })),
+  }
+  if (total <= 1) {
+    opt.graphic = [leerHinweis("Keine investiven Posten in diesem Dokument.")]
+  }
+  return opt
+}
+
+// R12 Variante B: Mini-Sankey — drei Quellknoten links, ein Zielknoten
+// "Investitionsvolumen" rechts. Disclaimer im Knotennamen.
+export function chartInvestFinanzierungSankey(agg) {
+  const f = agg.investFinanzierung || { foerderung: 0, darlehen: 0, eigen: 0 }
+  const quellen = [
+    ["Foerderung", f.foerderung || 0, INK.green],
+    ["Darlehen (netto)", f.darlehen || 0, INK.blue],
+    ["Eigenmittel (Restgroesse)", f.eigen || 0, INK.soft],
+  ].filter(([, v]) => v > 0)
+  const nodes = quellen.map(([n, , c]) => ({ name: n, itemStyle: { color: c } }))
+  nodes.push({ name: "Investitionsvolumen", itemStyle: { color: INK.orange } })
+  const links = quellen.map(([n, v]) => ({
+    source: n,
+    target: "Investitionsvolumen",
+    value: round(v),
+  }))
+  const opt = {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "item" }),
+    series: [
+      {
+        type: "sankey",
+        left: 8,
+        right: 240,
+        top: 16,
+        bottom: 16,
+        nodeGap: 13,
+        nodeWidth: 26,
+        label: {
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
+          color: ACHSE_TEXT,
+        },
+        lineStyle: { color: "gradient", opacity: 0.32, curveness: 0.5 },
+        emphasis: { focus: "adjacency" },
+        data: nodes,
+        links,
+      },
+    ],
+  }
+  if (quellen.length === 0) {
+    opt.graphic = [leerHinweis("Keine investiven Posten in diesem Dokument.")]
+  }
+  return opt
+}
+
 function mehrjahrBasis(jahre) {
   return {
     textStyle: baseText(),
@@ -735,6 +1002,12 @@ export function alleCharts(daten) {
       korridor: chartKorridor(agg),
       treiber: chartTreiber(agg),
       investitionen: chartInvestitionen(agg),
+      // R2 — Schulden & Finanzierung
+      fin_saeulen: chartFinanzierung(agg),
+      fin_combo: chartSchuldenCombo(agg, daten.trend),
+      // R12 — Investitions-Finanzierung
+      investfin_a: chartInvestFinanzierungStapel(agg),
+      investfin_b: chartInvestFinanzierungSankey(agg),
     }
   }
   const trend = daten.trend
@@ -742,6 +1015,8 @@ export function alleCharts(daten) {
     trend_eck: chartTrendEckwerte(trend),
     trend_komm: chartTrendKomm(trend),
     trend_auf: chartTrendAufwand(trend),
+    // R2 — kumulierter Schuldenstand ueber alle Dokumente
+    schuldenstand: chartSchuldenstand(trend),
   }
   const jahre = daten.dokumente.map((d) => d.label)
   const mehrjahr = {
