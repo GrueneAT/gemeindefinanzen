@@ -83,6 +83,7 @@
                 <th>Dokument</th>
                 <th>Quelldatei</th>
                 <th class="num">Detailposten</th>
+                <th>Einwohner:innen (A)</th>
                 <th>Pruefstatus</th>
                 <th></th>
               </tr>
@@ -471,6 +472,30 @@
     <p class="table-hint" id="mj-hint"></p>
   </div>
 </div>
+
+<!-- Variante B (R5): Edit-Dialog fuer die Einwohnerzahl. HTML5 <dialog>;
+     wird von app.js per .showModal() geoeffnet und schreibt ueber dieselbe
+     UPDATE-Statement wie das Inline-Feld (Variante A). -->
+<dialog class="doc-einwohner-dialog" id="doc-einwohner-dialog"
+        aria-labelledby="doc-einwohner-dialog-titel">
+  <form method="dialog" class="doc-einwohner-form" id="doc-einwohner-form">
+    <h3 id="doc-einwohner-dialog-titel">Einwohnerzahl (Variante B)</h3>
+    <p class="doc-einwohner-sub" id="doc-einwohner-sub"></p>
+    <label class="doc-einwohner-label">
+      Einwohner:innen
+      <input type="number" id="dlg-einwohner" min="0" step="1"
+             class="doc-einwohner-input">
+    </label>
+    <p class="doc-einwohner-hint">Optional — schaltet Pro-Kopf-Sichten frei.
+      Leer lassen, um die Einwohnerzahl zu entfernen.</p>
+    <menu class="doc-einwohner-actions">
+      <button type="button" class="gat-btn gat-btn--secondary"
+              value="cancel" id="doc-einwohner-cancel">Abbrechen</button>
+      <button type="submit" class="gat-btn gat-btn--primary"
+              value="confirm" id="doc-einwohner-save">Speichern</button>
+    </menu>
+  </form>
+</dialog>
 
 <script type="module" src="./js/app.js"></script>
 </body>
