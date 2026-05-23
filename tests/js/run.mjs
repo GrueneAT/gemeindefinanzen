@@ -255,6 +255,56 @@ async function teste() {
   )
   pruefe("CFG: trend_charts vorhanden", "trend_eck" in cfg.trend_charts)
 
+  // R5 — dokumente() liefert einwohner-Feld (Default null bei Fixtures).
+  pruefe(
+    "DATA: dokumente[0] hat einwohner-Feld",
+    daten.dokumente.length > 0 && "einwohner" in daten.dokumente[0],
+    JSON.stringify(Object.keys(daten.dokumente[0] || {})),
+  )
+  pruefe(
+    "DATA: einwohner ist null bei frisch importierten Fixtures",
+    daten.dokumente.every((d) => d.einwohner === null),
+  )
+
+  // R10 — agg.einnahmen[i] ist ein 3-Tuple [bezeichnung, betrag, anteil].
+  const ersterAgg = daten.aggregate[String(daten.meta.default_dok)]
+  const ersteEinnahme = ersterAgg && ersterAgg.einnahmen[0]
+  pruefe(
+    "agg.einnahmen[0] ist 3-Tuple",
+    Array.isArray(ersteEinnahme) && ersteEinnahme.length === 3,
+    JSON.stringify(ersteEinnahme),
+  )
+  pruefe(
+    "agg.einnahmen[0][2] ist eine Zahl (Prozent)",
+    typeof ersteEinnahme[2] === "number" && ersteEinnahme[2] >= 0,
+    String(ersteEinnahme && ersteEinnahme[2]),
+  )
+
+  // R5 — migrationenAnwenden ist idempotent: zweimaliger Aufruf wirft nicht.
+  let migrationOk = true
+  try {
+    const { migrationenAnwenden } = await import("../../web/js/db.js")
+    migrationenAnwenden(db)
+    migrationenAnwenden(db)
+  } catch (e) {
+    migrationOk = false
+  }
+  pruefe("migrationenAnwenden ist idempotent (doppelter Aufruf wirft nicht)",
+    migrationOk)
+
+  // R5 — Pro-Kopf-Felder kommen aus aggregateDok, sobald einwohner gesetzt.
+  // einwohner direkt setzen und collect() erneut aufrufen.
+  db.ausfuehren(
+    `UPDATE dokument SET einwohner=9000 WHERE dokument_id=?`,
+    [Number(daten.meta.default_dok)],
+  )
+  const datenPK = collect(db)
+  const dokMitEW = datenPK.dokumente.find(
+    (d) => String(d.id) === String(datenPK.meta.default_dok),
+  )
+  pruefe("DATA: einwohner persistent gesetzt", dokMitEW.einwohner === 9000,
+    String(dokMitEW.einwohner))
+
   console.log("\nsankey-drill — Geldfluss-Drill-down")
   // quelleVonPosten — Portierung der CASE-Logik aus dashboard-data.js.
   pruefe(

@@ -216,6 +216,19 @@ export async function importBytes(initModul, bytes) {
   return new Datenbank(sqlite3, deserialisieren(sqlite3, bytes), false)
 }
 
+// Idempotente Schema-Erweiterungen, die `CREATE TABLE IF NOT EXISTS` nicht
+// abdeckt. SQLite akzeptiert kein wiederholtes `ALTER TABLE ... ADD COLUMN`
+// (Fehler "duplicate column name") — daher try/catch je Migrationsschritt.
+// Aufruf in web/js/app.js direkt nach `db.schemaAnwenden(schema)`.
+export function migrationenAnwenden(db) {
+  // R5 — optionale Einwohnerzahl pro Dokument fuer Pro-Kopf-Sichten.
+  try {
+    db.ausfuehren("ALTER TABLE dokument ADD COLUMN einwohner INTEGER")
+  } catch (e) {
+    // Spalte existiert bereits — ok.
+  }
+}
+
 // --- Dokument-Schreiblogik (Port der reinen loader.py-Schritte) -------------
 
 // Ein geparstes Dokument in die DB schreiben. `dok` stammt aus
@@ -330,6 +343,7 @@ export function dokumentEntfernen(db, dokId) {
 export function dokumente(db) {
   return db.abfrage(
     `SELECT dokument_id, gemeinde, typ, finanzjahr, quelldatei, seiten,
+            einwohner,
             (SELECT COUNT(*) FROM posten
              WHERE posten.dokument_id = dokument.dokument_id
                AND zeilentyp='detail') AS detailposten

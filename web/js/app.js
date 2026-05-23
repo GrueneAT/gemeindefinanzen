@@ -10,6 +10,7 @@ import * as mupdf from "../vendor/mupdf/mupdf.js"
 import sqlite3InitModule from "../vendor/sqlite-wasm/sqlite3.mjs"
 import {
   oeffneDb, dokumente, dokumentEntfernen, persistenzLeeren,
+  migrationenAnwenden,
 } from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
 import { baueDashboard } from "./dashboard-app.js"
@@ -39,6 +40,9 @@ async function init() {
   const schema = await fetch("./schema.sql").then((r) => r.text())
   db = await oeffneDb(sqlite3InitModule)
   db.schemaAnwenden(schema)
+  // Migrationen, die `CREATE IF NOT EXISTS` nicht abdeckt (z. B. ALTER TABLE
+  // bei einer bereits gefuellten IndexedDB-DB): siehe migrationenAnwenden().
+  migrationenAnwenden(db)
 
   const note = document.getElementById("persist-note")
   note.textContent = db.persistent

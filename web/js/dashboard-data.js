@@ -50,10 +50,10 @@ function dokumente(db) {
   const zeilen = rows(
     db,
     `SELECT dokument_id, typ, finanzjahr, spalte_wert,
-            spalte_vergleich, spalte_dritte
+            spalte_vergleich, spalte_dritte, einwohner
      FROM dokument ORDER BY finanzjahr, ${ORDER}`,
   )
-  return zeilen.map(([did, typ, jahr, sw, sv, sd]) => ({
+  return zeilen.map(([did, typ, jahr, sw, sv, sd, einw]) => ({
     id: did,
     typ,
     jahr,
@@ -61,6 +61,8 @@ function dokumente(db) {
     spalte_wert: sw,
     spalte_vergleich: sv,
     spalte_dritte: sd,
+    // R5: optionale Einwohnerzahl — null wenn nicht erfasst.
+    einwohner: einw == null ? null : Number(einw),
   }))
 }
 
@@ -249,7 +251,17 @@ function aggregateDok(db, did) {
         ? roundHalfEven((100 * komm) / ertraege, 1)
         : 0.0,
     },
-    einnahmen: einnahmen.map(([b, v]) => [b, round(v)]),
+    einnahmen: (() => {
+      // R10: Anteil am Gesamtertrag mitgeben. Gesamtertrag = Summe ALLER
+      // operativen Einnahmen (nicht nur der Top-12 — sonst summieren sich
+      // die angezeigten Anteile auf >100 %).
+      const total = ertraege || 1
+      return einnahmen.map(([b, v]) => [
+        b,
+        round(v),
+        Math.round((100 * v) / total),
+      ])
+    })(),
     aufwand_art: aufwandArt.map(([a, v]) => [a, round(v)]),
     treemap: treemap.map(([g, a, v]) => [
       g || "ohne Gruppe",

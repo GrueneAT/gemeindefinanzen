@@ -95,6 +95,13 @@ function legende(extra = {}) {
   }
 }
 
+// R15: Achsenlabels mit Ellipse abkuerzen, wenn sie zu lang werden.
+// Tooltip-Trigger 'axis' nutzt den vollen Kategorienamen weiter — daher
+// die Kuerzung NUR im axisLabel.formatter, nicht in den `data`-Werten.
+const ELLIPSE_LIMIT = 34
+const ELLIPSE_FORMATTER =
+  "(v)=>v && v.length>34 ? v.slice(0,33)+'…' : v"
+
 function catAxis(data, fontsize = LABEL_SIZE, rotate = 0) {
   return {
     type: "category",
@@ -105,12 +112,24 @@ function catAxis(data, fontsize = LABEL_SIZE, rotate = 0) {
       color: ACHSE_TEXT,
       rotate,
       interval: 0,
+      formatter: ELLIPSE_FORMATTER,
     },
     axisLine: { lineStyle: { color: ACHSE_LINIE } },
   }
 }
 
-function valAxis(formatter = "(v)=>(v/1000).toLocaleString('de')+'k'") {
+// R14: Einheitliche Wertformate. Wertachsen tragen "Mio EUR" (die Achse
+// dient der Groessenordnung); einzelne Datenlabels duerfen weiterhin in
+// "k EUR" mit Postenbezug stehen. fmtMio/fmtK liefern die Formatter-
+// Strings, die ECharts (per revive in dashboard.js) zu Funktionen
+// auspackt — innerhalb eines Diagramms wird konsequent EIN Format genutzt.
+const FMT_MIO_AXIS =
+  "(v)=>(v/1e6).toLocaleString('de-AT',{minimumFractionDigits:1," +
+  "maximumFractionDigits:1})+' Mio'"
+const FMT_K_LABEL =
+  "(v)=>(v/1000).toLocaleString('de-AT')+'k'"
+
+function valAxis(formatter = FMT_MIO_AXIS) {
   return {
     type: "value",
     axisLabel: {
@@ -208,13 +227,38 @@ export function chartSankey(agg) {
 }
 
 export function chartEinnahmen(agg) {
+  // R10: jede Zeile traegt [bezeichnung, betrag, anteil_prozent] —
+  // Datenlabel zeigt zusaetzlich den Anteil am Gesamtertrag.
+  // R15: voller Kategorienname im Tooltip, axisLabel.formatter kuerzt.
   const e = agg.einnahmen
-  const cats = e.map(([b]) => b.slice(0, 34)).reverse()
+  const cats = e.map(([b]) => b).reverse()
   const vals = e.map(([, v]) => v).reverse()
+  const ants = e.map(([, , p]) => p ?? 0).reverse()
   const cols = e
     .map(([b]) => (b.includes("Kommunalsteuer") ? INK.green : INK.blue))
     .reverse()
-  return bar(cats, vals, INK.blue, cols)
+  const opt = bar(cats, vals, INK.blue, cols)
+  // Datenpunkte um den Anteil ergaenzen und Datenlabel rechts vom Balken
+  // platzieren — "2,4 Mio EUR · 18 %"-Form.
+  opt.series[0].data = vals.map((v, i) => ({
+    value: round(v),
+    anteil: ants[i],
+    itemStyle: { color: cols[i] },
+  }))
+  opt.series[0].label = {
+    show: true,
+    position: "right",
+    fontFamily: CHART_FONT,
+    fontSize: AXIS_SIZE,
+    color: ACHSE_TEXT,
+    formatter:
+      "(p)=>(p.value/1000).toLocaleString('de-AT')+' k EUR · '+" +
+      "(p.data && p.data.anteil!=null ? p.data.anteil : 0)+' %'",
+  }
+  // Damit das rechte Label nicht von der Panel-Kante abgeschnitten wird,
+  // dem Grid mehr rechten Innenrand goennen.
+  opt.grid = grid({ right: 110 })
+  return opt
 }
 
 // Kostentreiber und Investitionen sitzen seit Iteration 13 in vollbreiten
@@ -227,14 +271,17 @@ export function chartEinnahmen(agg) {
 // Delta). Anstiege in der Risiko-Farbe (Clay), Rueckgaenge in Gruen —
 // konsistent mit der Farbsemantik des Design-Systems.
 export function chartTreiber(agg) {
-  const cats = agg.treiber.map(([b]) => b.slice(0, 34)).reverse()
+  // R15: keine manuelle Kuerzung mehr — catAxis kuerzt im axisLabel,
+  // Tooltip zeigt den vollen Namen.
+  const cats = agg.treiber.map(([b]) => b).reverse()
   const vals = agg.treiber.map(([, d]) => d).reverse()
   const cols = vals.map((v) => (v >= 0 ? INK.red : INK.green))
   return bar(cats, vals, INK.red, cols, BAR_MAX_WEIT)
 }
 
 export function chartInvestitionen(agg) {
-  const cats = agg.investitionen.map(([b]) => b.slice(0, 36)).reverse()
+  // R15: voller Name in der Kategorie, axisLabel.formatter kuerzt.
+  const cats = agg.investitionen.map(([b]) => b).reverse()
   const vals = agg.investitionen.map(([, , v]) => v).reverse()
   return bar(cats, vals, INK.orange, null, BAR_MAX_WEIT)
 }
@@ -355,7 +402,7 @@ export function chartWasserfall(agg, jahr) {
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     grid: grid({ top: 28 }),
     xAxis: catAxis(namen),
-    yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
+    yAxis: valAxis(),
     series: [
       {
         type: "bar",
@@ -397,7 +444,10 @@ export function chartWasserfall(agg, jahr) {
           position: "top",
           fontFamily: CHART_FONT,
           fontSize: LABEL_SIZE,
-          formatter: "(p)=>(p.value/1000).toLocaleString('de')+'k'",
+          // R14: dieselbe Einheit wie auf der Wertachse — Mio EUR.
+          formatter:
+            "(p)=>(p.value/1e6).toLocaleString('de-AT',{minimumFractionDigits:1," +
+            "maximumFractionDigits:1})+' Mio'",
         },
       },
     ],
@@ -405,30 +455,57 @@ export function chartWasserfall(agg, jahr) {
 }
 
 export function chartKorridor(agg) {
+  // R13: kumulierte Linie auf eine eigene zweite y-Achse legen, skaliert
+  // 0-100 % der Gesamtsumme — die Einzelbalken werden sonst von der hohen
+  // Endsumme vertikal gestaucht.
+  // R15: voller Kategorienname; axisLabel.formatter kuerzt.
   const e = agg.korridor
-  const cats = e.map(([b]) => b.slice(0, 32))
+  const cats = e.map(([b]) => b)
   const einzeln = e.map(([, v]) => v)
-  const kumuliert = e.map(([, , k]) => k)
+  const total = e.length ? e[e.length - 1][2] : 0
+  // Kumulierte Linie in Prozent der Gesamtsumme.
+  const kumProz = e.map(([, , k]) =>
+    total > 0 ? round((100 * k) / total) : 0,
+  )
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
     legend: legende(),
-    grid: grid({ bottom: 96, top: 18 }),
+    grid: grid({ bottom: 96, top: 18, right: 60 }),
     xAxis: catAxis(cats, LABEL_SIZE, 38),
-    yAxis: valAxis(),
+    yAxis: [
+      // links: Einzelposten in Mio EUR
+      valAxis(),
+      // rechts: kumulierter Anteil in Prozent
+      {
+        type: "value",
+        min: 0,
+        max: 100,
+        position: "right",
+        axisLabel: {
+          fontFamily: CHART_FONT,
+          fontSize: AXIS_SIZE,
+          color: ACHSE_TEXT_SOFT,
+          formatter: "(v)=>v + ' %'",
+        },
+        splitLine: { show: false },
+      },
+    ],
     series: [
       {
         name: "Einzelposten",
         type: "bar",
+        yAxisIndex: 0,
         data: einzeln,
         itemStyle: { color: INK.orange, borderRadius: 2 },
         barWidth: "52%",
         barMaxWidth: BAR_MAX_DICHT,
       },
       {
-        name: "kumuliert",
+        name: "kumuliert (Anteil an Gesamtsumme)",
         type: "line",
-        data: kumuliert,
+        yAxisIndex: 1,
+        data: kumProz,
         smooth: true,
         symbolSize: 5,
         itemStyle: { color: INK.red },
@@ -488,7 +565,7 @@ export function chartTrendEckwerte(trend) {
     aria: { enabled: true, decal: { show: true } },
     grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
-    yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
+    yAxis: valAxis(),
     series: [
       {
         name: "Ertraege",
@@ -552,7 +629,9 @@ export function chartTrendKomm(trend) {
           position: "top",
           fontFamily: CHART_FONT,
           fontSize: LABEL_SIZE,
-          formatter: "(p)=>(p.value/1e6).toLocaleString('de')+' Mio'",
+          formatter:
+            "(p)=>(p.value/1e6).toLocaleString('de-AT'," +
+            "{minimumFractionDigits:1,maximumFractionDigits:1})+' Mio'",
         },
       },
       // Legendenhinweise: Punktform erklaert Plan vs. Ist.
@@ -595,7 +674,7 @@ export function chartTrendAufwand(trend) {
     aria: { enabled: true, decal: { show: true } },
     grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
-    yAxis: valAxis("(v)=>(v/1e6).toLocaleString('de')+' Mio'"),
+    yAxis: valAxis(),
     series: [
       ...reihen.map(([name, idx, col]) => ({
         name,
