@@ -395,6 +395,51 @@ input, select { font-family: var(--gat-font-copy); }
   opacity: 0.5;
   cursor: default;
 }
+
+/* --- A11y-Toggle: Hochkontrast in der Brandbar ----------------------------
+   App-eigener Knopf — DS liefert die .gat-mode-hc-Variant, aber keine
+   Toggle-Steuerung. Icon + Label "Kontrast", aria-pressed wird vom JS
+   gepflegt. Im aktiven Zustand wechselt der Knopf in die Primaer-Optik
+   (gruener Hintergrund, weisse Schrift). Im HC-Modus selbst werden Knopf
+   und aktiver Zustand zusaetzlich auf Gelb/Anthrazit gehoben, damit das
+   Bedienelement im invertierten Farbschema klar ablesbar bleibt. */
+.gat-header__a11y-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: inherit;
+  font-family: var(--gat-font-headline);
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  color: var(--gat-web-green-deep);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.gat-header__a11y-toggle:hover {
+  border-color: var(--gat-web-green);
+  background: var(--gat-web-green-tint);
+}
+.gat-header__a11y-toggle[aria-pressed="true"] {
+  background: var(--gat-web-green-deep);
+  border-color: var(--gat-web-green-deep);
+  color: var(--gat-color-weiss);
+}
+.gat-header__a11y-toggle svg { flex: none; }
+/* HC-Modus: Knopf in Gelb/Anthrazit hervorgehoben — sichtbar im
+   invertierten Farbschema. */
+.gat-mode-hc .gat-header__a11y-toggle {
+  border-color: var(--gat-color-gelb);
+  color: var(--gat-color-gelb);
+}
+.gat-mode-hc .gat-header__a11y-toggle[aria-pressed="true"] {
+  background: var(--gat-color-gelb);
+  color: var(--gat-color-anthrazit);
+}
+
 /* --- Einheitlicher Tastatur-Fokus -----------------------------------------
    Jedes interaktive Element traegt denselben sichtbaren Fokus: eine
    2px-Kontur in --gat-web-green-deep plus den weichen --gat-web-focus-ring. Der
@@ -403,6 +448,7 @@ input, select { font-family: var(--gat-font-copy); }
    Kante sitzen (Reiter, sortierbare Spaltenkoepfe), setzen ihn lokal auf
    einen negativen Wert, der Ring bleibt aussen sichtbar. */
 .gat-btn:focus-visible,
+.gat-header__a11y-toggle:focus-visible,
 .dropzone-btn:focus-visible,
 .doc-remove:focus-visible,
 .doc-clear-btn:focus-visible,

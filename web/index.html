@@ -9,6 +9,17 @@
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script>
+  // FOWT-Prevention: HC-Modus VOR dem ersten Paint setzen, damit ein
+  // bereits gespeicherter Hochkontrast-Modus nicht erst nach dem Render
+  // einblendet. Klasse landet auf <html>, weil <body> hier noch nicht
+  // existiert; DS-Selektor .gat-mode-hc body greift trotzdem (Ancestor).
+  try {
+    if (localStorage.getItem("gat-mode-hc") === "1") {
+      document.documentElement.classList.add("gat-mode-hc");
+    }
+  } catch (e) { /* localStorage gesperrt (Privatmodus) — egal */ }
+</script>
 <link rel="stylesheet" href="https://grueneat.github.io/design-system/design-system.css">
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <link rel="stylesheet" href="./vendor/dashboard/dashboard.css">
@@ -31,6 +42,12 @@
       <ul class="gat-header__nav-list">
         <li><a class="gat-header__nav-current" aria-current="page" href=".">VRV-2015-Analyse</a></li>
       </ul>
+      <button type="button" class="gat-header__a11y-toggle" id="hc-toggle"
+              aria-pressed="false" aria-label="Hohen Kontrast einschalten">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
+             fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20V2z"/></svg>
+        <span>Kontrast</span>
+      </button>
     </nav>
   </div>
 </header>
