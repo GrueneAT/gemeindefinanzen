@@ -978,6 +978,163 @@ export function chartInvestFinanzierungSankey(agg) {
   return opt
 }
 
+// --- R6 — Aufgabenbereiche als sortierte Balken --------------------------
+// Horizontales Balken-Ranking aller Aufgabengruppen (Ausgaben) — Laengen
+// statt Flaechen vergleichen. Reuse von `bar()`.
+export function chartGruppenBalken(agg) {
+  const liste = (agg.gruppen || [])
+    .slice()
+    .sort((a, b) => (b[2] || 0) - (a[2] || 0))
+  const cats = liste
+    .map((r) => (r[1] && r[1].length ? r[1] : "Gruppe " + (r[0] || "?")))
+    .reverse()
+  const vals = liste.map((r) => r[2] || 0).reverse()
+  return bar(cats, vals, INK.orange, null, BAR_MAX_DICHT)
+}
+
+// --- R7 — Saldo je Aufgabenbereich (zweiseitig) --------------------------
+// Diverging-Balken: Gruen = Ueberschuss-Bereich (Einnahmen > Ausgaben),
+// Clay = Zuschussbereich. Sortiert nach Saldo (groesster Ueberschuss
+// oben). Liefert die Grundfrage: welcher Bereich traegt sich selbst?
+export function chartGruppenSaldo(agg) {
+  const liste = (agg.gruppenSaldo || [])
+    .slice()
+    .sort((a, b) => (b[4] || 0) - (a[4] || 0))
+  const cats = liste
+    .map((r) => (r[1] && r[1].length ? r[1] : "Gruppe " + (r[0] || "?")))
+    .reverse()
+  const vals = liste.map((r) => r[4] || 0).reverse()
+  const cols = vals.map((v) => (v >= 0 ? INK.green : INK.red))
+  return bar(cats, vals, INK.green, cols, BAR_MAX_WEIT)
+}
+
+// --- R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?" -------
+// Variante A: ein einzelner horizontaler 100-%-Stapelbalken; jedes Segment
+// eine Kategorie, Datenlabel als Cent-Wert. seite ist "aus" oder "ein".
+export function chartEinEuroStapel(agg, seite) {
+  const liste = (seite === "ein" ? agg.einEuroEin : agg.einEuroAuf) || []
+  // Palette: konsistent zur Pie/Sankey-Semantik der App.
+  const palette = {
+    Personal: INK.blue,
+    Sachaufwand: INK.orange,
+    Transfers: INK.red,
+    Finanz: INK.soft,
+    Sonstige: INK.soft,
+    Kommunalsteuer: INK.green,
+    "Ertragsanteile (Bund)": INK.green,
+    Grundsteuer: INK.green,
+    "Gebuehren & Leistungen": INK.blue,
+    "Transfers & Zuschuesse": INK.orange,
+    "Sonstige Einnahmen": INK.soft,
+  }
+  return {
+    textStyle: baseText(),
+    tooltip: tip({
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter:
+        "(arr)=>arr.map(p=>p.seriesName+': '+p.value+' Cent').join('<br>')",
+    }),
+    legend: legende({ type: "scroll" }),
+    grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
+    xAxis: {
+      type: "value",
+      min: 0,
+      max: 100,
+      axisLabel: {
+        fontFamily: CHART_FONT,
+        fontSize: AXIS_SIZE,
+        color: ACHSE_TEXT_SOFT,
+        formatter: "(v)=>v + ' Cent'",
+      },
+      splitLine: { lineStyle: { color: ACHSE_SPLIT } },
+    },
+    yAxis: catAxis([seite === "ein" ? "100 Euro Einnahmen" : "1 Euro Ausgaben"]),
+    series: liste.map(([cat, cent]) => ({
+      name: cat,
+      type: "bar",
+      stack: "eineuro",
+      data: [cent],
+      itemStyle: { color: palette[cat] || INK.soft },
+      barWidth: "50%",
+      barMaxWidth: BAR_MAX_WEIT,
+      label: {
+        show: cent >= 4,
+        position: "inside",
+        fontFamily: CHART_FONT,
+        fontSize: AXIS_SIZE,
+        color: "#fff",
+        formatter: "(p)=>p.value+''",
+      },
+    })),
+  }
+}
+
+// Variante B: 10x10-Piktogramm-Raster. ECharts hat keinen nativen "100
+// Quadrate eingefaerbt nach Anteil"-Modus; eine bewusst schlichte
+// Loesung: 100 gleichgrosse Pie-Slices, jeweils einer Kategorie
+// zugeordnet. Optisch sehr nahe an einem Pikto-Raster, ohne neuen Renderer.
+export function chartEinEuroPikto(agg, seite) {
+  const liste = (seite === "ein" ? agg.einEuroEin : agg.einEuroAuf) || []
+  const palette = {
+    Personal: INK.blue,
+    Sachaufwand: INK.orange,
+    Transfers: INK.red,
+    Finanz: INK.soft,
+    Sonstige: INK.soft,
+    Kommunalsteuer: INK.green,
+    "Ertragsanteile (Bund)": INK.green,
+    Grundsteuer: INK.green,
+    "Gebuehren & Leistungen": INK.blue,
+    "Transfers & Zuschuesse": INK.orange,
+    "Sonstige Einnahmen": INK.soft,
+  }
+  // 100 gleichgrosse Pie-Slices (waeren mit pictorialBar etwas natuerlicher,
+  // hier aber bewusst auf Pie reduziert — Variante-Vergleich braucht keine
+  // pixelgenaue Pikto-Geometrie, sondern eine alternative Anmutung).
+  const segmente = []
+  for (const [cat, cent] of liste) {
+    for (let i = 0; i < cent; i++) {
+      segmente.push({
+        name: cat + " #" + (i + 1),
+        value: 1,
+        itemStyle: { color: palette[cat] || INK.soft },
+      })
+    }
+  }
+  // Auf exakt 100 Felder auffuellen, falls Rundungsdrift.
+  while (segmente.length < 100) {
+    segmente.push({
+      name: "Restdifferenz #" + segmente.length,
+      value: 1,
+      itemStyle: { color: ACHSE_SPLIT },
+    })
+  }
+  return {
+    textStyle: baseText(),
+    tooltip: tip({
+      trigger: "item",
+      formatter: "(p)=>p.name.replace(/ #\\d+$/, '')+': '+p.percent+' %'",
+    }),
+    legend: legende({
+      data: liste.map(([cat]) => cat),
+      type: "scroll",
+    }),
+    series: [
+      {
+        type: "pie",
+        radius: ["20%", "80%"],
+        center: ["50%", "50%"],
+        padAngle: 0,
+        startAngle: 90,
+        data: segmente.slice(0, 100),
+        itemStyle: { borderColor: "#fff", borderWidth: 0.5 },
+        label: { show: false },
+      },
+    ],
+  }
+}
+
 // --- R3 — Soll-Ist-Abweichung (nur RA) -----------------------------------
 // Defensive Builder: bei undefined/leerem sollIst eine Empty-Hinweis-Grafik
 // statt eines kaputten Charts. onDocChange-Hook in dashboard.js blendet das
@@ -1206,6 +1363,15 @@ export function alleCharts(daten) {
       // R4 — Polster (Variante A + B)
       polster_a: chartPolsterDoppel(agg),
       polster_b: chartPolsterDiverging(agg),
+      // R6 — Aufgabenbereiche als sortierte Balken
+      gruppen_balken: chartGruppenBalken(agg),
+      // R7 — Saldo je Aufgabenbereich (zweiseitig)
+      gruppen_saldo: chartGruppenSaldo(agg),
+      // R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?"
+      eineuro_aus_a: chartEinEuroStapel(agg, "aus"),
+      eineuro_aus_b: chartEinEuroPikto(agg, "aus"),
+      eineuro_ein_a: chartEinEuroStapel(agg, "ein"),
+      eineuro_ein_b: chartEinEuroPikto(agg, "ein"),
     }
   }
   const trend = daten.trend

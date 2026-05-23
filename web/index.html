@@ -131,6 +131,56 @@
           Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
           Ausgaben und Spielraeume weiter auf.</p>
       </div>
+
+      <!-- R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?".
+           Variante A: 100-%-Stapelbalken; Variante B: 10x10-Piktogramm-
+           Raster (ECharts pie mit 100 gleichgrossen Slices). Beide
+           nebeneinander, damit der User die Form online vergleichen kann. -->
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Wofuer geht 1 Euro? (100-%-Stapelbalken)</h3>
+            <p class="web-panel__note">Aufwandsaufteilung auf 100 Cent
+              normalisiert. Personal, Sachaufwand, Transfers, Finanz,
+              Sonstige in semantischer Farbe.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_aus_a" class="dash-chart" style="height:220px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Wofuer geht 1 Euro? (10x10 Piktogramm)</h3>
+            <p class="web-panel__note">100 gleichgrosse Felder, je
+              Kategorie eingefaerbt — anschaulicher, aber raumgreifender.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_aus_b" class="dash-chart" style="height:320px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Wofuer kommen 100 Euro herein? (100-%-Stapel)</h3>
+            <p class="web-panel__note">Einnahmenseite auf 100 Cent
+              normalisiert: Kommunalsteuer, Ertragsanteile, Gebuehren,
+              Transfers, Sonstige.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_ein_a" class="dash-chart" style="height:220px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Wofuer kommen 100 Euro herein? (10x10 Piktogramm)</h3>
+            <p class="web-panel__note">Pendant zum Pikto-Raster oben,
+              fuer die Einnahmenseite.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_ein_b" class="dash-chart" style="height:320px"></div>
+          </div>
+        </section>
+      </div>
+
       <div class="stats">
         <div class="stat metric-card metric-card--ertrag">
           <div class="stat-label">Ertraege</div>
@@ -230,6 +280,35 @@
           Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
           Ermessensspielraum steckt im Sachaufwand.</p>
       </div>
+
+      <!-- R6 — Aufgabenbereiche als sortierte Balken (Erstrang).
+           Laengen sind leichter vergleichbar als Flaechen. Treemap rueckt
+           weiter unten als sekundaere Detailsicht. -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Aufwand nach Aufgabenbereich (sortierte Balken)</h3>
+          <p class="web-panel__note">Horizontales Ranking — Laengen sind
+            leichter vergleichbar als Flaechen. Die Treemap unten zeigt
+            zusaetzlich die Ansatz-Ebene.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_gruppen_balken" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+
+      <!-- R7 — Saldo je Aufgabenbereich (zweiseitig). -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Saldo je Aufgabenbereich (Einnahmen &minus; Ausgaben)</h3>
+          <p class="web-panel__note">Welcher Bereich traegt sich selbst,
+            welcher ist ein Zuschussbereich? Gruen = Ueberschuss,
+            Clay = Zuschussbereich.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_gruppen_saldo" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+
       <div class="dash-grid">
         <section class="web-panel">
           <div class="web-panel__head"><h3>Aufwand nach Art</h3></div>
@@ -238,7 +317,9 @@
           </div>
         </section>
         <section class="web-panel">
-          <div class="web-panel__head"><h3>Aufwand nach Aufgabenbereich</h3></div>
+          <div class="web-panel__head">
+            <h3>Aufwand nach Aufgabenbereich (Treemap — Detailsicht)</h3>
+          </div>
           <div class="web-panel__body">
             <div id="c_treemap" class="dash-chart" style="height:340px"></div>
           </div>

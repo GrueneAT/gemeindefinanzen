@@ -47,3 +47,23 @@ test('Pro-Kopf-Zeile erscheint, sobald Einwohnerzahl gesetzt wird',
     await expect(page.locator('#st-ertraege-pk'))
       .toContainText('je Einwohner:in:')
   })
+
+test('Ueberblick-Tab oeffnet mit 1-Euro/100-Euro-Panels (Variante A+B)',
+  async ({ page }) => {
+    await ladeFixturePdf(page)
+    // Standard-Tab ist Ueberblick — die vier Panels sind direkt sichtbar.
+    await expect(page.locator('#c_eineuro_aus_a canvas')).toBeVisible()
+    await expect(page.locator('#c_eineuro_aus_b canvas')).toBeVisible()
+    await expect(page.locator('#c_eineuro_ein_a canvas')).toBeVisible()
+    await expect(page.locator('#c_eineuro_ein_b canvas')).toBeVisible()
+  })
+
+test('Ausgaben-Tab oeffnet mit sortierten Balken und Saldo',
+  async ({ page }) => {
+    await ladeFixturePdf(page)
+    await page.locator('.tab-btn[data-tab="ausgaben"]').click()
+    await expect(page.locator('#c_gruppen_balken canvas')).toBeVisible()
+    await expect(page.locator('#c_gruppen_saldo canvas')).toBeVisible()
+    // Treemap bleibt sichtbar (unten als Detailsicht).
+    await expect(page.locator('#c_treemap canvas')).toBeVisible()
+  })

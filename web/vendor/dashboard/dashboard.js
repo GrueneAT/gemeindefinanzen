@@ -823,6 +823,14 @@
   // R4 — Budgetierungspolster (Variante A + B); nur bei VA aussagekraeftig.
   registerChart("c_polster_a", "dok", "polster_a");
   registerChart("c_polster_b", "dok", "polster_b");
+  // R6 + R7 — Aufgabenbereiche (sortierte Balken + Saldo)
+  registerChart("c_gruppen_balken", "dok", "gruppen_balken");
+  registerChart("c_gruppen_saldo",  "dok", "gruppen_saldo");
+  // R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?" (A+B)
+  registerChart("c_eineuro_aus_a", "dok", "eineuro_aus_a");
+  registerChart("c_eineuro_aus_b", "dok", "eineuro_aus_b");
+  registerChart("c_eineuro_ein_a", "dok", "eineuro_ein_a");
+  registerChart("c_eineuro_ein_b", "dok", "eineuro_ein_b");
 
   // Typabhaengige Panels (R3 nur RA, R4 nur VA) ein-/ausblenden, wenn der
   // User das Dokument wechselt. data-typ-panel="RA"/"VA" ist im Markup

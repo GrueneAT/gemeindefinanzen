@@ -315,6 +315,25 @@ function aggregateDok(db, did) {
   const investDarlehen = Math.max(0, finAufnahme - finTilgung)
   const investEigen = Math.max(0, investAus - foerderung - investDarlehen)
 
+  // R7 — Saldo je Aufgabenbereich. Einnahmen und Ausgaben je Gruppe;
+  // Saldo = Einnahmen - Ausgaben. Portierung von web/sql/02-gruppen-
+  // uebersicht.sql, parametriert auf dokument_id.
+  const gruppenSaldoRows = rows(
+    db,
+    `SELECT gruppe, gruppe_text,
+            ROUND(SUM(CASE WHEN richtung='einnahme' THEN eh_wert ELSE 0 END), 0),
+            ROUND(SUM(CASE WHEN richtung='ausgabe'  THEN eh_wert ELSE 0 END), 0),
+            ROUND(SUM(CASE WHEN richtung='einnahme' THEN eh_wert
+                           ELSE -eh_wert END), 0)
+     FROM v_detail WHERE dokument_id=${did}
+     GROUP BY gruppe, gruppe_text ORDER BY gruppe`,
+  )
+
+  // R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?".
+  // Aufwand auf 100 Cent normalisieren (aus aufwand_art), Einnahmen
+  // ebenso (aus sankey.quellen). Cent-Werte summieren sich auf 100 +/- 1
+  // (Rundung). Werden weiter unten nach Aggregation der Quellen befuellt.
+
   // R3 — Soll-Ist-Abweichung (nur fuer Rechnungsabschluesse). Direkt aus
   // v_detail.eh_delta abgeleitet, parametriert auf dokument_id; analog zu
   // web/sql/14-soll-ist-abweichung.sql, aber je Dokument.
@@ -454,6 +473,35 @@ function aggregateDok(db, did) {
     sollIst,
     // R4 — Polster-Liste (nur VA). Bei RA undefined.
     polster,
+    // R7 — Saldo je Aufgabenbereich: [gruppe, gruppe_text, einnahmen,
+    // ausgaben, saldo].
+    gruppenSaldo: gruppenSaldoRows.map((r) => [
+      r[0] || "",
+      r[1] || "",
+      round(r[2] || 0),
+      round(r[3] || 0),
+      round(r[4] || 0),
+    ]),
+    // R8 — auf 100 normalisiert. einEuroAuf aus aufwand_art (Personal,
+    // Sachaufwand, Transfers, Finanz, Sonstige); einEuroEin aus den
+    // aggregierten sankey.quellen.
+    einEuroAuf: (() => {
+      const total = aufwandArt.reduce((s, [, v]) => s + (v || 0), 0) || 1
+      return aufwandArt.map(([cat, v]) => [
+        cat,
+        Math.round((100 * (v || 0)) / total),
+      ])
+    })(),
+    // Einnahmen-Klassifikation analog Sankey: 833000 Kommunalsteuer usw.
+    // Auf der Einnahmenseite normalisiert auf 100.
+    einEuroEin: (() => {
+      // sankey-Quellen sind schon aggregiert — sie verwendet round() je
+      // Eintrag, also lieber direkt aus DB lesen, um konsistente Summen
+      // zu erhalten.
+      const ein = sankey(db, did).quellen
+      const total = ein.reduce((s, [, v]) => s + (v || 0), 0) || 1
+      return ein.map(([q, v]) => [q, Math.round((100 * v) / total)])
+    })(),
   }
 }
 

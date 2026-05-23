@@ -462,6 +462,49 @@ async function teste() {
       "polster_a" in ersterDok && "polster_b" in ersterDok,
   )
 
+  // R6/R7 — gruppen + gruppenSaldo
+  const aggBase = datenPK.aggregate[String(datenPK.meta.default_dok)]
+  pruefe(
+    "agg.gruppen ist nicht leer",
+    Array.isArray(aggBase.gruppen) && aggBase.gruppen.length > 0,
+    String(aggBase.gruppen && aggBase.gruppen.length),
+  )
+  pruefe(
+    "agg.gruppenSaldo ist Array mit 5-Tuples [gr,gr_text,ein,aus,saldo]",
+    Array.isArray(aggBase.gruppenSaldo) &&
+      aggBase.gruppenSaldo.every((r) => r.length === 5),
+    JSON.stringify(aggBase.gruppenSaldo && aggBase.gruppenSaldo[0]),
+  )
+
+  // R8 — einEuroAuf und einEuroEin summieren sich auf 100 +/- 1.
+  pruefe(
+    "agg.einEuroAuf ist Array",
+    Array.isArray(aggBase.einEuroAuf) && aggBase.einEuroAuf.length > 0,
+  )
+  const sumAus = aggBase.einEuroAuf.reduce((s, [, c]) => s + c, 0)
+  pruefe(
+    "agg.einEuroAuf: Summe = 100 +/- 1 (Rundung)",
+    Math.abs(sumAus - 100) <= 1,
+    String(sumAus),
+  )
+  const sumEin = aggBase.einEuroEin.reduce((s, [, c]) => s + c, 0)
+  pruefe(
+    "agg.einEuroEin: Summe = 100 +/- 1 (Rundung)",
+    Math.abs(sumEin - 100) <= 1,
+    String(sumEin),
+  )
+
+  // CFG enthaelt die neuen Variante-Keys.
+  pruefe(
+    "CFG: dok_charts hat gruppen_balken, gruppen_saldo",
+    "gruppen_balken" in ersterDok && "gruppen_saldo" in ersterDok,
+  )
+  pruefe(
+    "CFG: dok_charts hat eineuro_aus_a/b und eineuro_ein_a/b",
+    "eineuro_aus_a" in ersterDok && "eineuro_aus_b" in ersterDok &&
+      "eineuro_ein_a" in ersterDok && "eineuro_ein_b" in ersterDok,
+  )
+
   // R11 — Sankey-Abschlussknoten: bei Ueberschuss "Ueberschuss /
   // Ruecklagenzufuhr" als Knoten, bei Abgang "Abgangsdeckung".
   const { chartSankey } = await import("../../web/js/dashboard-charts.js")
