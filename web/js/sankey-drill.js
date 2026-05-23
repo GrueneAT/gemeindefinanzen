@@ -13,32 +13,36 @@
 //
 // Reine Funktionen ohne ECharts-/DOM-Abhaengigkeit, damit in Node testbar.
 
+// Org-weite Chart-Konstanten: PALETTE/INK/LABEL_SIZE kommen aus dem
+// gehosteten gat-charts.js-Modul, identisch zu dashboard-charts.js.
+import {
+  PALETTE,
+  INK as DS_INK,
+  LABEL_SIZE,
+} from "https://grueneat.github.io/design-system/gat-charts.js"
+
 const MITTE = "Gemeindehaushalt"
 
 // Hoechstzahl Detailknoten je ausgeklapptem Bereich; der Rest wird gebuendelt.
 export const TOP_N = 8
 
-// Entsaettigte Diagramm-Palette des Web-Design-Systems — semantisch
-// eingesetzt, identisch zu dashboard-charts.js (siehe
-// docs/web-design-system.md). green=Ertraege/positiv,
+// App-Adapter: DS-INK ist tonal (text/soft/axis/...), die App nutzt
+// semantische Rollen (green/blue/orange/red/soft) — Mapping ueber PALETTE,
+// identisch zu dashboard-charts.js. green=Ertraege/positiv,
 // blue=Personal/neutral-kuehl (Teal), orange=Sachaufwand (Gold),
 // red=Aufwand/Risiko (Clay), soft=Sonstige/Restgruppe (Sage).
 const INK = {
-  green: "#3f7d4f",
-  blue: "#4f93a0",
-  orange: "#c9a24b",
-  red: "#b9744f",
-  soft: "#8a8f7d",
+  green: PALETTE[0],
+  blue: PALETTE[2],
+  orange: PALETTE[3],
+  red: PALETTE[4],
+  soft: PALETTE[7],
 }
 
-// Diagrammschrift = Seitenschrift (Gruene-AT-DS).
+// Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsenwerte aus DS-INK.
 const CHART_FONT = "Barlow Semi Condensed, sans-serif"
-const ACHSE_TEXT = "#23271f"
-const ACHSE_LINIE = "#cdd2c8"
-
-// Gemeinsame Diagramm-Schriftgroesse (Iteration 16) — identisch zu
-// dashboard-charts.js. Spuerbar groesser fuer aeltere Nutzer:innen.
-const LABEL_SIZE = 15
+const ACHSE_TEXT = DS_INK.text
+const ACHSE_LINIE = DS_INK.axis
 
 // Tooltip auf die Komponentensprache: helle Karte mit Haarlinie und weichem
 // Schatten statt der dunklen ECharts-Voreinstellung — identisch zu

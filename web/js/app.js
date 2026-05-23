@@ -57,8 +57,38 @@ async function init() {
   zeichneDokumentliste()
   zeichneDashboard()
   verdrahteVollbild()
+  verdrahteHcToggle()
   window.__appBereit = true
   zeigeBuildStempel()
+}
+
+// --- A11y: .gat-mode-hc-Toggle ------------------------------------------- //
+// Knopf in der Brandbar schaltet den Hochkontrast-Modus ein/aus. Der DS
+// definiert die Variant (body.gat-mode-hc), die App pflegt nur den
+// Toggle-Knopf und persistiert den Zustand in localStorage. Ein
+// Inline-Skript im <head> setzt die Klasse VOR dem ersten Paint (FOWT-
+// Prevention) auf <html>; dieser Toggle spiegelt die Klasse zusaetzlich
+// auf <body>, damit die DS-Selektoren (body.gat-mode-hc ...) greifen.
+function verdrahteHcToggle() {
+  const btn = document.getElementById("hc-toggle")
+  if (!btn) return
+  const set = (an) => {
+    document.body.classList.toggle("gat-mode-hc", an)
+    document.documentElement.classList.toggle("gat-mode-hc", an)
+    btn.setAttribute("aria-pressed", an ? "true" : "false")
+    btn.setAttribute(
+      "aria-label",
+      an ? "Hohen Kontrast ausschalten" : "Hohen Kontrast einschalten",
+    )
+    try {
+      localStorage.setItem("gat-mode-hc", an ? "1" : "")
+    } catch (e) { /* gesperrt (Privatmodus) — egal */ }
+  }
+  let aktiv = false
+  try { aktiv = localStorage.getItem("gat-mode-hc") === "1" } catch (e) {}
+  set(aktiv)
+  btn.addEventListener("click", () =>
+    set(!document.body.classList.contains("gat-mode-hc")))
 }
 
 // --- Mehrjahres-Overlay: Fokusverwaltung --------------------------------- //
@@ -123,7 +153,7 @@ function verdrahteOverlayFokus() {
 // Schirm — gerade fuer die interaktiven Diagramme und fuer aeltere
 // Nutzer:innen eine deutlich bessere Lesbarkeit. Esc oder ein erneuter Klick
 // fuehren zurueck. Im Vollbild ist der .dash-chart-Div nicht mehr an seine
-// feste Inline-Hoehe gebunden (CSS .web-panel:fullscreen); damit ECharts die
+// feste Inline-Hoehe gebunden (CSS .gat-panel:fullscreen); damit ECharts die
 // neue Flaeche fuellt, wird auf fullscreenchange ein window-resize-Event
 // ausgeloest — dashboard.js hoert darauf (resizeVisibleCharts) und passt
 // alle sichtbaren Diagramme an. dashboard.js bleibt unangetastet.
@@ -135,16 +165,16 @@ function verdrahteVollbild() {
   // Nur Panels mit einem echten Diagramm (.dash-chart) — Tabellen-Panels
   // profitieren nicht von einer Vollbildansicht.
   const panels = document.querySelectorAll(
-    ".web-panel:has(.dash-chart)",
+    ".gat-panel:has(.dash-chart)",
   )
   for (const panel of panels) {
-    const kopf = panel.querySelector(".web-panel__head")
+    const kopf = panel.querySelector(".gat-panel__head")
     const titel = kopf && kopf.querySelector("h3")
     if (!kopf || !titel) continue
 
     const btn = document.createElement("button")
     btn.type = "button"
-    btn.className = "web-panel__fs-btn"
+    btn.className = "app-panel-fs-btn"
     btn.textContent = "Vergroessern"
     setzeVollbildLabel(btn, false)
     btn.addEventListener("click", () => {
@@ -160,7 +190,7 @@ function verdrahteVollbild() {
     // Titel und Knopf in eine gemeinsame Kopfzeile setzen — der Knopf sitzt
     // rechts neben dem Titel, ueber einer etwaigen Notiz/Sankey-Leiste.
     const reihe = document.createElement("div")
-    reihe.className = "web-panel__head-row"
+    reihe.className = "gat-panel__head-row"
     kopf.insertBefore(reihe, titel)
     reihe.appendChild(titel)
     reihe.appendChild(btn)
@@ -169,8 +199,8 @@ function verdrahteVollbild() {
   // Vollbildwechsel: Knopf-Label/aria umstellen und ECharts neu vermessen.
   document.addEventListener("fullscreenchange", () => {
     const aktiv = document.fullscreenElement
-    for (const btn of document.querySelectorAll(".web-panel__fs-btn")) {
-      const panel = btn.closest(".web-panel")
+    for (const btn of document.querySelectorAll(".app-panel-fs-btn")) {
+      const panel = btn.closest(".gat-panel")
       setzeVollbildLabel(btn, panel != null && panel === aktiv)
     }
     // ECharts kennt die neue Flaeche erst nach dem Layout — ein

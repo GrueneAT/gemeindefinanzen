@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:js": "node tests/js/run.mjs",
+    "test:js": "node --import ./tests/js/gat-charts-shim.mjs tests/js/run.mjs",
     "test:e2e": "playwright test",
     "poc": "node scripts/mupdf-geometrie.mjs",
     "serve": "node scripts/serve.mjs"

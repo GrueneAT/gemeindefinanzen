@@ -56,7 +56,9 @@ function baueSwitcher(daten) {
   ziel.innerHTML = ""
   for (const d of daten.dokumente) {
     const btn = document.createElement("button")
-    btn.className = "switch-btn"
+    // Doppel-Klasse: Funktionsklasse switch-btn fuer dashboard.js-Vendor,
+    // gat-switch-btn fuer die DS-v2-Optik.
+    btn.className = "switch-btn gat-switch-btn"
     btn.dataset.dok = String(d.id)
     btn.textContent = d.label
     ziel.appendChild(btn)

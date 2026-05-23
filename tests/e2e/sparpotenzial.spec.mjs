@@ -24,7 +24,7 @@ test('Sparpotenzial-Tab: Soll-Ist und Polster blenden typabhaengig ein',
 
     // Bei VA sind Soll-Ist-Panels hidden via data-typ-panel="RA".
     const sollistAPanel = page.locator(
-      'section.web-panel[data-typ-panel="RA"]').first()
+      'section.gat-panel[data-typ-panel="RA"]').first()
     await expect(sollistAPanel).toBeHidden()
 
     // R9 — Gebunden vs. gestaltbar: beide Variante-Panels sichtbar.

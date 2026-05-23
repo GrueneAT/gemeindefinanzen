@@ -1,16 +1,17 @@
 /* Browser-App — Stil der Upload-Oberflaeche, des Dashboards und der
    Dokumentverwaltung.
 
-   Quellschicht ist das Web-Design-System (--web-*-Token, hier definiert).
-   Es baut auf den --gat-*-Tokens des Gruene-AT-Design-Systems auf (per CDN
-   geladen) und ergaenzt die Basisstile, die das DS bewusst nicht mitliefert.
+   Quellschicht ist das Gruene-AT-Design-System v2.0 (--gat-*-/--gat-web-*-
+   Token, per CDN geladen). Diese Datei ergaenzt nur App-spezifische
+   Adapter-Aliase (--app-*) und die Basisstile, die das DS bewusst nicht
+   mitliefert.
 
    Aufbau:
-     1. Design-Token (:root)
+     1. App-Adapter-Token (:root)
      2. Basis- / Element-Stile
      3. Layout & Container
-     4. Komponenten (.metric-card, .web-panel, .web-callout,
-        .web-section-head, Markenleiste)
+     4. App-spezifische Komponenten (.app-panel-fs-btn, .mark-*,
+        .boot-banner, .dashboard-leer)
      5. Bedienelemente & app-spezifische Flaechen (Dropzone,
         Dokumentverwaltung, Fortschritt, Tabellen, Sankey-Leiste) */
 
@@ -18,69 +19,17 @@
 /* ===========================================================================
    1. DESIGN-TOKEN
    ===========================================================================
-   Bewusst unabhaengig von den --gat-*-Marken-Tokens, damit die Entsaettigung
-   an einer Stelle steuerbar ist. Quelle und Begruendung:
-   docs/web-design-system.md. */
+   Die Web-Token-Schicht (--gat-web-*) liefert das org-weite DS v2.0 ueber
+   das CDN-Stylesheet (design-system.css). Die App fuegt nur eine duenne
+   Adapter-Schicht hinzu: semantische --app-*-Aliase, die aelterer App-Code
+   mehrfach nutzt. --hair/--soft sind reine Flaechen-/Textaliase;
+   --akzent-primaer/--risiko benennen Status-Rollen (Fortschritt, Sankey).
+   Einmalig genutzte Aliase wurden auf die --gat-web-*-Token inline aufgeloest. */
 :root {
-  /* Flaeche & Text */
-  --web-bg: #f3f5f0;
-  --web-surface: #ffffff;
-  --web-surface-sunk: #f7f9f4;
-  --web-hairline: #e1e4db;
-  --web-shadow: 0 1px 2px rgba(31,38,28,.05), 0 4px 14px rgba(31,38,28,.05);
-  --web-text: #23271f;
-  --web-text-soft: #5e6358;
-  /* --web-text-mute auf AA-Kontrast nachgezogen (Iteration 8): 8b8f82 lag
-     mit 3.0-3.3 unter dem 4.5er-Schwellwert fuer Fliesstext; 6b6f63 erreicht
-     auf --web-bg / --web-surface / --web-surface-sunk 4.7-5.2 und bleibt
-     dabei ein ruhiger, entsaettigter Grauton. */
-  --web-text-mute: #6b6f63;
-
-  /* Gruene Identitaet (entsaettigt) */
-  --web-green-deep: #2c6e40;
-  --web-green: #4a8a52;
-  --web-green-tint: #e7efe3;
-  --web-yellow: #ecd64a;
-
-  /* Risiko-/Fehler-Ton fuer Text und gefuellte Flaechen. --web-chart-clay
-     (#b9744f) ist als Diagrammfuellung gut, als Textfarbe auf hellem Grund
-     aber zu hell (AA-Kontrast nur ~3.2-3.7). --web-clay-text ist die
-     abgedunkelte Variante fuer Text/Rahmen: ~4.7 auf der Fehl-Tint-Flaeche,
-     ~5.3 auf Weiss, weiss darauf ~5.5. */
-  --web-clay-text: #9c5a38;
-
-  /* Diagramm-Palette (kategorial, niedrige Saettigung).
-     Doku-Token: --web-yellow (oben) sowie --web-chart-leaf/-teal/-gold/
-     -plum/-sage werden von keiner CSS-Regel referenziert. Sie halten die
-     Spec-Tabelle fest; die Chart-Module lesen die gleichen Hex-Werte
-     direkt im JS. --web-chart-green/-clay/-slate werden dagegen auch in
-     CSS genutzt (Metric-Card-Akzente, Risiko-Ton). */
-  --web-chart-green: #3f7d4f;
-  --web-chart-leaf: #6ba368;
-  --web-chart-teal: #4f93a0;
-  --web-chart-gold: #c9a24b;
-  --web-chart-clay: #b9744f;
-  --web-chart-plum: #9c5b7d;
-  --web-chart-slate: #5d6b8a;
-  --web-chart-sage: #8a8f7d;
-
-  /* Radien — eine konsistente Skala fuer die ganze App.
-     --web-radius-control fuer Bedienelemente (Buttons, Felder, Reiter,
-     Segmente), --web-radius-card fuer Karten/Panels/Dialoge. */
-  --web-radius-control: 6px;
-  --web-radius-card: 10px;
-
-  /* Fokusring — einheitlich fuer alle fokussierbaren Bedienelemente. */
-  --web-focus-ring: 0 0 0 3px color-mix(in srgb, var(--web-green) 38%, transparent);
-
-  /* Adapterschicht: semantische --app-*-Aliase, die aelterer App-Code
-     mehrfach nutzt. --hair/--soft sind reine Flaechen-/Textaliase;
-     --akzent-primaer/--risiko benennen Status-Rollen (Fortschritt, Sankey).
-     Einmalig genutzte Aliase wurden auf die --web-*-Token inline aufgeloest. */
-  --app-hair: var(--web-hairline);
-  --app-soft: var(--web-text-soft);
-  --app-akzent-primaer: var(--web-green-deep);
-  --app-risiko: var(--web-chart-clay);
+  --app-hair: var(--gat-web-hairline);
+  --app-soft: var(--gat-web-text-soft);
+  --app-akzent-primaer: var(--gat-web-green-deep);
+  --app-risiko: var(--gat-web-chart-5);
 }
 
 
@@ -92,9 +41,9 @@
    Ueberschriften, Tabellen und Formularfelder direkt aus den Tokens. */
 body {
   font-family: var(--gat-font-copy);
-  color: var(--web-text);
+  color: var(--gat-web-text);
   /* Ruhiger, leicht gruenstichiger Grundton statt hartem Weiss. */
-  background: var(--web-bg);
+  background: var(--gat-web-bg);
   line-height: var(--gat-leading-copy);
   margin: 0;
   font-size: var(--gat-text-copy);
@@ -103,14 +52,14 @@ body {
 /* Ueberschriften-Typografie: Barlow Semi Condensed ist von Natur aus schmal —
    Gewicht 900 macht es zusaetzlich laut. Ruhigere Skala laut
    docs/web-design-system.md: h1 -> 800, h2 -> 700, h3 -> 700 (kleiner).
-   Farbe --web-text statt schwarz. Vertikaler Rhythmus: h2 beginnt einen
+   Farbe --gat-web-text statt schwarz. Vertikaler Rhythmus: h2 beginnt einen
    Abschnitt (grosser Oberabstand), h3 sitzt eng an seinem Inhalt. */
 h1, h2, h3 {
   font-family: var(--gat-font-headline);
   /* Bewusst nicht --gat-leading-headline (0.9) — zu eng fuer mehrzeilige
      Dashboard-Ueberschriften. */
   line-height: 1.18;
-  color: var(--web-text);
+  color: var(--gat-web-text);
 }
 h1 {
   font-size: var(--gat-text-h1);
@@ -131,7 +80,7 @@ h3 {
 }
 /* Erste Ueberschrift in einem Tab-Panel braucht keinen Extra-Oberabstand —
    die Steuerleiste darueber liefert ihn bereits. */
-.tab-panel > .web-section-head:first-child h2,
+.tab-panel > .gat-section-head:first-child h2,
 .tab-panel > h2:first-child {
   margin-top: var(--gat-space-3);
 }
@@ -158,12 +107,9 @@ input, select { font-family: var(--gat-font-copy); }
    Fliesstextes wird separat pro Komponente gedeckelt (~70rem), nicht
    ueber den Container. Die breite 15-Spalten-Suchtabelle scrollt intern
    ueber .table-scroll und braucht den Container nicht zu sprengen.
-   --web-page-max ist die gemeinsame Quelle fuer .page und den Header. */
-:root {
-  --web-page-max: min(2040px, 94vw);
-}
+   --gat-web-page-max liefert das DS v2.0 (CDN-Stylesheet). */
 .page {
-  max-width: var(--web-page-max);
+  max-width: var(--gat-web-page-max);
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 2.5rem);
 }
@@ -184,31 +130,11 @@ input, select { font-family: var(--gat-font-copy); }
 }
 
 /* --- Hero — Auftakt der Seite ---------------------------------------------
-   Seitentitel und Intro als eine ruhige Einheit: gemeinsamer Abstand zum
-   Header, Titel und Intro eng aneinander gebunden statt mit eigenem
-   Streuabstand. Die Leseweite des Intros bleibt begrenzt. */
-.web-hero {
-  margin: var(--gat-space-5) 0 var(--gat-space-5);
-}
-.web-hero__title {
-  margin: 0;
-}
-.web-hero__intro {
-  margin: var(--gat-space-2) 0 0;
-}
+   DS v2.0 liefert .gat-hero/.gat-hero__title/.gat-hero__intro. Lokal nur
+   noch die App-eigene .lead-Klasse (Fliesstext-Vorspann unter h2). */
 .lead {
   font-size: var(--gat-text-subline);
   line-height: var(--gat-leading-copy);
-}
-
-/* Seitentitel im Inhaltsbereich — Abstand zum Header. Die DS-Klasse
-   .gat-headline traegt Gewicht 900 und schwarze Schrift; hier auf die
-   ruhigere Skala (h1 -> 800, --web-text) gebracht. */
-.gat-headline {
-  margin: var(--gat-space-5) 0 var(--gat-space-2);
-  font-weight: 800;
-  line-height: 1.18;
-  color: var(--web-text);
 }
 
 /* Seitenfuss — dezente Grundzeile. */
@@ -229,83 +155,13 @@ input, select { font-family: var(--gat-font-copy); }
    4. KOMPONENTEN
    =========================================================================== */
 
-/* --- Weisse Markenleiste (gruene.at-Muster) --------------------------------
-   Header nach dem Vorbild von gruene.at: weisse Flaeche statt Dunkelgruen-
-   Block. Die gruene Identitaet kommt aus dem prominenten Die-Grünen-Logo,
-   den gruenen Navigationslinks und einer duennen gruenen Akzentlinie am
-   unteren Rand. Ein sehr leichter Schatten hebt den Header ab, die gruene
-   Linie ist der eigentliche Trenner zum gruenstichigen Seitengrund.
-   Die DS-Klassen bleiben am Element und funktionsfaehig. */
-.web-brandbar {
-  background: var(--web-surface);
-  border-bottom: 3px solid var(--web-green);
-  box-shadow: 0 1px 3px rgba(31, 38, 28, .06);
-}
-/* Header-Inhalt auf dieselbe Breite wie der Seiteninhalt bringen, damit
-   Header und Body einen gemeinsamen linken Rand teilen. */
-.gat-header__inner {
-  max-width: var(--web-page-max);
-  padding-inline: clamp(1rem, 4vw, 2.5rem);
-  padding-block: 0.85rem;
-  gap: var(--gat-space-3);
-  flex-wrap: wrap;
-}
-/* Logo plus Wortmarke als eine zusammenhaengende Markeneinheit. */
-.web-brandbar__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0;
-  text-decoration: none;
-}
-/* Prominentes, klar wiedererkennbares Die-Grünen-Logo (Voll-Farbe,
-   per CDN verlinkt, nicht vendorisiert). Hoehe ~56px -> Header ~80-90px. */
-.web-brandbar__logo {
-  height: 56px;
-  width: auto;
-  display: block;
-}
-.web-brandbar__wordmark {
-  font-family: var(--gat-font-headline);
-  font-weight: 700;
-  font-size: 1.5rem;
-  line-height: 1;
-  color: var(--web-text);
-  letter-spacing: 0.01em;
-}
-/* Navigationszone rechts — gruene Links wie bei gruene.at. Als Liste
-   angelegt, damit kuenftige Tool-Links direkt eingehaengt werden koennen. */
-.web-brandbar__nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.25rem;
-}
-.web-brandbar__nav-list a,
-.web-brandbar__nav-current {
-  font-family: var(--gat-font-headline);
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--web-green-deep);
-  text-decoration: none;
-}
-.web-brandbar__nav-list a:hover {
-  text-decoration: underline;
-}
-/* Aktueller App-Kontext — gruen, leicht hervorgehoben als aktiver Eintrag. */
-.web-brandbar__nav-current {
-  border-bottom: 2px solid var(--web-green);
-  padding-bottom: 2px;
-}
-@media (max-width: 30rem) {
-  .web-brandbar__logo { height: 46px; }
-  .web-brandbar__wordmark { font-size: 1.25rem; }
-}
+/* --- Markenleiste -----------------------------------------------------------
+   DS v2.0 liefert .gat-header und alle Sub-Elemente (.gat-header__brand/
+   __logo/__wordmark/__nav/__nav-list/__nav-current) mit gleicher Optik
+   (weisse Flaeche, gruene Unterkante, prominentes Die-Gruenen-Logo, gruene
+   Navigationslinks). Keine lokale Brandbar-Schicht mehr noetig. */
 
-/* --- .metric-card — Ueberblick-Kennzahlen ---------------------------------
+/* --- .gat-metric-card-Raster -----------------------------------------------
    Kennzahlen-Karten: weisse Flaeche, Haarlinie, weicher Schatten, farbiger
    3px-Akzentbalken oben, grosse tabular-nums-Zahl, kleines
    Grossbuchstaben-Label. Responsives 4-spaltiges Raster -> 2 -> 1. */
@@ -328,211 +184,89 @@ input, select { font-family: var(--gat-font-copy); }
 @media (max-width: 36rem) {
   .stats { grid-template-columns: 1fr; }
 }
-.metric-card {
-  position: relative;
-  background: var(--web-surface);
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  box-shadow: var(--web-shadow);
-  padding: var(--gat-space-3);
-  overflow: hidden;
-}
-/* Farbiger Akzentbalken (3px) am oberen Kartenrand. */
-.metric-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--metric-accent, var(--web-green));
-}
-/* Semantische Akzente je Kennzahl: der Akzentbalken unterscheidet die vier
-   Lagebild-Karten — Ertraege gruen, Aufwendungen Clay, Nettoergebnis
-   Schiefer; der Kommunalsteuer-Anteil bleibt Hero. */
-.metric-card--ertrag {
-  --metric-accent: var(--web-chart-green);
-}
-.metric-card--aufwand {
-  --metric-accent: var(--web-chart-clay);
-}
-.metric-card--netto {
-  --metric-accent: var(--web-chart-slate);
-}
-.metric-card--hero {
-  background: var(--web-green-tint);
-  --metric-accent: var(--web-green-deep);
-}
-.stat-num {
-  font-size: var(--gat-text-h2);
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--web-text);
-  margin-top: 0.2rem;
-}
-.stat-label {
-  font-size: var(--gat-text-small);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--web-text-soft);
-}
-/* .stat-delta — sekundaere Zeile auf der Kennzahlen-Karte: Vorjahres-
-   bzw. Soll-Ist-Delta in Prozent. Gruen wenn der Wert positiv waechst,
-   clay wenn er sinkt (semantisch konsistent mit der Diagramm-Palette). */
+/* DS v2.0 liefert .gat-metric-card mit allen Modifiern
+   (--ertrag/--aufwand/--netto/--hero) und Sub-Elementen __num/__label.
+   Markup nutzt jetzt .gat-metric-card__num/__label, daher entfaellt
+   die lokale Stilebene fuer Karten und Beschriftungen. */
+
+/* .stat-delta — App-spezifisches Lagebild-Detail (Vorjahres-/Soll-Ist-Delta
+   in Prozent). Gruen wenn der Wert positiv waechst, clay wenn er sinkt
+   (semantisch konsistent mit der Diagramm-Palette). Kein DS-Pendant. */
 .stat-delta {
   font-size: 0.86rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-variant-numeric: tabular-nums;
   margin-top: 0.18rem;
 }
-.stat-delta.is-up   { color: var(--web-chart-green); }
-.stat-delta.is-down { color: var(--web-clay-text); }
-/* .stat-pk — Pro-Kopf-Zeile. Erscheint nur, wenn fuer das Dokument eine
-   Einwohnerzahl erfasst ist (sonst hidden via JS). */
+.stat-delta.is-up   { color: var(--gat-web-chart-1); }
+.stat-delta.is-down { color: var(--gat-web-clay-text); }
+/* .stat-pk — Pro-Kopf-Zeile. App-spezifisch — kein DS-Pendant. */
 .stat-pk {
   font-size: 0.85rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-variant-numeric: tabular-nums;
   margin-top: 0.18rem;
 }
 
-/* --- .web-panel — Diagramm-/Inhaltsrahmen ---------------------------------
-   Jedes Diagramm sitzt mit seiner h3-Ueberschrift in einer Karte: weisse
-   Flaeche, Haarlinie, weicher Schatten, abgerundet. Der reine
-   Diagramm-Container .dash-chart sitzt im .web-panel__body und traegt daher
-   keinen eigenen Rahmen mehr (sonst Karte-in-Karte). */
-.web-panel {
-  display: block;
-  background: var(--web-surface);
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  box-shadow: var(--web-shadow);
-  margin: var(--gat-space-4) 0;
-  overflow: hidden;
-}
+/* --- .gat-panel — App-spezifische Erweiterungen -------------------------
+   DS v2.0 liefert .gat-panel mit allen Sub-Elementen (__head/__head-row/
+   __body/__body--table/__note) und :fullscreen-Defaults. Hier nur die
+   App-spezifischen Ergaenzungen: 2-Spalten-Raster-Anpassung, Sankey-Bar-
+   Position im Panel-Kopf, und der Vollbild-Knopf (App-eigen, kein
+   DS-Pendant). */
+
 /* Panels in der 2-spaltigen .dash-grid fuellen ihre Rasterzelle ganz aus. */
-.dash-grid > .web-panel {
+.dash-grid > .gat-panel {
   margin: 0;
   height: 100%;
 }
-/* Kopf: traegt die h3 (und ggf. Kurzbeschreibung / Sankey-Leiste), mit
-   subtiler Haarlinie zum Diagrammkoerper. */
-.web-panel__head {
-  padding: var(--gat-space-3) var(--gat-space-3) var(--gat-space-2);
-  border-bottom: 1px solid var(--web-hairline);
-}
-.web-panel__head h3 {
-  margin: 0;
-}
-/* Kurzbeschreibung im Panel-Kopf — eng an den Titel gebunden. */
-.web-panel__note {
-  margin: var(--gat-space-1) 0 0;
-  font-size: var(--gat-text-small);
-  color: var(--web-text-soft);
-  max-width: 70rem;
-}
-/* Koerper: haelt das Diagramm, ruhiger Innenabstand. */
-.web-panel__body {
-  padding: var(--gat-space-3);
-}
-/* Tabellen-Variante: die .dtable bringt eigene Zellpolster mit und soll
-   bis an die Panel-Kante laufen — sonst doppelter Innenabstand. Die
-   sticky Kopfzeile sitzt so buendig unter dem Panel-Kopf. Filter-, Meta-
-   und Hinweiszeilen behalten den ruhigen seitlichen Abstand. */
-.web-panel__body--table {
-  padding: 0;
-}
-.web-panel__body--table .table-scroll {
-  border: none;
-  border-radius: 0;
-}
-/* Bare .dtable (ohne .table-scroll) — Rand-Zellen auf den Panel-Innenrand
-   ausrichten, damit Spalte 1 unter dem Panel-Titel beginnt. */
-.web-panel__body--table > .dtable th:first-child,
-.web-panel__body--table > .dtable td:first-child {
-  padding-left: var(--gat-space-3);
-}
-.web-panel__body--table > .dtable th:last-child,
-.web-panel__body--table > .dtable td:last-child {
-  padding-right: var(--gat-space-3);
-}
-/* Letzte Tabellenzeile im Panel: keine baumelnde Haarlinie an der Kante. */
-.web-panel__body--table > .dtable tbody tr:last-child td {
-  border-bottom: none;
-}
-/* Erstes/letztes Element im Panel-Koerper traegt keinen eigenen Aussen-
-   abstand — der Koerper-Innenabstand liefert den Rahmen (Drill-down-Liste,
-   Filterleiste, Meta-/Hinweiszeilen). */
-.web-panel__body > :first-child {
-  margin-top: 0;
-}
-.web-panel__body > :last-child {
-  margin-bottom: 0;
-}
 /* Die Sankey-Drill-down-Leiste sitzt im Panel-Kopf direkt unter dem Titel. */
-.web-panel__head .sankey-bar {
+.gat-panel__head .sankey-bar {
   margin: var(--gat-space-2) 0 0;
 }
 
-/* --- Vollbild-Steuerung je Diagramm-Panel ---------------------------------
-   "Vergroessern" legt das Diagramm-Panel ueber die Fullscreen-API auf den
-   ganzen Schirm — vor allem fuer die interaktiven Diagramme und fuer aeltere
-   Nutzer:innen eine deutlich bessere Lesbarkeit. Der Kopf traegt jetzt eine
-   Titelzeile (.web-panel__head-row), die Titel/Notiz links und den ruhigen
-   "Vergroessern"-Knopf rechts haelt. Der Knopf ist eine zurueckhaltende
-   Sekundaerflaeche, fuegt sich in die Bedienelement-Sprache ein. */
-.web-panel__head-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--gat-space-3);
-}
-.web-panel__head-row > h3 {
-  flex: 1 1 auto;
-}
-.web-panel__fs-btn {
+/* --- Vollbild-Knopf je Diagramm-Panel ------------------------------------
+   App-eigener "Vergroessern"-Knopf — DS hat kein Pendant. Sitzt im
+   .gat-panel__head-row neben dem Titel und schaltet ueber die native
+   Fullscreen-API. */
+.app-panel-fs-btn {
   flex: none;
   font: inherit;
   font-family: var(--gat-font-headline);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--web-hairline);
-  background: var(--web-surface);
-  color: var(--web-green-deep);
-  border-radius: var(--web-radius-control);
+  border: 1px solid var(--gat-web-hairline);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-green-deep);
+  border-radius: var(--gat-web-radius-control);
   padding: 0.28rem 0.7rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s,
     box-shadow 0.15s;
 }
-.web-panel__fs-btn:hover {
-  background: var(--web-green-tint);
-  border-color: var(--web-green-deep);
+.app-panel-fs-btn:hover {
+  background: var(--gat-web-green-tint);
+  border-color: var(--gat-web-green-deep);
 }
-.web-panel__fs-btn:focus-visible {
-  outline: 2px solid var(--web-green-deep);
+.app-panel-fs-btn:focus-visible {
+  outline: 2px solid var(--gat-web-green-deep);
   outline-offset: 2px;
-  box-shadow: var(--web-focus-ring);
+  box-shadow: var(--gat-web-focus-ring);
 }
 
-/* --- Diagramm-Panel im Vollbild -------------------------------------------
-   Im Vollbild fuellt das Panel den Viewport: weisse Flaeche ohne Rahmen, der
-   Kopf (Titel) bleibt oben sichtbar, der Diagrammkoerper waechst auf die
-   verbleibende Hoehe. Der .dash-chart-Div traegt eine feste Inline-Hoehe —
-   im Vollbild wird sie ueberschrieben, damit ECharts (nach dem ausgeloesten
-   window-resize) die ganze Flaeche fuellt. */
-.web-panel:fullscreen {
-  margin: 0;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  background: var(--web-surface);
+/* --- Diagramm-Panel im Vollbild — App-spezifische Layout-Erweiterungen ---
+   DS deckt .gat-panel:fullscreen-Basis ab (weisse Flaeche, kein Rahmen).
+   Hier nur die App-eigenen Layout-Anpassungen: Flex-Spalte fuer Kopf/Body,
+   .dash-chart fuellt verbleibende Hoehe, .drill-list scrollt. */
+.gat-panel:fullscreen {
   display: flex;
   flex-direction: column;
   overflow: auto;
 }
-.web-panel:fullscreen > .web-panel__head {
+.gat-panel:fullscreen > .gat-panel__head {
   flex: none;
 }
-.web-panel:fullscreen > .web-panel__body {
+.gat-panel:fullscreen > .gat-panel__body {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -540,13 +274,13 @@ input, select { font-family: var(--gat-font-copy); }
 }
 /* Diagramm-Container fuellt im Vollbild die verbleibende Hoehe statt der
    festen Inline-Hoehe; ECharts passt sich ueber den resize-Event an. */
-.web-panel:fullscreen .dash-chart {
+.gat-panel:fullscreen .dash-chart {
   flex: 1 1 auto;
   height: auto !important;
   min-height: 0;
 }
 /* Im Vollbild aktive Bloecke (Drill-down-Liste) duerfen wachsen/scrollen. */
-.web-panel:fullscreen .drill-list {
+.gat-panel:fullscreen .drill-list {
   flex: 1 1 auto;
   overflow: auto;
 }
@@ -556,30 +290,9 @@ input, select { font-family: var(--gat-font-copy); }
   margin: 0;
 }
 
-/* --- .web-section-head — Abschnittskopf -----------------------------------
-   Titel (h2) und einleitender Absatz als eine ruhige Einheit; klare
-   Trennung von der Steuerleiste und vom Abschnittsinhalt. */
-.web-section-head {
-  margin-bottom: var(--gat-space-4);
-}
-.web-section-head h2 {
-  margin-bottom: var(--gat-space-2);
-}
-.web-section-head p {
-  margin: 0;
-  max-width: 70rem;
-  color: var(--web-text-soft);
-}
-
-/* --- Callout "Wichtige Einordnung" ----------------------------------------
-   Als .gat-card--primary umgesetzt; nur Leseweite begrenzen. */
-.callout {
-  max-width: 70rem;
-  margin-top: var(--gat-space-3);
-}
-.callout p {
-  margin: var(--gat-space-2) 0 0;
-}
+/* --- Section-Head und Callout -----------------------------------------------
+   DS v2.0 liefert .gat-section-head und .gat-callout direkt. Keine lokale
+   Schicht mehr noetig. */
 
 /* --- Inline-Hervorhebungen ------------------------------------------------
    Das DS kennt nur einen Highlight-Stil (gelb). Die dreifache Semantik der
@@ -593,16 +306,16 @@ input, select { font-family: var(--gat-font-copy); }
   font-weight: 600;
 }
 .mark-positiv {
-  background: color-mix(in srgb, var(--web-green-deep) 14%, white);
-  border-bottom: 2px solid var(--web-green-deep);
+  background: color-mix(in srgb, var(--gat-web-green-deep) 14%, white);
+  border-bottom: 2px solid var(--gat-web-green-deep);
 }
 .mark-neutral {
-  background: color-mix(in srgb, var(--web-green) 16%, white);
-  border-bottom: 2px solid var(--web-green);
+  background: color-mix(in srgb, var(--gat-web-green) 16%, white);
+  border-bottom: 2px solid var(--gat-web-green);
 }
 .mark-risiko {
-  background: color-mix(in srgb, var(--web-chart-clay) 14%, white);
-  border-bottom: 2px solid var(--web-chart-clay);
+  background: color-mix(in srgb, var(--gat-web-chart-5) 14%, white);
+  border-bottom: 2px solid var(--gat-web-chart-5);
 }
 
 /* --- Boot-Fehlerbanner / Empty-State --------------------------------------
@@ -624,10 +337,10 @@ input, select { font-family: var(--gat-font-copy); }
 .dashboard-leer {
   margin: var(--gat-space-4) 0 var(--gat-space-5);
   padding: var(--gat-space-4);
-  border: 1px dashed var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  background: var(--web-surface-sunk);
-  color: var(--web-text-soft);
+  border: 1px dashed var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-card);
+  background: var(--gat-web-surface-sunk);
+  color: var(--gat-web-text-soft);
   text-align: center;
 }
 .dashboard-leer p {
@@ -643,11 +356,11 @@ input, select { font-family: var(--gat-font-copy); }
 
 /* --- Buttons --------------------------------------------------------------
    Das DS faerbt .gat-btn--primary/--secondary mit der vollgesaettigten
-   Markenfarbe. Hier auf die entsaettigte --web-*-Palette gebracht, mit
+   Markenfarbe. Hier auf die entsaettigte --gat-web-*-Palette gebracht, mit
    einheitlichem Radius und sichtbarem Fokusring. Die DS-Klassen bleiben am
    Element; nur die Optik wird ueberschrieben. */
 .gat-btn {
-  border-radius: var(--web-radius-control);
+  border-radius: var(--gat-web-radius-control);
   transition: background 0.15s, border-color 0.15s, color 0.15s,
     box-shadow 0.15s, transform 0.1s;
 }
@@ -658,38 +371,84 @@ input, select { font-family: var(--gat-font-copy); }
 }
 /* Primaer — gedaempfte gruene Flaeche, weisse Schrift. */
 .gat-btn--primary {
-  background: var(--web-green-deep);
-  border-color: var(--web-green-deep);
+  background: var(--gat-web-green-deep);
+  border-color: var(--gat-web-green-deep);
   color: var(--gat-color-weiss);
 }
 .gat-btn--primary:hover {
   filter: none;
-  background: color-mix(in srgb, var(--web-green-deep) 85%, black);
-  border-color: color-mix(in srgb, var(--web-green-deep) 85%, black);
+  background: color-mix(in srgb, var(--gat-web-green-deep) 85%, black);
+  border-color: color-mix(in srgb, var(--gat-web-green-deep) 85%, black);
 }
 /* Sekundaer — Umriss auf heller Flaeche, gruene Schrift. */
 .gat-btn--secondary {
-  background: var(--web-surface);
-  border-color: var(--web-green-deep);
-  color: var(--web-green-deep);
+  background: var(--gat-web-surface);
+  border-color: var(--gat-web-green-deep);
+  color: var(--gat-web-green-deep);
 }
 .gat-btn--secondary:hover {
-  background: var(--web-green-tint);
-  color: var(--web-green-deep);
+  background: var(--gat-web-green-tint);
+  color: var(--gat-web-green-deep);
 }
 .gat-btn:disabled,
 .doc-clear-btn:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
+/* --- A11y-Toggle: Hochkontrast in der Brandbar ----------------------------
+   App-eigener Knopf — DS liefert die .gat-mode-hc-Variant, aber keine
+   Toggle-Steuerung. Icon + Label "Kontrast", aria-pressed wird vom JS
+   gepflegt. Im aktiven Zustand wechselt der Knopf in die Primaer-Optik
+   (gruener Hintergrund, weisse Schrift). Im HC-Modus selbst werden Knopf
+   und aktiver Zustand zusaetzlich auf Gelb/Anthrazit gehoben, damit das
+   Bedienelement im invertierten Farbschema klar ablesbar bleibt. */
+.gat-header__a11y-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: inherit;
+  font-family: var(--gat-font-headline);
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  color: var(--gat-web-green-deep);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.gat-header__a11y-toggle:hover {
+  border-color: var(--gat-web-green);
+  background: var(--gat-web-green-tint);
+}
+.gat-header__a11y-toggle[aria-pressed="true"] {
+  background: var(--gat-web-green-deep);
+  border-color: var(--gat-web-green-deep);
+  color: var(--gat-color-weiss);
+}
+.gat-header__a11y-toggle svg { flex: none; }
+/* HC-Modus: Knopf in Gelb/Anthrazit hervorgehoben — sichtbar im
+   invertierten Farbschema. */
+.gat-mode-hc .gat-header__a11y-toggle {
+  border-color: var(--gat-color-gelb);
+  color: var(--gat-color-gelb);
+}
+.gat-mode-hc .gat-header__a11y-toggle[aria-pressed="true"] {
+  background: var(--gat-color-gelb);
+  color: var(--gat-color-anthrazit);
+}
+
 /* --- Einheitlicher Tastatur-Fokus -----------------------------------------
    Jedes interaktive Element traegt denselben sichtbaren Fokus: eine
-   2px-Kontur in --web-green-deep plus den weichen --web-focus-ring. Der
+   2px-Kontur in --gat-web-green-deep plus den weichen --gat-web-focus-ring. Der
    Ring hebt den Fokus auch dort ab, wo die Kontur knapp am Rand sitzt.
-   --web-focus-offset haelt den Abstand konsistent; Elemente, die an einer
+   --gat-web-focus-offset haelt den Abstand konsistent; Elemente, die an einer
    Kante sitzen (Reiter, sortierbare Spaltenkoepfe), setzen ihn lokal auf
    einen negativen Wert, der Ring bleibt aussen sichtbar. */
 .gat-btn:focus-visible,
+.gat-header__a11y-toggle:focus-visible,
 .dropzone-btn:focus-visible,
 .doc-remove:focus-visible,
 .doc-clear-btn:focus-visible,
@@ -706,31 +465,25 @@ input, select { font-family: var(--gat-font-copy); }
 .filterbar select:focus-visible,
 .dtable .pick input:focus-visible,
 input.search:focus-visible {
-  outline: 2px solid var(--web-green-deep);
-  outline-offset: var(--web-focus-offset, 2px);
-  box-shadow: var(--web-focus-ring);
+  outline: 2px solid var(--gat-web-green-deep);
+  outline-offset: var(--gat-web-focus-offset, 2px);
+  box-shadow: var(--gat-web-focus-ring);
 }
 /* Felder mit eigenem Rahmen: der Fokus ersetzt zusaetzlich die Rahmenfarbe,
    damit Kontur, Rahmen und Ring eine ruhige Einheit bilden. */
 .filterbar input:focus-visible,
 .filterbar select:focus-visible,
 input.search:focus-visible {
-  border-color: var(--web-green-deep);
+  border-color: var(--gat-web-green-deep);
 }
-/* Marken-Link im Header sitzt auf weisser Flaeche — der gruene Standard-
-   Fokusring wie bei allen uebrigen interaktiven Elementen. */
-.web-brandbar__brand:focus-visible {
-  outline: 2px solid var(--web-green-deep);
-  outline-offset: 3px;
-  border-radius: 2px;
-  box-shadow: var(--web-focus-ring);
-}
+/* Marken-Link im Header: DS v2.0 liefert .gat-header__brand:focus-visible
+   im globalen Fokus-Block — keine lokale Ergaenzung mehr noetig. */
 
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
 .doc-manager {
   border: 1px solid var(--app-hair);
-  border-radius: var(--web-radius-card);
-  background: var(--web-surface-sunk);
+  border-radius: var(--gat-web-radius-card);
+  background: var(--gat-web-surface-sunk);
   margin: 1.4rem 0;
 }
 .doc-manager-summary {
@@ -757,16 +510,16 @@ input.search:focus-visible {
   transform: rotate(90deg);
 }
 .doc-manager-summary:hover {
-  background: color-mix(in srgb, var(--web-green) 8%, transparent);
+  background: color-mix(in srgb, var(--gat-web-green) 8%, transparent);
 }
 /* Summary sitzt buendig im Karten-Rahmen — Fokus-Offset negativ; Kontur,
    Ring und Radius halten den Fokus innerhalb der Karte sichtbar. Die
    Kontur-/Ring-Optik liefert der gemeinsame Fokus-Block. */
 .doc-manager-summary {
-  --web-focus-offset: -2px;
+  --gat-web-focus-offset: -2px;
 }
 .doc-manager-summary:focus-visible {
-  border-radius: var(--web-radius-card);
+  border-radius: var(--gat-web-radius-card);
 }
 .doc-manager-title {
   font-weight: 600;
@@ -790,24 +543,24 @@ input.search:focus-visible {
 
 /* --- Drag-&-Drop-Zone ---------------------------------------------------- */
 .dropzone {
-  border: 2px dashed var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  background: var(--web-surface-sunk);
+  border: 2px dashed var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-card);
+  background: var(--gat-web-surface-sunk);
   padding: 2.4rem 1.4rem;
   text-align: center;
   margin: 1.2rem 0;
   transition: border-color 0.15s, background 0.15s;
 }
 .dropzone.is-over {
-  border-color: var(--web-green-deep);
-  background: var(--web-green-tint);
+  border-color: var(--gat-web-green-deep);
+  background: var(--gat-web-green-tint);
 }
 .dropzone-title {
   font-size: 1.05rem;
   margin: 0 0 0.3rem;
 }
 .dropzone-hint {
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-size: 0.85rem;
   margin: 0 0 0.9rem;
 }
@@ -827,9 +580,9 @@ input.search:focus-visible {
   margin: 1rem 0;
 }
 .progress-item {
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-control);
-  background: var(--web-surface);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  background: var(--gat-web-surface);
   padding: 0.6rem 0.85rem;
   margin-bottom: 0.5rem;
 }
@@ -847,7 +600,7 @@ input.search:focus-visible {
 }
 .progress-bar {
   height: 5px;
-  background: var(--web-hairline);
+  background: var(--gat-web-hairline);
   border-radius: 999px;
   margin-top: 0.45rem;
   overflow: hidden;
@@ -862,10 +615,10 @@ input.search:focus-visible {
   background: var(--app-risiko);
 }
 .progress-item.is-done .progress-fill {
-  background: var(--web-green-deep);
+  background: var(--gat-web-green-deep);
 }
 .progress-error {
-  color: var(--web-clay-text);
+  color: var(--gat-web-clay-text);
   font-size: 0.82rem;
   margin: 0.35rem 0 0;
 }
@@ -887,16 +640,16 @@ input.search:focus-visible {
 .doc-table td {
   text-align: left;
   padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid var(--web-hairline);
+  border-bottom: 1px solid var(--gat-web-hairline);
 }
 .doc-table th {
   font-size: 0.72rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
 }
 .doc-table tbody tr:hover {
-  background: color-mix(in srgb, var(--web-green) 7%, transparent);
+  background: color-mix(in srgb, var(--gat-web-green) 7%, transparent);
 }
 .doc-table td.num {
   text-align: right;
@@ -911,14 +664,14 @@ input.search:focus-visible {
   border: 1px solid;
 }
 .doc-status.ok {
-  color: var(--web-green-deep);
-  border-color: color-mix(in srgb, var(--web-green) 45%, var(--web-hairline));
-  background: var(--web-green-tint);
+  color: var(--gat-web-green-deep);
+  border-color: color-mix(in srgb, var(--gat-web-green) 45%, var(--gat-web-hairline));
+  background: var(--gat-web-green-tint);
 }
 .doc-status.fehl {
-  color: var(--web-clay-text);
-  border-color: color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
-  background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
+  color: var(--gat-web-clay-text);
+  border-color: color-mix(in srgb, var(--gat-web-chart-5) 45%, var(--gat-web-hairline));
+  background: color-mix(in srgb, var(--gat-web-chart-5) 12%, white);
 }
 /* .doc-einwohner-input (Variante A) — Inline-Feld in der Dokumentliste.
    Schmaler Number-Input, eingebettet ins Tabellen-Layout. */
@@ -927,15 +680,15 @@ input.search:focus-visible {
   font: inherit;
   font-size: 0.85rem;
   padding: 0.2rem 0.4rem;
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-control);
-  background: var(--web-surface);
-  color: var(--web-text);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-text);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .doc-einwohner-input:focus-visible {
-  outline: 2px solid var(--web-green);
+  outline: 2px solid var(--gat-web-green);
   outline-offset: 1px;
 }
 /* .doc-edit-btn (Variante B) — gleiches Pattern wie .doc-remove, aber
@@ -944,25 +697,25 @@ input.search:focus-visible {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  border: 1px solid var(--web-hairline);
-  background: var(--web-surface);
-  color: var(--web-text-soft);
-  border-radius: var(--web-radius-control);
+  border: 1px solid var(--gat-web-hairline);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-text-soft);
+  border-radius: var(--gat-web-radius-control);
   padding: 0.2rem 0.6rem;
   margin-right: 0.35rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .doc-edit-btn:hover {
-  border-color: var(--web-green);
-  background: color-mix(in srgb, var(--web-green) 8%, white);
-  color: var(--web-green-deep);
+  border-color: var(--gat-web-green);
+  background: color-mix(in srgb, var(--gat-web-green) 8%, white);
+  color: var(--gat-web-green-deep);
 }
 /* Einwohner-Dialog (Variante B) — natives <dialog>, knapp und ruhig. */
 .doc-einwohner-dialog {
   padding: 0;
   border: 0;
-  border-radius: var(--web-radius-card);
-  box-shadow: var(--web-shadow);
+  border-radius: var(--gat-web-radius-card);
+  box-shadow: var(--gat-web-shadow);
   max-width: 28rem;
 }
 .doc-einwohner-dialog::backdrop {
@@ -980,7 +733,7 @@ input.search:focus-visible {
 }
 .doc-einwohner-sub {
   margin: 0;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-size: 0.85rem;
 }
 .doc-einwohner-label {
@@ -988,12 +741,12 @@ input.search:focus-visible {
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.85rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
 }
 .doc-einwohner-hint {
   margin: 0;
   font-size: 0.78rem;
-  color: var(--web-text-mute);
+  color: var(--gat-web-text-mute);
 }
 .doc-einwohner-actions {
   display: flex;
@@ -1007,19 +760,19 @@ input.search:focus-visible {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  border: 1px solid var(--web-hairline);
-  background: var(--web-surface);
-  color: var(--web-clay-text);
-  border-radius: var(--web-radius-control);
+  border: 1px solid var(--gat-web-hairline);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-clay-text);
+  border-radius: var(--gat-web-radius-control);
   padding: 0.2rem 0.6rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .doc-remove:hover {
-  border-color: var(--web-chart-clay);
-  background: color-mix(in srgb, var(--web-chart-clay) 10%, white);
+  border-color: var(--gat-web-chart-5);
+  background: color-mix(in srgb, var(--gat-web-chart-5) 10%, white);
 }
 .doc-empty {
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-style: italic;
 }
 .doc-clear-zeile {
@@ -1029,12 +782,12 @@ input.search:focus-visible {
    Risiko-Toenung statt der gruenen Sekundaerfarbe und die Feingroesse. */
 .doc-clear-btn {
   font-size: 0.85rem;
-  border-color: var(--web-clay-text);
-  color: var(--web-clay-text);
+  border-color: var(--gat-web-clay-text);
+  color: var(--gat-web-clay-text);
 }
 .doc-clear-btn:hover {
-  background: var(--web-clay-text);
-  border-color: var(--web-clay-text);
+  background: var(--gat-web-clay-text);
+  border-color: var(--gat-web-clay-text);
   color: var(--gat-color-weiss);
 }
 .persist-note {
@@ -1046,18 +799,18 @@ input.search:focus-visible {
 .toast {
   font-size: 0.85rem;
   padding: 0.5rem 0.85rem;
-  border-radius: var(--web-radius-control);
+  border-radius: var(--gat-web-radius-control);
   margin: 0.6rem 0;
 }
 .toast.ok {
-  background: var(--web-green-tint);
-  border: 1px solid color-mix(in srgb, var(--web-green) 45%, var(--web-hairline));
-  color: var(--web-green-deep);
+  background: var(--gat-web-green-tint);
+  border: 1px solid color-mix(in srgb, var(--gat-web-green) 45%, var(--gat-web-hairline));
+  color: var(--gat-web-green-deep);
 }
 .toast.fehl {
-  background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
-  border: 1px solid color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
-  color: var(--web-clay-text);
+  background: color-mix(in srgb, var(--gat-web-chart-5) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--gat-web-chart-5) 45%, var(--gat-web-hairline));
+  color: var(--gat-web-clay-text);
 }
 
 /* --- Geldfluss-Sankey: Drill-down-Leiste --------------------------------- */
@@ -1089,35 +842,16 @@ input.search:focus-visible {
 /* ===========================================================================
    6. REDUZIERTE BEWEGUNG
    ===========================================================================
-   Wer im Betriebssystem reduzierte Bewegung verlangt, bekommt keine
-   CSS-Uebergaenge und keine Animationen mehr: Hover-/Fokus-/Active-Wechsel
-   der Bedienelemente, der Fortschrittsbalken, die Dropzone, der Aufklapp-
-   Pfeil der Dokumentverwaltung, die Tableisten-Optik sowie die Einblend-
-   Animation des Tab-Panel-Wechsels greifen dann ohne Zeitverlauf. Die
-   animation-duration-Regel deckt auch tab-panel-ein ab. Gilt fuer app.css
-   und dashboard.css gemeinsam. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    transition-delay: 0ms !important;
-    animation-duration: 0.01ms !important;
-    animation-delay: 0ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-  }
-}
+   DS v2.0 liefert den globalen Block (alle transitions/animations auf
+   0.01ms). Keine App-eigene Schicht mehr noetig. */
 
 /* ===========================================================================
    7. DRUCK-STYLESHEET
    ===========================================================================
-   Beim Ausdruck einer Auswertung zaehlt der Inhalt, nicht die Bedienung.
-   Ausgeblendet werden Upload/Dokumentverwaltung, der Dokument-Umschalter,
-   die Tableiste und das Mehrjahres-Overlay. Der aktive Tab (nur
-   .tab-panel.is-active ist sichtbar) wird ruhig in Schwarz auf Weiss
-   gesetzt; Panels und Tabellenzeilen brechen sinnvoll ueber Seiten um.
-   Die Markenleiste bleibt als schlichte Kopfzeile erhalten. */
+   DS v2.0 deckt Header/Panel/Metric-Card-Druck-Defaults global ab. Hier
+   nur App-spezifische Drucksicht-Anpassungen: Bedienflaechen ausblenden
+   (Dropzone, Doc-Manager, MJ-Overlay, Sankey-Bar, Footer), volle
+   Seitenbreite, Section-Head-Umbruch, Sankey-Hoehe-Cap. */
 @media print {
   body {
     background: #ffffff;
@@ -1136,48 +870,14 @@ input.search:focus-visible {
     display: none !important;
   }
 
-  /* Markenleiste ist bereits weiss — fuer den Ausdruck nur Schatten und
-     gruene Akzentlinie auf eine schlichte schwarze Linie reduzieren und
-     die Navigationszone ausblenden. Das Logo bleibt als Kopfzeichen. */
-  .web-brandbar {
-    background: #ffffff;
-    border-bottom: 1px solid #000000;
-    box-shadow: none;
-  }
-  .web-brandbar__wordmark {
-    color: #000000;
-  }
-  .web-brandbar__nav {
-    display: none;
-  }
-  .gat-header__inner {
-    padding-block: 0.5rem;
-  }
-
   /* Voller Lesebereich statt zentrierter Bildschirmbreite. */
   .page {
     max-width: none;
     padding-inline: 0;
   }
 
-  /* Ruhiges Schwarz-auf-Weiss: Karten/Panels ohne Schatten, mit einer
-     duennen Linie zur Abgrenzung. */
-  .web-panel,
-  .metric-card {
-    box-shadow: none;
-    border: 1px solid #999999;
-    break-inside: avoid;
-  }
-  .metric-card--hero {
-    background: #ffffff;
-  }
-  .metric-card::before {
-    display: none;
-  }
-
   /* Panels und Tabellenzeilen brechen sauber ueber Seiten um. */
-  .web-section-head,
-  .web-panel__head {
+  .gat-section-head {
     break-inside: avoid;
     break-after: avoid;
   }
