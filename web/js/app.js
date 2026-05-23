@@ -10,6 +10,7 @@ import * as mupdf from "../vendor/mupdf/mupdf.js"
 import sqlite3InitModule from "../vendor/sqlite-wasm/sqlite3.mjs"
 import {
   oeffneDb, dokumente, dokumentEntfernen, persistenzLeeren,
+  migrationenAnwenden,
 } from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
 import { baueDashboard } from "./dashboard-app.js"
@@ -39,6 +40,9 @@ async function init() {
   const schema = await fetch("./schema.sql").then((r) => r.text())
   db = await oeffneDb(sqlite3InitModule)
   db.schemaAnwenden(schema)
+  // Migrationen, die `CREATE IF NOT EXISTS` nicht abdeckt (z. B. ALTER TABLE
+  // bei einer bereits gefuellten IndexedDB-DB): siehe migrationenAnwenden().
+  migrationenAnwenden(db)
 
   const note = document.getElementById("persist-note")
   note.textContent = db.persistent
@@ -233,13 +237,26 @@ function zeichneDokumentliste() {
   for (const d of rows) {
     const tr = document.createElement("tr")
     const status = leseStatus(d.dokument_id)
+    const einwohnerWert = d.einwohner == null ? "" : String(d.einwohner)
+    const dokLabel = `${escapeHtml(d.typ)} ${d.finanzjahr ?? ""}`
     tr.innerHTML = `
-      <td>${escapeHtml(d.typ)} ${d.finanzjahr ?? ""}</td>
+      <td>${dokLabel}</td>
       <td>${escapeHtml(d.quelldatei)}</td>
       <td class="num">${d.detailposten.toLocaleString("de-DE")}</td>
+      <td><input type="number" class="doc-einwohner-input"
+            data-id="${d.dokument_id}" value="${escapeHtml(einwohnerWert)}"
+            min="0" step="1"
+            aria-label="Einwohnerzahl (Variante A — Inline)"></td>
       <td>${statusBadge(status)}</td>
-      <td><button class="doc-remove" data-id="${d.dokument_id}">
-        entfernen</button></td>`
+      <td>
+        <button class="doc-edit-btn" data-id="${d.dokument_id}"
+          data-doklabel="${dokLabel}"
+          data-einwohner="${escapeHtml(einwohnerWert)}"
+          aria-label="Einwohnerzahl bearbeiten (Variante B — Dialog)">
+          bearbeiten</button>
+        <button class="doc-remove" data-id="${d.dokument_id}">
+          entfernen</button>
+      </td>`
     tbody.appendChild(tr)
   }
   for (const btn of tbody.querySelectorAll(".doc-remove")) {
@@ -253,6 +270,91 @@ function zeichneDokumentliste() {
       location.reload()
     })
   }
+  // Variante A (Inline-Eingabe): change schreibt den Wert direkt und
+  // re-rendert das Dashboard, damit Pro-Kopf-Zeilen sofort erscheinen.
+  for (const input of tbody.querySelectorAll(".doc-einwohner-input")) {
+    input.addEventListener("change", async () => {
+      await speichereEinwohner(Number(input.dataset.id), input.value)
+      // Den daneben sitzenden Edit-Knopf auch aktualisieren, damit beim
+      // spaeteren Oeffnen des Dialogs der jetzt gesetzte Wert vorbelegt ist.
+      const editBtn = tbody.querySelector(
+        `.doc-edit-btn[data-id="${input.dataset.id}"]`,
+      )
+      if (editBtn) editBtn.dataset.einwohner = input.value
+    })
+  }
+  // Variante B (Dialog): Klick auf Bearbeiten oeffnet den Dialog mit dem
+  // aktuellen Wert vorbelegt; Speichern schreibt und schliesst.
+  for (const btn of tbody.querySelectorAll(".doc-edit-btn")) {
+    btn.addEventListener("click", () => oeffneEinwohnerDialog(btn))
+  }
+}
+
+// Den Einwohner-Wert eines Dokuments in die DB schreiben (oder loeschen,
+// wenn das Feld leer ist), sichern, und das Dashboard neu zeichnen.
+async function speichereEinwohner(dokId, rohwert) {
+  const text = String(rohwert ?? "").trim()
+  const wert = text === "" ? null : Math.max(0, Math.round(Number(text)))
+  if (text !== "" && (!Number.isFinite(wert) || wert < 0)) return
+  db.ausfuehren(
+    "UPDATE dokument SET einwohner=? WHERE dokument_id=?",
+    [wert, dokId],
+  )
+  await db.sichern()
+  // Inline-Felder und Edit-Buttons in der Dokumentliste aktualisieren,
+  // damit der neue Wert nach dem Dialog-Save auch im Inline-Feld erscheint.
+  // Auf gezielte DOM-Updates statt rebuild der Liste setzen — das laesst
+  // Inline-Fokus und Tab-Zustand erhalten.
+  const input = document.querySelector(
+    `.doc-einwohner-input[data-id="${dokId}"]`,
+  )
+  if (input && document.activeElement !== input) {
+    input.value = wert == null ? "" : String(wert)
+  }
+  const editBtn = document.querySelector(
+    `.doc-edit-btn[data-id="${dokId}"]`,
+  )
+  if (editBtn) editBtn.dataset.einwohner = wert == null ? "" : String(wert)
+  zeichneDashboard()
+}
+
+// Den Einwohner-Dialog (Variante B) mit dem aktuellen Wert eines Dokuments
+// oeffnen. Submit speichert; "Abbrechen" verwirft.
+function oeffneEinwohnerDialog(btn) {
+  const dialog = document.getElementById("doc-einwohner-dialog")
+  const input = document.getElementById("dlg-einwohner")
+  const sub = document.getElementById("doc-einwohner-sub")
+  if (!dialog || !input || typeof dialog.showModal !== "function") return
+  const dokId = Number(btn.dataset.id)
+  const aktuell = btn.dataset.einwohner || ""
+  input.value = aktuell
+  if (sub) sub.textContent = btn.dataset.doklabel || ""
+  // Etwaige vorhergehende Bindung aufloesen, bevor neu gebunden wird.
+  const form = document.getElementById("doc-einwohner-form")
+  const abbrechenBtn = document.getElementById("doc-einwohner-cancel")
+  if (form && form.__a7handler) {
+    form.removeEventListener("submit", form.__a7handler)
+  }
+  if (abbrechenBtn && abbrechenBtn.__a7handler) {
+    abbrechenBtn.removeEventListener("click", abbrechenBtn.__a7handler)
+  }
+  const onSubmit = async (ev) => {
+    ev.preventDefault()
+    await speichereEinwohner(dokId, input.value)
+    dialog.close("confirm")
+  }
+  const onCancel = () => dialog.close("cancel")
+  if (form) {
+    form.addEventListener("submit", onSubmit)
+    form.__a7handler = onSubmit
+  }
+  if (abbrechenBtn) {
+    abbrechenBtn.addEventListener("click", onCancel)
+    abbrechenBtn.__a7handler = onCancel
+  }
+  dialog.showModal()
+  // Den Fokus in das Eingabefeld setzen, damit der Wert direkt editierbar ist.
+  requestAnimationFrame(() => input.focus())
 }
 
 // Einklappbare Dokumentverwaltung: Offen-/Zu-Zustand und Summenzeile.

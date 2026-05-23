@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS dokument (
     fassung          TEXT,      -- z. B. 'Auflage'
     quelldatei       TEXT,
     seiten           INTEGER,
-    eingelesen_am    TEXT DEFAULT (datetime('now'))
+    eingelesen_am    TEXT DEFAULT (datetime('now')),
+    einwohner        INTEGER       -- optionale Einwohnerzahl fuer Pro-Kopf-Sichten (R5)
 );
 
 -- ===========================================================================

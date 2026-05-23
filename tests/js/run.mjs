@@ -255,6 +255,336 @@ async function teste() {
   )
   pruefe("CFG: trend_charts vorhanden", "trend_eck" in cfg.trend_charts)
 
+  // R5 — dokumente() liefert einwohner-Feld (Default null bei Fixtures).
+  pruefe(
+    "DATA: dokumente[0] hat einwohner-Feld",
+    daten.dokumente.length > 0 && "einwohner" in daten.dokumente[0],
+    JSON.stringify(Object.keys(daten.dokumente[0] || {})),
+  )
+  pruefe(
+    "DATA: einwohner ist null bei frisch importierten Fixtures",
+    daten.dokumente.every((d) => d.einwohner === null),
+  )
+
+  // R10 — agg.einnahmen[i] ist ein 3-Tuple [bezeichnung, betrag, anteil].
+  const ersterAgg = daten.aggregate[String(daten.meta.default_dok)]
+  const ersteEinnahme = ersterAgg && ersterAgg.einnahmen[0]
+  pruefe(
+    "agg.einnahmen[0] ist 3-Tuple",
+    Array.isArray(ersteEinnahme) && ersteEinnahme.length === 3,
+    JSON.stringify(ersteEinnahme),
+  )
+  pruefe(
+    "agg.einnahmen[0][2] ist eine Zahl (Prozent)",
+    typeof ersteEinnahme[2] === "number" && ersteEinnahme[2] >= 0,
+    String(ersteEinnahme && ersteEinnahme[2]),
+  )
+
+  // R5 — migrationenAnwenden ist idempotent: zweimaliger Aufruf wirft nicht.
+  let migrationOk = true
+  try {
+    const { migrationenAnwenden } = await import("../../web/js/db.js")
+    migrationenAnwenden(db)
+    migrationenAnwenden(db)
+  } catch (e) {
+    migrationOk = false
+  }
+  pruefe("migrationenAnwenden ist idempotent (doppelter Aufruf wirft nicht)",
+    migrationOk)
+
+  // R5 — Pro-Kopf-Felder kommen aus aggregateDok, sobald einwohner gesetzt.
+  // einwohner direkt setzen und collect() erneut aufrufen.
+  db.ausfuehren(
+    `UPDATE dokument SET einwohner=9000 WHERE dokument_id=?`,
+    [Number(daten.meta.default_dok)],
+  )
+  const datenPK = collect(db)
+  const dokMitEW = datenPK.dokumente.find(
+    (d) => String(d.id) === String(datenPK.meta.default_dok),
+  )
+  pruefe("DATA: einwohner persistent gesetzt", dokMitEW.einwohner === 9000,
+    String(dokMitEW.einwohner))
+
+  // R1 — Vergleichssummen und Prozent-Delta sind im eckwerte-Block.
+  const eckMitEW = datenPK.aggregate[String(datenPK.meta.default_dok)]
+    .eckwerte
+  pruefe(
+    "agg.eckwerte.ertraege_vgl ist eine Zahl",
+    typeof eckMitEW.ertraege_vgl === "number",
+    String(eckMitEW.ertraege_vgl),
+  )
+  pruefe(
+    "agg.eckwerte.aufwand_vgl ist eine Zahl",
+    typeof eckMitEW.aufwand_vgl === "number",
+    String(eckMitEW.aufwand_vgl),
+  )
+  pruefe(
+    "agg.eckwerte.delta_ertraege_proz ist eine Zahl",
+    typeof eckMitEW.delta_ertraege_proz === "number",
+    String(eckMitEW.delta_ertraege_proz),
+  )
+  pruefe(
+    "agg.eckwerte.delta_aufwand_proz ist eine Zahl",
+    typeof eckMitEW.delta_aufwand_proz === "number",
+    String(eckMitEW.delta_aufwand_proz),
+  )
+
+  // R5 — Pro-Kopf-Felder erscheinen, sobald einwohner > 0.
+  pruefe(
+    "agg.eckwerte.ertraege_pk ist eine Zahl bei gesetzter Einwohnerzahl",
+    typeof eckMitEW.ertraege_pk === "number",
+    String(eckMitEW.ertraege_pk),
+  )
+  pruefe(
+    "agg.eckwerte.aufwand_pk ist eine Zahl bei gesetzter Einwohnerzahl",
+    typeof eckMitEW.aufwand_pk === "number",
+    String(eckMitEW.aufwand_pk),
+  )
+  pruefe(
+    "agg.eckwerte.netto_pk ist eine Zahl bei gesetzter Einwohnerzahl",
+    typeof eckMitEW.netto_pk === "number",
+    String(eckMitEW.netto_pk),
+  )
+  // R5 — Pro-Kopf bleibt null bei Dokumenten ohne einwohner.
+  const andereDokId = datenPK.dokumente.find(
+    (d) => String(d.id) !== String(datenPK.meta.default_dok),
+  ).id
+  const eckOhneEW = datenPK.aggregate[String(andereDokId)].eckwerte
+  pruefe(
+    "agg.eckwerte.ertraege_pk ist null ohne Einwohnerzahl",
+    eckOhneEW.ertraege_pk === null,
+    String(eckOhneEW.ertraege_pk),
+  )
+
+  // R2 — Finanzierung-Block und Schuldendienst.
+  const fin = datenPK.aggregate[String(datenPK.meta.default_dok)]
+    .finanzierung
+  pruefe(
+    "agg.finanzierung hat Aufnahme/Tilgung/Schuldendienst",
+    fin && typeof fin.aufnahme === "number" &&
+      typeof fin.tilgung === "number" &&
+      typeof fin.schuldendienst === "number",
+    JSON.stringify(fin),
+  )
+  pruefe(
+    "agg.eckwerte.schuldendienst ist eine Zahl",
+    typeof eckMitEW.schuldendienst === "number",
+    String(eckMitEW.schuldendienst),
+  )
+  // R2 — trend.schuldenstand: Array, kumulativ konsistent.
+  const stand = datenPK.trend.schuldenstand
+  pruefe(
+    "trend.schuldenstand ist ein Array",
+    Array.isArray(stand) && stand.length > 0,
+    String(stand && stand.length),
+  )
+  let kumOk = true
+  let kum = 0
+  for (const [, auf, til, st] of stand) {
+    kum += (auf || 0) - (til || 0)
+    if (Math.abs(kum - st) > 1) { kumOk = false; break }
+  }
+  pruefe(
+    "trend.schuldenstand: kumulierter Stand entspricht Aufnahme - Tilgung",
+    kumOk, "Drift in einer Zeile",
+  )
+
+  // R12 — Investitions-Finanzierung: Foerderung + Darlehen + Eigen >= 0.
+  const invFin = datenPK.aggregate[String(datenPK.meta.default_dok)]
+    .investFinanzierung
+  pruefe(
+    "agg.investFinanzierung hat Foerderung/Darlehen/Eigen",
+    invFin && typeof invFin.foerderung === "number" &&
+      typeof invFin.darlehen === "number" &&
+      typeof invFin.eigen === "number",
+    JSON.stringify(invFin),
+  )
+  pruefe(
+    "agg.investFinanzierung: alle Komponenten >= 0",
+    invFin.foerderung >= 0 && invFin.darlehen >= 0 && invFin.eigen >= 0,
+    JSON.stringify(invFin),
+  )
+
+  // Neue Charts sind in alleCharts() registriert.
+  const cfg2 = alleCharts(datenPK)
+  const ersterDokSchluessel = Object.keys(cfg2.dok_charts)[0]
+  const ersterDok = cfg2.dok_charts[ersterDokSchluessel]
+  pruefe(
+    "CFG: dok_charts hat fin_saeulen, fin_combo, investfin_a, investfin_b",
+    "fin_saeulen" in ersterDok && "fin_combo" in ersterDok &&
+      "investfin_a" in ersterDok && "investfin_b" in ersterDok,
+  )
+  pruefe(
+    "CFG: trend_charts hat schuldenstand",
+    "schuldenstand" in cfg2.trend_charts,
+  )
+
+  // R3 — sollIst befuellt bei RA, undefined bei VA.
+  const raDok = datenPK.dokumente.find((d) => d.typ === "RA")
+  const vaDok = datenPK.dokumente.find((d) => d.typ === "VA")
+  if (raDok) {
+    const ag = datenPK.aggregate[String(raDok.id)]
+    pruefe(
+      "agg.sollIst ist Array bei RA-Dokument",
+      Array.isArray(ag.sollIst),
+      typeof ag.sollIst,
+    )
+  }
+  if (vaDok) {
+    const ag = datenPK.aggregate[String(vaDok.id)]
+    pruefe(
+      "agg.sollIst ist undefined bei VA-Dokument",
+      ag.sollIst === undefined,
+      String(ag.sollIst),
+    )
+  }
+  // R4 — polster befuellt bei VA, undefined bei RA.
+  if (vaDok) {
+    const ag = datenPK.aggregate[String(vaDok.id)]
+    pruefe(
+      "agg.polster ist Array bei VA-Dokument",
+      Array.isArray(ag.polster),
+      typeof ag.polster,
+    )
+  }
+  if (raDok) {
+    const ag = datenPK.aggregate[String(raDok.id)]
+    pruefe(
+      "agg.polster ist undefined bei RA-Dokument",
+      ag.polster === undefined,
+      String(ag.polster),
+    )
+  }
+  // CFG enthaelt die vier neuen Variante-Keys je Dokument.
+  pruefe(
+    "CFG: dok_charts hat sollist_a, sollist_b, polster_a, polster_b",
+    "sollist_a" in ersterDok && "sollist_b" in ersterDok &&
+      "polster_a" in ersterDok && "polster_b" in ersterDok,
+  )
+
+  // R6/R7 — gruppen + gruppenSaldo
+  const aggBase = datenPK.aggregate[String(datenPK.meta.default_dok)]
+  pruefe(
+    "agg.gruppen ist nicht leer",
+    Array.isArray(aggBase.gruppen) && aggBase.gruppen.length > 0,
+    String(aggBase.gruppen && aggBase.gruppen.length),
+  )
+  pruefe(
+    "agg.gruppenSaldo ist Array mit 5-Tuples [gr,gr_text,ein,aus,saldo]",
+    Array.isArray(aggBase.gruppenSaldo) &&
+      aggBase.gruppenSaldo.every((r) => r.length === 5),
+    JSON.stringify(aggBase.gruppenSaldo && aggBase.gruppenSaldo[0]),
+  )
+
+  // R8 — einEuroAuf und einEuroEin summieren sich auf 100 +/- 1.
+  pruefe(
+    "agg.einEuroAuf ist Array",
+    Array.isArray(aggBase.einEuroAuf) && aggBase.einEuroAuf.length > 0,
+  )
+  const sumAus = aggBase.einEuroAuf.reduce((s, [, c]) => s + c, 0)
+  pruefe(
+    "agg.einEuroAuf: Summe = 100 +/- 1 (Rundung)",
+    Math.abs(sumAus - 100) <= 1,
+    String(sumAus),
+  )
+  const sumEin = aggBase.einEuroEin.reduce((s, [, c]) => s + c, 0)
+  pruefe(
+    "agg.einEuroEin: Summe = 100 +/- 1 (Rundung)",
+    Math.abs(sumEin - 100) <= 1,
+    String(sumEin),
+  )
+
+  // CFG enthaelt die neuen Variante-Keys.
+  pruefe(
+    "CFG: dok_charts hat gruppen_balken, gruppen_saldo",
+    "gruppen_balken" in ersterDok && "gruppen_saldo" in ersterDok,
+  )
+  pruefe(
+    "CFG: dok_charts hat eineuro_aus_a/b und eineuro_ein_a/b",
+    "eineuro_aus_a" in ersterDok && "eineuro_aus_b" in ersterDok &&
+      "eineuro_ein_a" in ersterDok && "eineuro_ein_b" in ersterDok,
+  )
+
+  // R9 — Bindungs-Aggregation und Pflichtumlagen-Helper.
+  const { istPflichtumlage } = await import(
+    "../../web/js/dashboard-data.js"
+  )
+  pruefe(
+    "istPflichtumlage('Sozialhilfeumlage') -> true",
+    istPflichtumlage("Sozialhilfeumlage") === true,
+  )
+  pruefe(
+    "istPflichtumlage('NOEKAS-Beitrag') -> true (Umlaut-variante)",
+    istPflichtumlage("NÖKAS-Beitrag") === true ||
+      istPflichtumlage("Nokas-Beitrag") === true,
+  )
+  pruefe(
+    "istPflichtumlage('Sachaufwand') -> false",
+    istPflichtumlage("Sachaufwand") === false,
+  )
+  pruefe(
+    "istPflichtumlage(null) -> false (defensive)",
+    istPflichtumlage(null) === false,
+  )
+
+  const bindung = aggBase.bindung
+  const erwarteteSchluessel = [
+    "personal", "pflichtumlagen", "finanz",
+    "freiwilligeTransfers", "freieSachaus", "unklar",
+  ]
+  pruefe(
+    "agg.bindung hat alle sechs Schluessel",
+    bindung && erwarteteSchluessel.every((k) => k in bindung),
+    JSON.stringify(bindung && Object.keys(bindung)),
+  )
+  pruefe(
+    "agg.bindung: alle Komponenten >= 0",
+    bindung && erwarteteSchluessel.every((k) => bindung[k] >= 0),
+    JSON.stringify(bindung),
+  )
+
+  pruefe(
+    "CFG: dok_charts hat bindung_a, bindung_b",
+    "bindung_a" in ersterDok && "bindung_b" in ersterDok,
+  )
+
+  // R11 — Sankey-Abschlussknoten: bei Ueberschuss "Ueberschuss /
+  // Ruecklagenzufuhr" als Knoten, bei Abgang "Abgangsdeckung".
+  const { chartSankey } = await import("../../web/js/dashboard-charts.js")
+  const sankeyMitUeberschuss = chartSankey({
+    eckwerte: { ertraege: 1000, aufwand: 600, netto: 400, komm: 0 },
+    sankey: { quellen: [], gruppen: [] },
+  })
+  pruefe(
+    "chartSankey: Ueberschuss-Knoten bei netto > 0",
+    sankeyMitUeberschuss.series[0].data.some(
+      (n) => n.name === "Ueberschuss / Ruecklagenzufuhr",
+    ),
+  )
+  const sankeyMitAbgang = chartSankey({
+    eckwerte: { ertraege: 600, aufwand: 1000, netto: -400, komm: 0 },
+    sankey: { quellen: [], gruppen: [] },
+  })
+  pruefe(
+    "chartSankey: Abgangsdeckung-Knoten bei netto < 0",
+    sankeyMitAbgang.series[0].data.some((n) => n.name === "Abgangsdeckung"),
+  )
+
+  // R11 — Sankey-Drill-down hat ebenfalls den Abschlussknoten.
+  const defaultDokId = String(datenPK.meta.default_dok)
+  const sUebersichtNeu = buildSankeyOption(datenPK.posten, defaultDokId, null)
+  const sSerieNeu = sUebersichtNeu.series[0]
+  const istAbschluss = sSerieNeu.data.some(
+    (n) =>
+      n.name === "Ueberschuss / Ruecklagenzufuhr" ||
+      n.name === "Abgangsdeckung",
+  )
+  pruefe(
+    "buildSankeyOption: Abschlussknoten (Ueberschuss/Abgang) ist vorhanden",
+    istAbschluss,
+    JSON.stringify(sSerieNeu.data.map((n) => n.name)),
+  )
+
   console.log("\nsankey-drill — Geldfluss-Drill-down")
   // quelleVonPosten — Portierung der CASE-Logik aus dashboard-data.js.
   pruefe(
@@ -370,10 +700,20 @@ async function teste() {
     gEinnahmeseite.length + " vs " + quelleKnoten.length,
   )
   // Betragstreue: die Kinder-Links summieren sich zum Betrag der Gruppe.
+  // R11 fuegt ggf. einen "Ueberschuss / Ruecklagenzufuhr"-Link vom
+  // Gemeindehaushalt hinzu — der gehoert nicht zu den Aufgabengruppen
+  // und wird hier ausgeschlossen.
+  const ABSCHLUSS_NAMEN = new Set([
+    "Ueberschuss / Ruecklagenzufuhr",
+    "Abgangsdeckung",
+  ])
   function gruppenSumme(serie) {
     return Math.round(
       serie.links
-        .filter((l) => l.source === "Gemeindehaushalt")
+        .filter((l) =>
+          l.source === "Gemeindehaushalt" &&
+          !ABSCHLUSS_NAMEN.has(l.target),
+        )
         .reduce((s, l) => s + l.value, 0),
     )
   }
@@ -393,9 +733,13 @@ async function teste() {
   })
   const qSerie = sQuelle.series[0]
   function quellenSumme(serie) {
+    // R11: "Abgangsdeckung" zaehlt nicht als Einnahmequelle.
     return Math.round(
       serie.links
-        .filter((l) => l.target === "Gemeindehaushalt")
+        .filter((l) =>
+          l.target === "Gemeindehaushalt" &&
+          !ABSCHLUSS_NAMEN.has(l.source),
+        )
         .reduce((s, l) => s + l.value, 0),
     )
   }

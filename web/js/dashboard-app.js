@@ -10,7 +10,7 @@
 // auf, sodass Upload-Oberflaeche und Dashboard auf einer Seite dieselben
 // Daten teilen.
 
-import { collect } from "./dashboard-data.js"
+import { collect, istPflichtumlage } from "./dashboard-data.js"
 import { alleCharts } from "./dashboard-charts.js"
 import { buildSankeyOption } from "./sankey-drill.js"
 
@@ -38,6 +38,9 @@ export function baueDashboard(db) {
   // Sankey-Drill-down-Builder global bereitstellen — dashboard.js ist ein
   // klassisches Skript und kann nicht importieren.
   window.buildSankeyOption = buildSankeyOption
+  // R9 — Pflichtumlagen-Heuristik einmalig zentralisiert (statt inline
+  // duplizierter Regex in dashboard.js).
+  window.istPflichtumlage = istPflichtumlage
   ladeDashboardLogik()
   return true
 }

@@ -83,6 +83,7 @@
                 <th>Dokument</th>
                 <th>Quelldatei</th>
                 <th class="num">Detailposten</th>
+                <th>Einwohner:innen (A)</th>
                 <th>Pruefstatus</th>
                 <th></th>
               </tr>
@@ -115,6 +116,7 @@
         <button class="tab-btn" data-tab="ausgaben">Ausgaben</button>
         <button class="tab-btn" data-tab="investitionen">Investitionen</button>
         <button class="tab-btn" data-tab="transfers">Transfers &amp; Umlagen</button>
+        <button class="tab-btn" data-tab="schulden">Schulden &amp; Finanzierung</button>
         <button class="tab-btn" data-tab="sparpotenzial">Sparpotenzial</button>
         <button class="tab-btn" data-tab="suche">Suche &amp; Daten</button>
       </div>
@@ -129,19 +131,81 @@
           Ergebnis zusammensetzen; die uebrigen Tabs schluesseln Einnahmen,
           Ausgaben und Spielraeume weiter auf.</p>
       </div>
+
+      <!-- R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?".
+           Variante A: 100-%-Stapelbalken; Variante B: 10x10-Piktogramm-
+           Raster (ECharts pie mit 100 gleichgrossen Slices). Beide
+           nebeneinander, damit der User die Form online vergleichen kann. -->
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Wofuer geht 1 Euro? (100-%-Stapelbalken)</h3>
+            <p class="web-panel__note">Aufwandsaufteilung auf 100 Cent
+              normalisiert. Personal, Sachaufwand, Transfers, Finanz,
+              Sonstige in semantischer Farbe.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_aus_a" class="dash-chart" style="height:220px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Wofuer geht 1 Euro? (10x10 Piktogramm)</h3>
+            <p class="web-panel__note">100 gleichgrosse Felder, je
+              Kategorie eingefaerbt — anschaulicher, aber raumgreifender.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_aus_b" class="dash-chart" style="height:320px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Wofuer kommen 100 Euro herein? (100-%-Stapel)</h3>
+            <p class="web-panel__note">Einnahmenseite auf 100 Cent
+              normalisiert: Kommunalsteuer, Ertragsanteile, Gebuehren,
+              Transfers, Sonstige.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_ein_a" class="dash-chart" style="height:220px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Wofuer kommen 100 Euro herein? (10x10 Piktogramm)</h3>
+            <p class="web-panel__note">Pendant zum Pikto-Raster oben,
+              fuer die Einnahmenseite.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_eineuro_ein_b" class="dash-chart" style="height:320px"></div>
+          </div>
+        </section>
+      </div>
+
       <div class="stats">
         <div class="stat metric-card metric-card--ertrag">
           <div class="stat-label">Ertraege</div>
-          <div class="stat-num" id="st-ertraege"></div></div>
+          <div class="stat-num" id="st-ertraege"></div>
+          <div class="stat-delta" id="st-ertraege-delta" hidden></div>
+          <div class="stat-pk" id="st-ertraege-pk" hidden></div>
+        </div>
         <div class="stat metric-card metric-card--aufwand">
           <div class="stat-label">Aufwendungen</div>
-          <div class="stat-num" id="st-aufwand"></div></div>
+          <div class="stat-num" id="st-aufwand"></div>
+          <div class="stat-delta" id="st-aufwand-delta" hidden></div>
+          <div class="stat-pk" id="st-aufwand-pk" hidden></div>
+        </div>
         <div class="stat metric-card metric-card--netto">
           <div class="stat-label">Nettoergebnis</div>
-          <div class="stat-num" id="st-netto"></div></div>
+          <div class="stat-num" id="st-netto"></div>
+          <div class="stat-delta" id="st-netto-delta" hidden></div>
+          <div class="stat-pk" id="st-netto-pk" hidden></div>
+        </div>
         <div class="stat metric-card metric-card--hero">
           <div class="stat-label">Kommunalsteuer-Anteil</div>
-          <div class="stat-num" id="st-komm-anteil"></div></div>
+          <div class="stat-num" id="st-komm-anteil"></div>
+          <div class="stat-delta" id="st-komm-anteil-delta" hidden></div>
+          <div class="stat-pk" id="st-komm-pk" hidden></div>
+        </div>
       </div>
       <section class="web-panel">
         <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
@@ -216,6 +280,35 @@
           Personal und Pflichttransfers sind kurzfristig kaum beweglich — der
           Ermessensspielraum steckt im Sachaufwand.</p>
       </div>
+
+      <!-- R6 — Aufgabenbereiche als sortierte Balken (Erstrang).
+           Laengen sind leichter vergleichbar als Flaechen. Treemap rueckt
+           weiter unten als sekundaere Detailsicht. -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Aufwand nach Aufgabenbereich (sortierte Balken)</h3>
+          <p class="web-panel__note">Horizontales Ranking — Laengen sind
+            leichter vergleichbar als Flaechen. Die Treemap unten zeigt
+            zusaetzlich die Ansatz-Ebene.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_gruppen_balken" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+
+      <!-- R7 — Saldo je Aufgabenbereich (zweiseitig). -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Saldo je Aufgabenbereich (Einnahmen &minus; Ausgaben)</h3>
+          <p class="web-panel__note">Welcher Bereich traegt sich selbst,
+            welcher ist ein Zuschussbereich? Gruen = Ueberschuss,
+            Clay = Zuschussbereich.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_gruppen_saldo" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+
       <div class="dash-grid">
         <section class="web-panel">
           <div class="web-panel__head"><h3>Aufwand nach Art</h3></div>
@@ -224,7 +317,9 @@
           </div>
         </section>
         <section class="web-panel">
-          <div class="web-panel__head"><h3>Aufwand nach Aufgabenbereich</h3></div>
+          <div class="web-panel__head">
+            <h3>Aufwand nach Aufgabenbereich (Treemap — Detailsicht)</h3>
+          </div>
           <div class="web-panel__body">
             <div id="c_treemap" class="dash-chart" style="height:340px"></div>
           </div>
@@ -310,19 +405,149 @@
       </section>
     </section>
 
+    <section class="tab-panel" data-panel="schulden">
+      <div class="web-section-head">
+        <h2>Schulden &amp; Finanzierung</h2>
+        <p>Wie viel Kredit nimmt die Gemeinde auf, wie viel tilgt sie? Wie
+          teuer ist der Schuldendienst (Tilgung + Zinsen)? Diese Sicht nutzt
+          erstmals die Daten zur <strong>Finanzierungstaetigkeit</strong>
+          (<code>gebarung = "finanzierung"</code>) und kumuliert ueber alle
+          eingelesenen Dokumente.</p>
+      </div>
+      <div class="stats stats--einspalt">
+        <div class="stat metric-card metric-card--aufwand">
+          <div class="stat-label">Schuldendienst (Tilgung + Zinsen)</div>
+          <div class="stat-num" id="st-schuldendienst"></div>
+          <div class="stat-pk" id="st-schuldendienst-pk" hidden></div>
+        </div>
+      </div>
+
+      <!-- R2 Variante A: drei separate Panels (Aufnahme/Tilgung, Stand-Linie) -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Variante A · Aufnahme vs. Tilgung (Saeulen)</h3>
+          <p class="web-panel__note">Saeulen fuer das gewaehlte Dokument:
+            Darlehensaufnahme (Einnahme) und Tilgung (Ausgabe) aus
+            <code>gebarung = "finanzierung"</code>.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_fin_saeulen" class="dash-chart" style="height:440px"></div>
+        </div>
+      </section>
+
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Variante A · Schuldenstand kumuliert (Linie)</h3>
+          <p class="web-panel__note">Kumulierte Netto-Veraenderung
+            (Aufnahme &minus; Tilgung) ueber alle Dokumente.
+            <strong>Kein Bilanzstichtags-Stand</strong> — nur die kumulative
+            Bewegung aus den eingelesenen Dokumenten.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_schuldenstand" class="dash-chart" style="height:440px"></div>
+        </div>
+      </section>
+
+      <!-- R2 Variante B: Combo-Chart Saeulen + Linie auf zwei y-Achsen -->
+      <section class="web-panel">
+        <div class="web-panel__head">
+          <h3>Variante B · Aufnahme/Tilgung + Stand (Combo)</h3>
+          <p class="web-panel__note">Saeulen Aufnahme/Tilgung pro Dokument,
+            Linie kumulierter Stand auf zweiter y-Achse — alles in einem
+            Chart.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_fin_combo" class="dash-chart" style="height:460px"></div>
+        </div>
+      </section>
+
+      <!-- R12 — Investitions-Finanzierung: Variante A + B nebeneinander -->
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Investitions-Finanzierung (Stapel)</h3>
+            <p class="web-panel__note">Gestapelter Balken: Foerderungen,
+              Darlehen (Aufnahme minus Tilgung, gedeckelt auf 0),
+              Eigenmittel (Restgroesse). <strong>Eigenmittel als
+              Restgroesse abgeleitet</strong> — Heuristik mit Disclaimer.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_investfin_a" class="dash-chart" style="height:380px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Investitions-Finanzierung (Mini-Sankey)</h3>
+            <p class="web-panel__note">Quellen links, Investitionen rechts —
+              eine vereinfachte Sankey-Darstellung derselben Daten.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_investfin_b" class="dash-chart" style="height:380px"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section class="tab-panel" data-panel="sparpotenzial">
       <div class="web-section-head">
         <h2>Sparpotenzial</h2>
-        <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
-          Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
-          zusammen welche Betraege ausmachen.</p>
+        <p>Wo im Budget liegt finanzieller Spielraum? Der kumulierte
+          Sachaufwand zeigt, welche Posten zusammen welche Betraege
+          ausmachen. Soll-Ist und Budgetierungspolster blenden sich je nach
+          Dokumenttyp ein.</p>
       </div>
-      <section class="web-panel">
-        <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
+
+      <!-- R3 — Soll-Ist (Variante A + B) — nur bei RA-Dokumenten sichtbar
+           (per onDocChange-Hook in dashboard.js gesteuert). -->
+      <section class="web-panel" data-typ-panel="RA">
+        <div class="web-panel__head">
+          <h3>Variante A · Soll-Ist-Abweichung (Diverging-Balken)</h3>
+          <p class="web-panel__note">Posten mit den groessten Abweichungen
+            zwischen Soll laut Voranschlag und Ist laut Rechnungsabschluss.
+            Gruen = Mehrertrag/Minderaufwand, Clay = Mehraufwand/
+            Mindereinnahme. <strong>Nur fuer Rechnungsabschluesse
+            aussagekraeftig.</strong></p>
+        </div>
         <div class="web-panel__body">
-          <div id="c_wasserfall_sp" class="dash-chart" style="height:460px"></div>
+          <div id="c_sollist_a" class="dash-chart" style="height:480px"></div>
         </div>
       </section>
+      <section class="web-panel" data-typ-panel="RA">
+        <div class="web-panel__head">
+          <h3>Variante B · Soll-Ist (Dumbbell)</h3>
+          <p class="web-panel__note">Soll-Punkt (blau) und Ist-Punkt (gruen
+            oder clay je nach Vorzeichen), verbunden durch eine Linie pro
+            Posten — zeigt die Absolutwerte beider Spalten.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_sollist_b" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+
+      <!-- R4 — Budgetierungspolster (Variante A + B) — nur bei VA. -->
+      <section class="web-panel" data-typ-panel="VA">
+        <div class="web-panel__head">
+          <h3>Variante A · Budgetierungspolster (Doppelbalken VA vs. Ist-RA)</h3>
+          <p class="web-panel__note">Vordergrundbalken Voranschlag (gold),
+            heller Geistersbalken letztes Ist (Sage). <strong>Nur fuer
+            Voranschlaege aussagekraeftig.</strong></p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_polster_a" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+      <section class="web-panel" data-typ-panel="VA">
+        <div class="web-panel__head">
+          <h3>Variante B · Budgetierungspolster (Diverging nach Polsterhoehe)</h3>
+          <p class="web-panel__note">Posten sortiert nach Polster-Hoehe in
+            EUR (Voranschlag minus letztes Ist) — die groesste Luft nach
+            oben rechts in Clay.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_polster_b" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+
       <section class="web-panel">
         <div class="web-panel__head">
           <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>
@@ -347,6 +572,36 @@
           <div id="c_treiber" class="dash-chart" style="height:480px"></div>
         </div>
       </section>
+      <!-- R9 — Gebunden vs. gestaltbar (Variante A + B). Pflichtumlagen
+           werden heuristisch per Bezeichnungs-Regex erkannt — der
+           Disclaimer steht im Panel-Note. -->
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Gebunden vs. gestaltbar (100 %-Stapel)</h3>
+            <p class="web-panel__note">Welcher Anteil der operativen
+              Ausgaben ist kurzfristig kaum beweglich? Personal,
+              Pflichtumlagen und Finanzaufwand gelten als gebunden;
+              freie Sachausgaben als gestaltbar. <strong>Pflichtumlagen
+              sind heuristisch erkannt (per Bezeichnungs-Regex)
+              — Fehlklassifikationen moeglich.</strong></p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_bindung_a" class="dash-chart" style="height:240px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Bindung je Aufwandsart (gestapelte Saeulen)</h3>
+            <p class="web-panel__note">Pro Aufwandsart der gebundene und
+              gestaltbare Anteil — detaillierter, weniger plakativ.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_bindung_b" class="dash-chart" style="height:360px"></div>
+          </div>
+        </section>
+      </div>
+
       <div class="callout gat-card gat-card--primary">
         <div class="callout-label gat-card__title">Wichtige Einordnung</div>
         <p class="gat-card__body">Diese Auswertung ist eine
@@ -471,6 +726,30 @@
     <p class="table-hint" id="mj-hint"></p>
   </div>
 </div>
+
+<!-- Variante B (R5): Edit-Dialog fuer die Einwohnerzahl. HTML5 <dialog>;
+     wird von app.js per .showModal() geoeffnet und schreibt ueber dieselbe
+     UPDATE-Statement wie das Inline-Feld (Variante A). -->
+<dialog class="doc-einwohner-dialog" id="doc-einwohner-dialog"
+        aria-labelledby="doc-einwohner-dialog-titel">
+  <form method="dialog" class="doc-einwohner-form" id="doc-einwohner-form">
+    <h3 id="doc-einwohner-dialog-titel">Einwohnerzahl (Variante B)</h3>
+    <p class="doc-einwohner-sub" id="doc-einwohner-sub"></p>
+    <label class="doc-einwohner-label">
+      Einwohner:innen
+      <input type="number" id="dlg-einwohner" min="0" step="1"
+             class="doc-einwohner-input">
+    </label>
+    <p class="doc-einwohner-hint">Optional — schaltet Pro-Kopf-Sichten frei.
+      Leer lassen, um die Einwohnerzahl zu entfernen.</p>
+    <menu class="doc-einwohner-actions">
+      <button type="button" class="gat-btn gat-btn--secondary"
+              value="cancel" id="doc-einwohner-cancel">Abbrechen</button>
+      <button type="submit" class="gat-btn gat-btn--primary"
+              value="confirm" id="doc-einwohner-save">Speichern</button>
+    </menu>
+  </form>
+</dialog>
 
 <script type="module" src="./js/app.js"></script>
 </body>

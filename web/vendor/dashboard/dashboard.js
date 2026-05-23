@@ -113,6 +113,36 @@
     if (el) el.textContent = value;
   }
 
+  // Hilfen fuer die Delta- und Pro-Kopf-Zeile auf den Kennzahlen-Karten.
+  // R1: Delta in Prozent gegenueber dem Vergleichswert (VA: Vorjahr,
+  // RA: Soll). is-up/is-down faerben den Text gruen/clay.
+  function deltaText(d, einheit, vglLabel) {
+    if (d == null) return "";
+    var pfeil = d >= 0 ? "↑ +" : "↓ ";
+    var zahl = Math.abs(d).toLocaleString("de-AT", {
+      minimumFractionDigits: 1, maximumFractionDigits: 1
+    });
+    return pfeil + (d >= 0 ? zahl : zahl) + " " + einheit +
+      " ggü. " + vglLabel;
+  }
+  function setDelta(id, d, einheit, vglLabel) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (d == null) { el.hidden = true; return; }
+    el.textContent = deltaText(d, einheit, vglLabel);
+    el.classList.toggle("is-up", d >= 0);
+    el.classList.toggle("is-down", d < 0);
+    el.hidden = false;
+  }
+  // R5: Pro-Kopf-Zeile. Nur einblenden, wenn der Wert verfuegbar ist.
+  function setPk(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (val == null) { el.hidden = true; return; }
+    el.textContent = "je Einwohner:in: " + euro(val);
+    el.hidden = false;
+  }
+
   function rerenderStats(dokId) {
     var e = aggs[dokId].eckwerte;
     fillText("st-ertraege", euro(e.ertraege, true));
@@ -126,6 +156,28 @@
     }
     fillText("kennzahl-dok", dokLabel(dokId));
     fillText("kennzahl-netto", euro(e.netto));
+
+    // R1 — Delta-Zeile je Karte. Vergleichslabel aus spalte_vergleich
+    // (z. B. "VA 2025" bei einem VA, "VA 2025" beim RA = Soll).
+    var dokEntry = docs.find(function (x) {
+      return String(x.id) === String(dokId);
+    });
+    var vglLabel = dokEntry ? dokEntry.spalte_vergleich : "Vergleich";
+    setDelta("st-ertraege-delta", e.delta_ertraege_proz, "%", vglLabel);
+    setDelta("st-aufwand-delta",  e.delta_aufwand_proz,  "%", vglLabel);
+    setDelta("st-netto-delta",    e.delta_netto_proz,    "%", vglLabel);
+    setDelta("st-komm-anteil-delta", e.delta_komm_anteil_pp, "Pp",
+             vglLabel);
+
+    // R5 — Pro-Kopf-Zeile je Karte (verschwindet, wenn kein einwohner).
+    setPk("st-ertraege-pk", e.ertraege_pk);
+    setPk("st-aufwand-pk",  e.aufwand_pk);
+    setPk("st-netto-pk",    e.netto_pk);
+    setPk("st-komm-pk",     e.komm_pk);
+
+    // R2 — Schuldendienst-Karte im Schulden-Tab.
+    fillText("st-schuldendienst", euro(e.schuldendienst || 0, true));
+    setPk("st-schuldendienst-pk", e.schuldendienst_pk);
   }
 
   // --- Tabellen je Dokument ------------------------------------------------
@@ -157,8 +209,12 @@
               { text: euro(r[2]), num: true }];
     }));
     tableRows("tbl-transfers", a.transfers.map(function (r) {
-      var pflicht = /umlage|nökas|nokas|sozialhilfe|krankenanstalt/i
-        .test(r[0]);
+      // R9: zentrale Heuristik — Fallback-Regex nur, falls window-Helfer
+      // (z. B. in Tests/Drittumgebung) fehlt.
+      var pflichtFn = window.istPflichtumlage || function (b) {
+        return /umlage|nökas|nokas|sozialhilfe|krankenanstalt/i.test(b);
+      };
+      var pflicht = pflichtFn(r[0]);
       return [{ text: esc(r[0]) },
               { text: pflicht ? "Pflichtumlage" : "freiwillig/sonstige" },
               { text: euro(r[1]), num: true },
@@ -752,13 +808,50 @@
   registerChart("c_aufwandart", "dok", "aufwandart");
   registerChart("c_treemap", "dok", "treemap");
   registerChart("c_wasserfall", "dok", "wasserfall");
-  registerChart("c_wasserfall_sp", "dok", "wasserfall");
   registerChart("c_korridor", "dok", "korridor");
   registerChart("c_treiber", "dok", "treiber");
   registerChart("c_investitionen", "dok", "investitionen");
   registerChart("c_trend_eck", "trend", "trend_eck");
   registerChart("c_trend_komm", "trend", "trend_komm");
   registerChart("c_trend_auf", "trend", "trend_auf");
+  // R2 — Schulden & Finanzierung (Variante A + B)
+  registerChart("c_fin_saeulen", "dok", "fin_saeulen");
+  registerChart("c_schuldenstand", "trend", "schuldenstand");
+  registerChart("c_fin_combo", "dok", "fin_combo");
+  // R12 — Investitions-Finanzierung (Variante A + B)
+  registerChart("c_investfin_a", "dok", "investfin_a");
+  registerChart("c_investfin_b", "dok", "investfin_b");
+  // R3 — Soll-Ist (Variante A + B); nur bei RA aussagekraeftig.
+  registerChart("c_sollist_a", "dok", "sollist_a");
+  registerChart("c_sollist_b", "dok", "sollist_b");
+  // R4 — Budgetierungspolster (Variante A + B); nur bei VA aussagekraeftig.
+  registerChart("c_polster_a", "dok", "polster_a");
+  registerChart("c_polster_b", "dok", "polster_b");
+  // R6 + R7 — Aufgabenbereiche (sortierte Balken + Saldo)
+  registerChart("c_gruppen_balken", "dok", "gruppen_balken");
+  registerChart("c_gruppen_saldo",  "dok", "gruppen_saldo");
+  // R8 — "Wofuer geht 1 Euro?" / "Wofuer kommen 100 Euro herein?" (A+B)
+  registerChart("c_eineuro_aus_a", "dok", "eineuro_aus_a");
+  registerChart("c_eineuro_aus_b", "dok", "eineuro_aus_b");
+  registerChart("c_eineuro_ein_a", "dok", "eineuro_ein_a");
+  registerChart("c_eineuro_ein_b", "dok", "eineuro_ein_b");
+  // R9 — Gebunden vs. gestaltbar (A+B)
+  registerChart("c_bindung_a", "dok", "bindung_a");
+  registerChart("c_bindung_b", "dok", "bindung_b");
+
+  // Typabhaengige Panels (R3 nur RA, R4 nur VA) ein-/ausblenden, wenn der
+  // User das Dokument wechselt. data-typ-panel="RA"/"VA" ist im Markup
+  // gesetzt.
+  onDocChange(function (dokId) {
+    var dok = docs.find(function (x) { return String(x.id) === String(dokId); });
+    if (!dok) return;
+    document.querySelectorAll("[data-typ-panel]").forEach(function (panel) {
+      var noetig = panel.dataset.typPanel;
+      panel.hidden = noetig !== dok.typ;
+    });
+    // ECharts kennt die Groesse erst nach dem Layout — Resize anstossen.
+    requestAnimationFrame(resizeVisibleCharts);
+  });
 
   onDocChange(rerenderStats);
   onDocChange(rerenderTables);

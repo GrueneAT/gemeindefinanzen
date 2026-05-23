@@ -315,6 +315,11 @@ input, select { font-family: var(--gat-font-copy); }
   grid-template-columns: repeat(4, 1fr);
   gap: var(--gat-space-3);
 }
+/* Einspaltige Variante fuer einzelne Kennzahlen (z. B. Schuldendienst-Karte
+   im Schulden-Tab) — eine Karte oben, volle Breite auf Tablet/Smartphone. */
+.stats--einspalt {
+  grid-template-columns: minmax(0, 22rem);
+}
 /* Lagebild-Raster: 4 Spalten (Desktop) -> 2 (Tablet) -> 1 (Smartphone).
    Breakpoints aus dem Design-System (48rem/36rem). */
 @media (max-width: 48rem) {
@@ -368,6 +373,25 @@ input, select { font-family: var(--gat-font-copy); }
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--web-text-soft);
+}
+/* .stat-delta — sekundaere Zeile auf der Kennzahlen-Karte: Vorjahres-
+   bzw. Soll-Ist-Delta in Prozent. Gruen wenn der Wert positiv waechst,
+   clay wenn er sinkt (semantisch konsistent mit der Diagramm-Palette). */
+.stat-delta {
+  font-size: 0.86rem;
+  color: var(--web-text-soft);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.18rem;
+}
+.stat-delta.is-up   { color: var(--web-chart-green); }
+.stat-delta.is-down { color: var(--web-clay-text); }
+/* .stat-pk — Pro-Kopf-Zeile. Erscheint nur, wenn fuer das Dokument eine
+   Einwohnerzahl erfasst ist (sonst hidden via JS). */
+.stat-pk {
+  font-size: 0.85rem;
+  color: var(--web-text-soft);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.18rem;
 }
 
 /* --- .web-panel — Diagramm-/Inhaltsrahmen ---------------------------------
@@ -895,6 +919,88 @@ input.search:focus-visible {
   color: var(--web-clay-text);
   border-color: color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
   background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
+}
+/* .doc-einwohner-input (Variante A) — Inline-Feld in der Dokumentliste.
+   Schmaler Number-Input, eingebettet ins Tabellen-Layout. */
+.doc-einwohner-input {
+  width: 7em;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--web-hairline);
+  border-radius: var(--web-radius-control);
+  background: var(--web-surface);
+  color: var(--web-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.doc-einwohner-input:focus-visible {
+  outline: 2px solid var(--web-green);
+  outline-offset: 1px;
+}
+/* .doc-edit-btn (Variante B) — gleiches Pattern wie .doc-remove, aber
+   in ruhiger Sekundaerfarbe (kein destruktiver Ton). */
+.doc-edit-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 1px solid var(--web-hairline);
+  background: var(--web-surface);
+  color: var(--web-text-soft);
+  border-radius: var(--web-radius-control);
+  padding: 0.2rem 0.6rem;
+  margin-right: 0.35rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.doc-edit-btn:hover {
+  border-color: var(--web-green);
+  background: color-mix(in srgb, var(--web-green) 8%, white);
+  color: var(--web-green-deep);
+}
+/* Einwohner-Dialog (Variante B) — natives <dialog>, knapp und ruhig. */
+.doc-einwohner-dialog {
+  padding: 0;
+  border: 0;
+  border-radius: var(--web-radius-card);
+  box-shadow: var(--web-shadow);
+  max-width: 28rem;
+}
+.doc-einwohner-dialog::backdrop {
+  background: rgba(31, 38, 28, 0.4);
+}
+.doc-einwohner-form {
+  padding: var(--gat-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gat-space-2);
+}
+.doc-einwohner-form h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.doc-einwohner-sub {
+  margin: 0;
+  color: var(--web-text-soft);
+  font-size: 0.85rem;
+}
+.doc-einwohner-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--web-text-soft);
+}
+.doc-einwohner-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--web-text-mute);
+}
+.doc-einwohner-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin: var(--gat-space-2) 0 0;
+  padding: 0;
 }
 /* .doc-remove — kleiner sekundaerer Button, ruhige Risiko-Toenung. */
 .doc-remove {
