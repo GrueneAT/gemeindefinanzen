@@ -1,7 +1,7 @@
 ---
 id: vyz9q
 title: Migration auf design-system v2.0 (Tokens, Komponenten, gat-charts.js)
-status: open
+status: done
 priority: medium
 labels:
 - migration
