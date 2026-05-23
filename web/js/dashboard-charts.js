@@ -6,93 +6,58 @@
 // eingebettet und clientseitig von dashboard.js per revive() in echte
 // Funktionen zurueckverwandelt.
 
-// Entsaettigte Diagramm-Palette des Web-Design-Systems (siehe
-// docs/web-design-system.md). ECharts liest keine CSS-Variablen — die
-// Hex-Werte werden hier gespiegelt und muessen mit den --web-chart-*-Token
-// in app.css uebereinstimmen. Semantik der Schluessel:
+// Org-weite Chart-Helfer: Palette/INK/Schriftgroessen/Tooltip/Legende/Grid/
+// Decal werden ueber den gehosteten ES-Modul-Import bezogen. DS v2.0 liefert
+// die gleichen Werte, die diese App vor der Konvergenz lokal pflegte.
+import {
+  PALETTE,
+  INK as DS_INK,
+  LABEL_SIZE,
+  AXIS_SIZE,
+  BAR_MAX_DICHT,
+  BAR_MAX_WEIT,
+  VA_DECAL,
+  tip,
+  legende,
+  grid,
+  planIstLegende,
+} from "https://grueneat.github.io/design-system/gat-charts.js"
+
+// App-Adapter: DS-INK ist tonal (text/soft/mute/hairline/gridline/axis/...),
+// die App nutzt semantische Rollen (green/blue/orange/red/soft/paper). Die
+// Bruecke besteht aus einem dichten PALETTE-Mapping plus einer paper-
+// Konstante fuer ECharts-Flaechen. Semantik der Schluessel:
 // green=Ertraege/positiv, blue=Personal/neutral-kuehl (Teal),
 // orange=Sachaufwand (Gold), red=Aufwand/Risiko (Clay),
 // soft=Sonstige/Restgruppe (Sage), paper=Diagramm-Flaeche.
 const INK = {
-  green: "#3f7d4f",
-  blue: "#4f93a0",
-  orange: "#c9a24b",
-  red: "#b9744f",
-  soft: "#8a8f7d",
+  green: PALETTE[0],
+  blue: PALETTE[2],
+  orange: PALETTE[3],
+  red: PALETTE[4],
+  soft: PALETTE[7],
   paper: "#ffffff",
 }
 
 // Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsen-/Linientoene weich
-// gehalten, abgestimmt auf den ruhigen Web-Grundton (web-design-system.md).
+// gehalten, abgestimmt auf den ruhigen Web-Grundton — Werte aus DS-INK
+// (tonal): text fuer Achsenbeschriftung, soft fuer Sekundaertext, axis fuer
+// Achsenlinie, gridline fuer Trennlinien im Plot.
 const CHART_FONT = "Barlow Semi Condensed, sans-serif"
-const ACHSE_TEXT = "#23271f"
-const ACHSE_TEXT_SOFT = "#5e6358"
-const ACHSE_LINIE = "#cdd2c8"
-const ACHSE_SPLIT = "#e7eae2"
+const ACHSE_TEXT = DS_INK.text
+const ACHSE_TEXT_SOFT = DS_INK.soft
+const ACHSE_LINIE = DS_INK.axis
+const ACHSE_SPLIT = DS_INK.gridline
 
-// Gemeinsame Diagramm-Schriftgroessen (Iteration 16). Die App hat viele
-// aeltere Nutzer:innen — die fruehere Skala (~10-12px) war zu klein. Ein
-// Wert je Textrolle, damit Achsen, Legenden, Tooltips und Datenlabels in
-// allen Buildern konsistent gross sind.
-// LABEL_SIZE = Achsenlabels, Legende, Tooltip, Datenlabels, Sankey-Knoten.
-// AXIS_SIZE  = Wertachse (etwas kleiner, bleibt klar lesbar).
-const LABEL_SIZE = 15
-const AXIS_SIZE = 14
+// App-Wrapper um die DS-Legende: DS hat keinen bottom-Default; die App
+// platziert die Legende durchgaengig am Diagramm-Fuss. Damit nicht jede
+// Call-Site `bottom: 0` setzen muss, kapselt dieser Wrapper den Default.
+function legende_app(extra = {}) {
+  return legende({ bottom: 0, ...extra })
+}
 
 function baseText() {
   return { fontFamily: CHART_FONT, color: ACHSE_TEXT }
-}
-
-// Balkenbreiten-Deckelung je Datendichte. Auf den jetzt vollbreiten Panels
-// (~2000px auf einem 4K-Schirm) wuerde ein globaler schmaler Deckel
-// kategorienarme Diagramme zu duennen Strichen verkommen lassen. Daher zwei
-// Stufen: BAR_MAX_DICHT fuer Diagramme mit vielen Kategorien (horizontale
-// Balkenlisten, Korridor), BAR_MAX_WEIT fuer kategorienarme Saeulendiagramme
-// (Wasserfall mit 3 Saeulen, Trend ueber wenige Dokumente) — dort sollen die
-// Saeulen substanziell wirken statt als Slivers in leerer Flaeche.
-const BAR_MAX_DICHT = 56
-const BAR_MAX_WEIT = 130
-
-// Gemeinsame, ruhige Grid-Raender — jedes Diagramm nutzt seine Panel-
-// flaeche gleichmaessig. containLabel haelt Achsenbeschriftungen drin;
-// bottom wird je Diagramm erhoeht, wenn Legende oder gedrehte Labels
-// zusaetzlichen Platz brauchen.
-function grid(extra = {}) {
-  return { left: 10, right: 18, top: 14, bottom: 10, containLabel: true, ...extra }
-}
-
-// Tooltip auf die Komponentensprache des Web-Design-Systems: helle Karte
-// mit Haarlinie und weichem Schatten statt der dunklen ECharts-Voreinstellung.
-// Schrift = Seitenschrift, Text im ruhigen --web-text-Ton. extra erlaubt es,
-// trigger/axisPointer je Diagramm zu ergaenzen.
-function tip(extra = {}) {
-  return {
-    backgroundColor: INK.paper,
-    borderColor: ACHSE_LINIE,
-    borderWidth: 1,
-    padding: [7, 11],
-    extraCssText: "box-shadow: 0 4px 14px rgba(31,38,28,.12); border-radius: 8px;",
-    textStyle: {
-      fontFamily: CHART_FONT,
-      color: ACHSE_TEXT,
-      fontSize: LABEL_SIZE,
-    },
-    ...extra,
-  }
-}
-
-// Legende auf die ruhige Komponentensprache: Sekundaertext-Ton, Seitenschrift.
-function legende(extra = {}) {
-  return {
-    bottom: 0,
-    itemGap: 14,
-    textStyle: {
-      fontFamily: CHART_FONT,
-      fontSize: LABEL_SIZE,
-      color: ACHSE_TEXT_SOFT,
-    },
-    ...extra,
-  }
 }
 
 // R15: Achsenlabels mit Ellipse abkuerzen, wenn sie zu lang werden.
@@ -317,7 +282,7 @@ export function chartAufwandart(agg) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "item" }),
-    legend: legende(),
+    legend: legende_app(),
     series: [
       {
         type: "pie",
@@ -490,7 +455,7 @@ export function chartKorridor(agg) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ bottom: 96, top: 18, right: 60 }),
     xAxis: catAxis(cats, LABEL_SIZE, 38),
     yAxis: [
@@ -540,13 +505,7 @@ export function chartKorridor(agg) {
 // Trend-Diagrammen werden sie deshalb optisch getrennt: RA-Datenpunkte
 // voll gefuellt, VA/NVA-Datenpunkte mit einem leichten Schraffur-Decal.
 // `typ` kommt je Datenpunkt aus dashboard-data.js (trend()).
-const VA_DECAL = {
-  symbol: "rect",
-  color: "rgba(255,255,255,0.55)",
-  dashArrayX: [1, 0],
-  dashArrayY: [3, 4],
-  rotation: -Math.PI / 4,
-}
+// VA_DECAL und planIstLegende kommen aus dem gat-charts.js-Import.
 
 // Balkendatenpunkt mit typabhaengigem itemStyle: RA solide, VA/NVA mit
 // Decal-Schraffur. Wert und Grundfarbe wie bisher.
@@ -556,32 +515,13 @@ function trendBalken(wert, typ, farbe) {
   return { value: wert, itemStyle: stil }
 }
 
-// Unsichtbare Hilfsserien nur fuer die Legende: erklaeren Plan vs. Ist,
-// ohne selbst Daten beizutragen.
-function planIstLegende() {
-  return [
-    {
-      name: "Ist (RA)",
-      type: "bar",
-      data: [],
-      itemStyle: { color: ACHSE_TEXT_SOFT },
-    },
-    {
-      name: "Plan (VA/NVA)",
-      type: "bar",
-      data: [],
-      itemStyle: { color: ACHSE_TEXT_SOFT, decal: VA_DECAL },
-    },
-  ]
-}
-
 export function chartTrendEckwerte(trend) {
   const reihe = trend.eckwerte
   const namen = reihe.map((r) => r[0])
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende(),
+    legend: legende_app(),
     aria: { enabled: true, decal: { show: true } },
     grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
@@ -625,7 +565,7 @@ export function chartTrendKomm(trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis" }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ top: 30, bottom: 36 }),
     xAxis: catAxis(reihe.map((r) => r[0])),
     yAxis: valAxis(),
@@ -690,7 +630,7 @@ export function chartTrendAufwand(trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende(),
+    legend: legende_app(),
     aria: { enabled: true, decal: { show: true } },
     grid: grid({ bottom: 52 }),
     xAxis: catAxis(namen),
@@ -784,7 +724,7 @@ export function chartSchuldenstand(trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ bottom: 52, top: 30 }),
     xAxis: catAxis(labels),
     yAxis: valAxis(),
@@ -833,7 +773,7 @@ export function chartSchuldenCombo(_agg, trend) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ bottom: 56, top: 30, right: 60 }),
     xAxis: catAxis(labels),
     yAxis: [
@@ -912,7 +852,7 @@ export function chartInvestFinanzierungStapel(agg) {
         "('de-AT')+' k EUR ('+Math.round(100*p.value/" + (total || 1) +
         ")+' %)').join('<br>')+'<br><br><em>Eigenmittel als Restgroesse abgeleitet.</em>'",
     }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ left: 16, right: 16, top: 32, bottom: 56 }),
     xAxis: valAxis(),
     yAxis: catAxis(["Investitionsvolumen"]),
@@ -1027,7 +967,7 @@ export function chartBindungStapel(agg) {
         ")+' %)').join('<br>')+'<br><br><em>Pflichtumlagen-Heuristik " +
         "per Regex auf Bezeichnung — Fehlklassifikationen moeglich.</em>'",
     }),
-    legend: legende({ type: "scroll" }),
+    legend: legende_app({ type: "scroll" }),
     grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
     xAxis: valAxis(),
     yAxis: catAxis(["Operativer Aufwand"]),
@@ -1065,7 +1005,7 @@ export function chartBindungSaeulen(agg) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ top: 30, bottom: 56 }),
     xAxis: catAxis(namen),
     yAxis: valAxis(),
@@ -1147,7 +1087,7 @@ export function chartEinEuroStapel(agg, seite) {
       formatter:
         "(arr)=>arr.map(p=>p.seriesName+': '+p.value+' Cent').join('<br>')",
     }),
-    legend: legende({ type: "scroll" }),
+    legend: legende_app({ type: "scroll" }),
     grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
     xAxis: {
       type: "value",
@@ -1228,7 +1168,7 @@ export function chartEinEuroPikto(agg, seite) {
       trigger: "item",
       formatter: "(p)=>p.name.replace(/ #\\d+$/, '')+': '+p.percent+' %'",
     }),
-    legend: legende({
+    legend: legende_app({
       data: liste.map(([cat]) => cat),
       type: "scroll",
     }),
@@ -1301,7 +1241,7 @@ export function chartSollIstDumbbell(agg) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "item" }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
     xAxis: valAxis(),
     yAxis: {
@@ -1362,7 +1302,7 @@ export function chartPolsterDoppel(agg) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende(),
+    legend: legende_app(),
     grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
     xAxis: valAxis(),
     yAxis: { ...catAxis(cats), inverse: false },
@@ -1423,7 +1363,7 @@ function mehrjahrBasis(jahre) {
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "axis", axisPointer: { type: "line" } }),
-    legend: legende({ type: "scroll" }),
+    legend: legende_app({ type: "scroll" }),
     grid: grid({ top: 30, bottom: 64 }),
     xAxis: catAxis(jahre),
     yAxis: valAxis(),
