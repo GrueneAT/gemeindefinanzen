@@ -200,6 +200,26 @@ export function chartSankey(agg) {
     node(name, INK.orange)
     links.push({ source: "Gemeindehaushalt", target: name, value: betrag })
   }
+  // R11 — Bilanzielle Ehrlichkeit: Ueberschuss/Abgang als eigener Knoten.
+  // Bei netto > 0 fliesst ein Teil aus dem Gemeindehaushalt in die
+  // Ruecklagenzufuhr (Ueberschuss); bei netto < 0 muss Abgangsdeckung in
+  // den Haushalt fliessen, damit Ertraege + Deckung = Aufwendungen.
+  const netto = agg.eckwerte ? agg.eckwerte.netto : 0
+  if (netto > 0) {
+    node("Ueberschuss / Ruecklagenzufuhr", INK.green)
+    links.push({
+      source: "Gemeindehaushalt",
+      target: "Ueberschuss / Ruecklagenzufuhr",
+      value: netto,
+    })
+  } else if (netto < 0) {
+    node("Abgangsdeckung", INK.red)
+    links.push({
+      source: "Abgangsdeckung",
+      target: "Gemeindehaushalt",
+      value: -netto,
+    })
+  }
   return {
     textStyle: baseText(),
     tooltip: tip({ trigger: "item" }),
@@ -958,6 +978,178 @@ export function chartInvestFinanzierungSankey(agg) {
   return opt
 }
 
+// --- R3 — Soll-Ist-Abweichung (nur RA) -----------------------------------
+// Defensive Builder: bei undefined/leerem sollIst eine Empty-Hinweis-Grafik
+// statt eines kaputten Charts. onDocChange-Hook in dashboard.js blendet das
+// Panel zusaetzlich aus, wenn der Doktyp nicht RA ist.
+export function chartSollIstDiverging(agg) {
+  const liste = agg.sollIst ?? []
+  if (liste.length === 0) {
+    return emptyOption("Nur fuer Rechnungsabschluesse verfuegbar.")
+  }
+  // r = [bezeichnung, gruppe_text, richtung, soll, ist, abweichung]
+  // Diverging-Form analog chartTreiber. Bei Einnahmen ist eine positive
+  // Abweichung (mehr Ist als Soll) gut (gruen); bei Ausgaben schlecht (clay).
+  // Sortiert nach |abweichung| absteigend; in catAxis-Inverse von unten.
+  const reverse = liste.slice().reverse()
+  const cats = reverse.map((r) => r[0])
+  const vals = reverse.map((r) => r[5])
+  const cols = reverse.map((r) => {
+    const richtung = r[2]
+    const abw = r[5]
+    // Einnahme: positive Abweichung gut, negative schlecht.
+    // Ausgabe: positive Abweichung schlecht, negative gut.
+    const positivGut =
+      richtung === "einnahme" ? abw >= 0 : abw < 0
+    return positivGut ? INK.green : INK.red
+  })
+  return bar(cats, vals, INK.red, cols, BAR_MAX_WEIT)
+}
+
+// R3 Variante B: Dumbbell — pro Posten ein Soll-Punkt (blau) und ein
+// Ist-Punkt (clay/gruen je nach Abweichungsrichtung), mit Verbindungslinie.
+export function chartSollIstDumbbell(agg) {
+  const liste = agg.sollIst ?? []
+  if (liste.length === 0) {
+    return emptyOption("Nur fuer Rechnungsabschluesse verfuegbar.")
+  }
+  const reverse = liste.slice().reverse()
+  const cats = reverse.map((r) => r[0])
+  const soll = reverse.map((r, i) => [r[3], i])
+  const ist = reverse.map((r, i) => [r[4], i])
+  // Verbindungslinien als `lines`-Serie.
+  const linien = reverse.map((r, i) => [
+    { value: [r[3], i] },
+    { value: [r[4], i] },
+  ])
+  const istFarbe = reverse.map((r) => {
+    const richtung = r[2]
+    const abw = r[5]
+    const positivGut =
+      richtung === "einnahme" ? abw >= 0 : abw < 0
+    return positivGut ? INK.green : INK.red
+  })
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "item" }),
+    legend: legende(),
+    grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
+    xAxis: valAxis(),
+    yAxis: {
+      type: "category",
+      data: cats,
+      inverse: false,
+      axisLabel: {
+        fontFamily: CHART_FONT,
+        fontSize: LABEL_SIZE,
+        color: ACHSE_TEXT,
+        interval: 0,
+        formatter: ELLIPSE_FORMATTER,
+      },
+      axisLine: { lineStyle: { color: ACHSE_LINIE } },
+    },
+    series: [
+      {
+        name: "Verbindung",
+        type: "lines",
+        coordinateSystem: "cartesian2d",
+        data: linien,
+        lineStyle: { color: ACHSE_LINIE, width: 1.5 },
+        silent: true,
+      },
+      {
+        name: "Soll (VA)",
+        type: "scatter",
+        data: soll,
+        symbolSize: 11,
+        itemStyle: { color: INK.blue },
+      },
+      {
+        name: "Ist (RA)",
+        type: "scatter",
+        data: ist.map((d, i) => ({
+          value: d,
+          itemStyle: { color: istFarbe[i] },
+        })),
+        symbolSize: 13,
+      },
+    ],
+  }
+}
+
+// --- R4 — Budgetierungspolster (nur VA) ----------------------------------
+// Variante A: horizontale Doppelbalken — Vordergrundbalken Voranschlag
+// (gold), Geistersbalken Ist-RA-Vorjahr (heller Sage) als Referenz.
+export function chartPolsterDoppel(agg) {
+  const liste = agg.polster ?? []
+  if (liste.length === 0) {
+    return emptyOption("Nur fuer Voranschlaege verfuegbar.")
+  }
+  // r = [bezeichnung, gruppe_text, ist_ra, voranschlag, polster, prozent]
+  const reverse = liste.slice().reverse()
+  const cats = reverse.map((r) => r[0])
+  const ist = reverse.map((r) => r[2])
+  const va = reverse.map((r) => r[3])
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
+    grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
+    xAxis: valAxis(),
+    yAxis: { ...catAxis(cats), inverse: false },
+    series: [
+      {
+        name: "Voranschlag (VA)",
+        type: "bar",
+        data: va,
+        itemStyle: { color: INK.orange, borderRadius: 2 },
+        barWidth: "55%",
+        barMaxWidth: BAR_MAX_DICHT,
+        z: 2,
+      },
+      {
+        name: "Ist (letzter RA)",
+        type: "bar",
+        data: ist,
+        itemStyle: { color: INK.soft, borderRadius: 2, opacity: 0.55 },
+        barGap: "-100%",
+        barWidth: "55%",
+        barMaxWidth: BAR_MAX_DICHT,
+        z: 1,
+      },
+    ],
+  }
+}
+
+// Variante B: Diverging-Balken nach Polster-Hoehe in EUR. Posten mit der
+// groessten Luft nach oben (Voranschlag deutlich ueber Ist-RA) gehen
+// rechts in clay; Posten unter Vorjahres-Ist (hier nicht in der Liste,
+// weil der SQL-Filter sie ausblendet — die Form bleibt offen).
+export function chartPolsterDiverging(agg) {
+  const liste = agg.polster ?? []
+  if (liste.length === 0) {
+    return emptyOption("Nur fuer Voranschlaege verfuegbar.")
+  }
+  const reverse = liste.slice().reverse()
+  const cats = reverse.map((r) => r[0])
+  const vals = reverse.map((r) => r[4])
+  const cols = vals.map((v) => (v >= 0 ? INK.red : INK.green))
+  return bar(cats, vals, INK.red, cols, BAR_MAX_WEIT)
+}
+
+// Hilfsoption: leerer Chart mit Hinweistext. Wird von R3/R4 genutzt, wenn
+// der aktuelle Dokumenttyp die Liste leer laesst.
+function emptyOption(text) {
+  return {
+    textStyle: baseText(),
+    grid: grid(),
+    xAxis: { show: false },
+    yAxis: { show: false },
+    series: [],
+    graphic: [leerHinweis(text)],
+  }
+}
+
 function mehrjahrBasis(jahre) {
   return {
     textStyle: baseText(),
@@ -1008,6 +1200,12 @@ export function alleCharts(daten) {
       // R12 — Investitions-Finanzierung
       investfin_a: chartInvestFinanzierungStapel(agg),
       investfin_b: chartInvestFinanzierungSankey(agg),
+      // R3 — Soll-Ist (Variante A + B)
+      sollist_a: chartSollIstDiverging(agg),
+      sollist_b: chartSollIstDumbbell(agg),
+      // R4 — Polster (Variante A + B)
+      polster_a: chartPolsterDoppel(agg),
+      polster_b: chartPolsterDiverging(agg),
     }
   }
   const trend = daten.trend

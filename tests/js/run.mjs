@@ -419,6 +419,86 @@ async function teste() {
     "schuldenstand" in cfg2.trend_charts,
   )
 
+  // R3 — sollIst befuellt bei RA, undefined bei VA.
+  const raDok = datenPK.dokumente.find((d) => d.typ === "RA")
+  const vaDok = datenPK.dokumente.find((d) => d.typ === "VA")
+  if (raDok) {
+    const ag = datenPK.aggregate[String(raDok.id)]
+    pruefe(
+      "agg.sollIst ist Array bei RA-Dokument",
+      Array.isArray(ag.sollIst),
+      typeof ag.sollIst,
+    )
+  }
+  if (vaDok) {
+    const ag = datenPK.aggregate[String(vaDok.id)]
+    pruefe(
+      "agg.sollIst ist undefined bei VA-Dokument",
+      ag.sollIst === undefined,
+      String(ag.sollIst),
+    )
+  }
+  // R4 — polster befuellt bei VA, undefined bei RA.
+  if (vaDok) {
+    const ag = datenPK.aggregate[String(vaDok.id)]
+    pruefe(
+      "agg.polster ist Array bei VA-Dokument",
+      Array.isArray(ag.polster),
+      typeof ag.polster,
+    )
+  }
+  if (raDok) {
+    const ag = datenPK.aggregate[String(raDok.id)]
+    pruefe(
+      "agg.polster ist undefined bei RA-Dokument",
+      ag.polster === undefined,
+      String(ag.polster),
+    )
+  }
+  // CFG enthaelt die vier neuen Variante-Keys je Dokument.
+  pruefe(
+    "CFG: dok_charts hat sollist_a, sollist_b, polster_a, polster_b",
+    "sollist_a" in ersterDok && "sollist_b" in ersterDok &&
+      "polster_a" in ersterDok && "polster_b" in ersterDok,
+  )
+
+  // R11 — Sankey-Abschlussknoten: bei Ueberschuss "Ueberschuss /
+  // Ruecklagenzufuhr" als Knoten, bei Abgang "Abgangsdeckung".
+  const { chartSankey } = await import("../../web/js/dashboard-charts.js")
+  const sankeyMitUeberschuss = chartSankey({
+    eckwerte: { ertraege: 1000, aufwand: 600, netto: 400, komm: 0 },
+    sankey: { quellen: [], gruppen: [] },
+  })
+  pruefe(
+    "chartSankey: Ueberschuss-Knoten bei netto > 0",
+    sankeyMitUeberschuss.series[0].data.some(
+      (n) => n.name === "Ueberschuss / Ruecklagenzufuhr",
+    ),
+  )
+  const sankeyMitAbgang = chartSankey({
+    eckwerte: { ertraege: 600, aufwand: 1000, netto: -400, komm: 0 },
+    sankey: { quellen: [], gruppen: [] },
+  })
+  pruefe(
+    "chartSankey: Abgangsdeckung-Knoten bei netto < 0",
+    sankeyMitAbgang.series[0].data.some((n) => n.name === "Abgangsdeckung"),
+  )
+
+  // R11 — Sankey-Drill-down hat ebenfalls den Abschlussknoten.
+  const defaultDokId = String(datenPK.meta.default_dok)
+  const sUebersichtNeu = buildSankeyOption(datenPK.posten, defaultDokId, null)
+  const sSerieNeu = sUebersichtNeu.series[0]
+  const istAbschluss = sSerieNeu.data.some(
+    (n) =>
+      n.name === "Ueberschuss / Ruecklagenzufuhr" ||
+      n.name === "Abgangsdeckung",
+  )
+  pruefe(
+    "buildSankeyOption: Abschlussknoten (Ueberschuss/Abgang) ist vorhanden",
+    istAbschluss,
+    JSON.stringify(sSerieNeu.data.map((n) => n.name)),
+  )
+
   console.log("\nsankey-drill — Geldfluss-Drill-down")
   // quelleVonPosten — Portierung der CASE-Logik aus dashboard-data.js.
   pruefe(
@@ -534,10 +614,20 @@ async function teste() {
     gEinnahmeseite.length + " vs " + quelleKnoten.length,
   )
   // Betragstreue: die Kinder-Links summieren sich zum Betrag der Gruppe.
+  // R11 fuegt ggf. einen "Ueberschuss / Ruecklagenzufuhr"-Link vom
+  // Gemeindehaushalt hinzu — der gehoert nicht zu den Aufgabengruppen
+  // und wird hier ausgeschlossen.
+  const ABSCHLUSS_NAMEN = new Set([
+    "Ueberschuss / Ruecklagenzufuhr",
+    "Abgangsdeckung",
+  ])
   function gruppenSumme(serie) {
     return Math.round(
       serie.links
-        .filter((l) => l.source === "Gemeindehaushalt")
+        .filter((l) =>
+          l.source === "Gemeindehaushalt" &&
+          !ABSCHLUSS_NAMEN.has(l.target),
+        )
         .reduce((s, l) => s + l.value, 0),
     )
   }
@@ -557,9 +647,13 @@ async function teste() {
   })
   const qSerie = sQuelle.series[0]
   function quellenSumme(serie) {
+    // R11: "Abgangsdeckung" zaehlt nicht als Einnahmequelle.
     return Math.round(
       serie.links
-        .filter((l) => l.target === "Gemeindehaushalt")
+        .filter((l) =>
+          l.target === "Gemeindehaushalt" &&
+          !ABSCHLUSS_NAMEN.has(l.source),
+        )
         .reduce((s, l) => s + l.value, 0),
     )
   }

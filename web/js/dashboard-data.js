@@ -315,6 +315,63 @@ function aggregateDok(db, did) {
   const investDarlehen = Math.max(0, finAufnahme - finTilgung)
   const investEigen = Math.max(0, investAus - foerderung - investDarlehen)
 
+  // R3 — Soll-Ist-Abweichung (nur fuer Rechnungsabschluesse). Direkt aus
+  // v_detail.eh_delta abgeleitet, parametriert auf dokument_id; analog zu
+  // web/sql/14-soll-ist-abweichung.sql, aber je Dokument.
+  const dokTyp = db.wert(
+    `SELECT typ FROM dokument WHERE dokument_id=${did}`,
+  )
+  let sollIst
+  if (dokTyp === "RA") {
+    sollIst = rows(
+      db,
+      `SELECT bezeichnung, gruppe_text, richtung,
+              ROUND(eh_vergleich,0),
+              ROUND(eh_wert,0),
+              ROUND(eh_wert - eh_vergleich, 0)
+       FROM v_detail
+       WHERE dokument_id=${did}
+         AND ABS(eh_wert - eh_vergleich) > 20000
+       ORDER BY ABS(eh_wert - eh_vergleich) DESC LIMIT 20`,
+    ).map((r) => [
+      r[0] || "",
+      r[1] || "",
+      r[2] || "",
+      round(r[3] || 0),
+      round(r[4] || 0),
+      round(r[5] || 0),
+    ])
+  }
+
+  // R4 — Budgetierungspolster (nur fuer Voranschlaege). Wo liegt VA
+  // spuerbar ueber dem letzten Ist (eh_dritte)? Analog
+  // web/sql/08-budgetierungspolster.sql, parametriert.
+  let polster
+  if (dokTyp === "VA") {
+    polster = rows(
+      db,
+      `SELECT bezeichnung, gruppe_text,
+              ROUND(eh_dritte,0),
+              ROUND(eh_wert,0),
+              ROUND(eh_wert - eh_dritte,0),
+              CASE WHEN eh_dritte > 0
+                THEN ROUND(100.0*(eh_wert-eh_dritte)/eh_dritte,0)
+                ELSE NULL END
+       FROM v_detail
+       WHERE richtung='ausgabe' AND eh_dritte > 2000
+         AND eh_wert - eh_dritte > 5000
+         AND dokument_id=${did}
+       ORDER BY (eh_wert - eh_dritte) DESC LIMIT 20`,
+    ).map((r) => [
+      r[0] || "",
+      r[1] || "",
+      round(r[2] || 0),
+      round(r[3] || 0),
+      round(r[4] || 0),
+      r[5] == null ? null : Math.round(Number(r[5])),
+    ])
+  }
+
   return {
     eckwerte: {
       ertraege: round(ertraege),
@@ -392,6 +449,11 @@ function aggregateDok(db, did) {
       darlehen: round(investDarlehen),
       eigen: round(investEigen),
     },
+    // R3 — Soll-Ist-Liste (nur RA). Bei VA bleibt das Feld undefined,
+    // damit die Chart-Builder defensiv `?? []` zurueckfallen.
+    sollIst,
+    // R4 — Polster-Liste (nur VA). Bei RA undefined.
+    polster,
   }
 }
 

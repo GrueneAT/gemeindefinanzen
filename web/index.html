@@ -410,16 +410,63 @@
     <section class="tab-panel" data-panel="sparpotenzial">
       <div class="web-section-head">
         <h2>Sparpotenzial</h2>
-        <p>Wo im Budget liegt finanzieller Spielraum? Der Wasserfall ordnet das
-          Ergebnis ein, der kumulierte Sachaufwand zeigt, welche Posten
-          zusammen welche Betraege ausmachen.</p>
+        <p>Wo im Budget liegt finanzieller Spielraum? Der kumulierte
+          Sachaufwand zeigt, welche Posten zusammen welche Betraege
+          ausmachen. Soll-Ist und Budgetierungspolster blenden sich je nach
+          Dokumenttyp ein.</p>
       </div>
-      <section class="web-panel">
-        <div class="web-panel__head"><h3>Ergebnis als Wasserfall</h3></div>
+
+      <!-- R3 — Soll-Ist (Variante A + B) — nur bei RA-Dokumenten sichtbar
+           (per onDocChange-Hook in dashboard.js gesteuert). -->
+      <section class="web-panel" data-typ-panel="RA">
+        <div class="web-panel__head">
+          <h3>Variante A · Soll-Ist-Abweichung (Diverging-Balken)</h3>
+          <p class="web-panel__note">Posten mit den groessten Abweichungen
+            zwischen Soll laut Voranschlag und Ist laut Rechnungsabschluss.
+            Gruen = Mehrertrag/Minderaufwand, Clay = Mehraufwand/
+            Mindereinnahme. <strong>Nur fuer Rechnungsabschluesse
+            aussagekraeftig.</strong></p>
+        </div>
         <div class="web-panel__body">
-          <div id="c_wasserfall_sp" class="dash-chart" style="height:460px"></div>
+          <div id="c_sollist_a" class="dash-chart" style="height:480px"></div>
         </div>
       </section>
+      <section class="web-panel" data-typ-panel="RA">
+        <div class="web-panel__head">
+          <h3>Variante B · Soll-Ist (Dumbbell)</h3>
+          <p class="web-panel__note">Soll-Punkt (blau) und Ist-Punkt (gruen
+            oder clay je nach Vorzeichen), verbunden durch eine Linie pro
+            Posten — zeigt die Absolutwerte beider Spalten.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_sollist_b" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+
+      <!-- R4 — Budgetierungspolster (Variante A + B) — nur bei VA. -->
+      <section class="web-panel" data-typ-panel="VA">
+        <div class="web-panel__head">
+          <h3>Variante A · Budgetierungspolster (Doppelbalken VA vs. Ist-RA)</h3>
+          <p class="web-panel__note">Vordergrundbalken Voranschlag (gold),
+            heller Geistersbalken letztes Ist (Sage). <strong>Nur fuer
+            Voranschlaege aussagekraeftig.</strong></p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_polster_a" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+      <section class="web-panel" data-typ-panel="VA">
+        <div class="web-panel__head">
+          <h3>Variante B · Budgetierungspolster (Diverging nach Polsterhoehe)</h3>
+          <p class="web-panel__note">Posten sortiert nach Polster-Hoehe in
+            EUR (Voranschlag minus letztes Ist) — die groesste Luft nach
+            oben rechts in Clay.</p>
+        </div>
+        <div class="web-panel__body">
+          <div id="c_polster_b" class="dash-chart" style="height:480px"></div>
+        </div>
+      </section>
+
       <section class="web-panel">
         <div class="web-panel__head">
           <h3>Kumulierter Sachaufwand mit Ermessensspielraum</h3>

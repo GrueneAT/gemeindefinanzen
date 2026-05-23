@@ -197,6 +197,13 @@ export function buildSankeyOption(posten, dokId, expand) {
     })
   }
 
+  // R11 — Eckwerte aus den Posten ableiten, um den Abschlussknoten
+  // (Ueberschuss/Abgangsdeckung) bilanziell korrekt einzuzeichnen.
+  // Summe ueber alle einnahmen- und ausgabenposten dieses Dokuments.
+  const ertraegeGesamt = einnahmen.reduce((s, p) => s + (p.ew || 0), 0)
+  const aufwandGesamt = ausgaben.reduce((s, p) => s + (p.ew || 0), 0)
+  const netto = ertraegeGesamt - aufwandGesamt
+
   node(MITTE, INK.soft, { seite: "mitte", key: "", expandbar: false })
 
   // Pro Seite: ist genau diese Seite die gedrillte Seite? Nur auf der
@@ -255,6 +262,30 @@ export function buildSankeyOption(posten, dokId, expand) {
     // Anderer, nicht-gewaehlter Knoten DERSELBEN gedrillten Seite: bleibt
     // ausgeblendet.
   })
+
+  // R11 — Bilanzielle Ehrlichkeit: Ueberschuss/Abgang als Abschlussknoten,
+  // konsistent mit chartSankey in dashboard-charts.js. Im Drill-down
+  // ebenfalls sichtbar, weil das Gemeindehaushalt-Saldo unabhaengig vom
+  // Aufklapp-Zustand ist.
+  if (netto > 0.5) {
+    node("Ueberschuss / Ruecklagenzufuhr", INK.green, {
+      seite: "abschluss", key: "ueberschuss", expandbar: false,
+    })
+    links.push({
+      source: MITTE,
+      target: "Ueberschuss / Ruecklagenzufuhr",
+      value: netto,
+    })
+  } else if (netto < -0.5) {
+    node("Abgangsdeckung", INK.red, {
+      seite: "abschluss", key: "abgang", expandbar: false,
+    })
+    links.push({
+      source: "Abgangsdeckung",
+      target: MITTE,
+      value: -netto,
+    })
+  }
 
   return {
     textStyle: { fontFamily: CHART_FONT, color: ACHSE_TEXT },

@@ -804,7 +804,6 @@
   registerChart("c_aufwandart", "dok", "aufwandart");
   registerChart("c_treemap", "dok", "treemap");
   registerChart("c_wasserfall", "dok", "wasserfall");
-  registerChart("c_wasserfall_sp", "dok", "wasserfall");
   registerChart("c_korridor", "dok", "korridor");
   registerChart("c_treiber", "dok", "treiber");
   registerChart("c_investitionen", "dok", "investitionen");
@@ -818,6 +817,26 @@
   // R12 — Investitions-Finanzierung (Variante A + B)
   registerChart("c_investfin_a", "dok", "investfin_a");
   registerChart("c_investfin_b", "dok", "investfin_b");
+  // R3 — Soll-Ist (Variante A + B); nur bei RA aussagekraeftig.
+  registerChart("c_sollist_a", "dok", "sollist_a");
+  registerChart("c_sollist_b", "dok", "sollist_b");
+  // R4 — Budgetierungspolster (Variante A + B); nur bei VA aussagekraeftig.
+  registerChart("c_polster_a", "dok", "polster_a");
+  registerChart("c_polster_b", "dok", "polster_b");
+
+  // Typabhaengige Panels (R3 nur RA, R4 nur VA) ein-/ausblenden, wenn der
+  // User das Dokument wechselt. data-typ-panel="RA"/"VA" ist im Markup
+  // gesetzt.
+  onDocChange(function (dokId) {
+    var dok = docs.find(function (x) { return String(x.id) === String(dokId); });
+    if (!dok) return;
+    document.querySelectorAll("[data-typ-panel]").forEach(function (panel) {
+      var noetig = panel.dataset.typPanel;
+      panel.hidden = noetig !== dok.typ;
+    });
+    // ECharts kennt die Groesse erst nach dem Layout — Resize anstossen.
+    requestAnimationFrame(resizeVisibleCharts);
+  });
 
   onDocChange(rerenderStats);
   onDocChange(rerenderTables);
