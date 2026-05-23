@@ -1,7 +1,7 @@
 ---
 id: a7x2n
 title: Auswertungen erweitern — Gemeindebudget verstaendlicher machen
-status: open
+status: done
 priority: high
 labels:
 - dashboard
