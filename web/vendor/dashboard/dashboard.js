@@ -209,8 +209,12 @@
               { text: euro(r[2]), num: true }];
     }));
     tableRows("tbl-transfers", a.transfers.map(function (r) {
-      var pflicht = /umlage|nökas|nokas|sozialhilfe|krankenanstalt/i
-        .test(r[0]);
+      // R9: zentrale Heuristik — Fallback-Regex nur, falls window-Helfer
+      // (z. B. in Tests/Drittumgebung) fehlt.
+      var pflichtFn = window.istPflichtumlage || function (b) {
+        return /umlage|nökas|nokas|sozialhilfe|krankenanstalt/i.test(b);
+      };
+      var pflicht = pflichtFn(r[0]);
       return [{ text: esc(r[0]) },
               { text: pflicht ? "Pflichtumlage" : "freiwillig/sonstige" },
               { text: euro(r[1]), num: true },
@@ -831,6 +835,9 @@
   registerChart("c_eineuro_aus_b", "dok", "eineuro_aus_b");
   registerChart("c_eineuro_ein_a", "dok", "eineuro_ein_a");
   registerChart("c_eineuro_ein_b", "dok", "eineuro_ein_b");
+  // R9 — Gebunden vs. gestaltbar (A+B)
+  registerChart("c_bindung_a", "dok", "bindung_a");
+  registerChart("c_bindung_b", "dok", "bindung_b");
 
   // Typabhaengige Panels (R3 nur RA, R4 nur VA) ein-/ausblenden, wenn der
   // User das Dokument wechselt. data-typ-panel="RA"/"VA" ist im Markup

@@ -978,6 +978,118 @@ export function chartInvestFinanzierungSankey(agg) {
   return opt
 }
 
+// --- R9 — Gebunden vs. gestaltbar ----------------------------------------
+// Sechs Segmente in fester Reihenfolge. Personal/Pflichtumlagen/Finanz
+// gelten als gebunden (kurzfristig nicht beweglich), freie Sachausgaben
+// als gestaltbar, freiwillige Transfers als teilweise gebunden, "unklar"
+// als Rest (Pflichtumlagen-Heuristik mit Disclaimer).
+const BINDUNG_SEGMENTE_ORDNUNG = [
+  ["personal", "Personal (gebunden)", "INK.blue"],
+  ["pflichtumlagen", "Pflichtumlagen (gebunden)", "INK.red"],
+  ["finanz", "Finanz (gebunden)", "INK.soft"],
+  [
+    "freiwilligeTransfers",
+    "freiwillige Transfers (teilweise gebunden)",
+    "INK.orange",
+  ],
+  ["freieSachaus", "freie Sachausgaben (gestaltbar)", "INK.green"],
+  ["unklar", "automatisch erkannt", "INK.soft"],
+]
+
+function bindungSegmente(agg) {
+  const farben = {
+    "INK.blue": INK.blue,
+    "INK.red": INK.red,
+    "INK.soft": INK.soft,
+    "INK.orange": INK.orange,
+    "INK.green": INK.green,
+  }
+  const b = agg.bindung || {}
+  return BINDUNG_SEGMENTE_ORDNUNG.map(([k, label, farbe]) => [
+    label,
+    b[k] || 0,
+    farben[farbe],
+  ]).filter(([, v]) => v > 0)
+}
+
+// R9 Variante A: einzelner horizontaler 100-%-Stapelbalken.
+export function chartBindungStapel(agg) {
+  const segmente = bindungSegmente(agg)
+  const total = segmente.reduce((s, [, v]) => s + v, 0) || 1
+  return {
+    textStyle: baseText(),
+    tooltip: tip({
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter:
+        "(arr)=>arr.map(p=>p.seriesName+': '+(p.value/1e3).toLocaleString" +
+        "('de-AT')+' k EUR ('+Math.round(100*p.value/" + (total || 1) +
+        ")+' %)').join('<br>')+'<br><br><em>Pflichtumlagen-Heuristik " +
+        "per Regex auf Bezeichnung — Fehlklassifikationen moeglich.</em>'",
+    }),
+    legend: legende({ type: "scroll" }),
+    grid: grid({ left: 12, right: 18, top: 32, bottom: 56 }),
+    xAxis: valAxis(),
+    yAxis: catAxis(["Operativer Aufwand"]),
+    series: segmente.map(([name, wert, farbe]) => ({
+      name,
+      type: "bar",
+      stack: "bindung",
+      data: [round(wert)],
+      itemStyle: { color: farbe },
+      barWidth: "55%",
+      barMaxWidth: BAR_MAX_WEIT,
+    })),
+  }
+}
+
+// R9 Variante B: vertikale gestapelte Saeulen je Aufwandsart-Gruppe.
+// Personal komplett gebunden, Sachaufwand komplett gestaltbar, Transfer
+// geteilt in Pflicht/freiwillig, Finanz komplett gebunden.
+export function chartBindungSaeulen(agg) {
+  const b = agg.bindung || {}
+  // Spalten: Personal | Transfer | Sachaufwand | Finanz
+  const namen = ["Personal", "Transfer", "Sachaufwand", "Finanz"]
+  const gebunden = [
+    b.personal || 0,
+    b.pflichtumlagen || 0,
+    0,
+    b.finanz || 0,
+  ]
+  const gestaltbar = [
+    0,
+    b.freiwilligeTransfers || 0,
+    b.freieSachaus || 0,
+    0,
+  ]
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende(),
+    grid: grid({ top: 30, bottom: 56 }),
+    xAxis: catAxis(namen),
+    yAxis: valAxis(),
+    series: [
+      {
+        name: "gebunden",
+        type: "bar",
+        stack: "bind",
+        data: gebunden.map((v) => round(v)),
+        itemStyle: { color: INK.red, borderRadius: 2 },
+        barMaxWidth: BAR_MAX_WEIT,
+      },
+      {
+        name: "gestaltbar",
+        type: "bar",
+        stack: "bind",
+        data: gestaltbar.map((v) => round(v)),
+        itemStyle: { color: INK.green, borderRadius: 2 },
+        barMaxWidth: BAR_MAX_WEIT,
+      },
+    ],
+  }
+}
+
 // --- R6 — Aufgabenbereiche als sortierte Balken --------------------------
 // Horizontales Balken-Ranking aller Aufgabengruppen (Ausgaben) — Laengen
 // statt Flaechen vergleichen. Reuse von `bar()`.
@@ -1372,6 +1484,9 @@ export function alleCharts(daten) {
       eineuro_aus_b: chartEinEuroPikto(agg, "aus"),
       eineuro_ein_a: chartEinEuroStapel(agg, "ein"),
       eineuro_ein_b: chartEinEuroPikto(agg, "ein"),
+      // R9 — Gebunden vs. gestaltbar (Variante A + B)
+      bindung_a: chartBindungStapel(agg),
+      bindung_b: chartBindungSaeulen(agg),
     }
   }
   const trend = daten.trend

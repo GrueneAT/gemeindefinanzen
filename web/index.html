@@ -572,6 +572,36 @@
           <div id="c_treiber" class="dash-chart" style="height:480px"></div>
         </div>
       </section>
+      <!-- R9 — Gebunden vs. gestaltbar (Variante A + B). Pflichtumlagen
+           werden heuristisch per Bezeichnungs-Regex erkannt — der
+           Disclaimer steht im Panel-Note. -->
+      <div class="dash-grid">
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante A · Gebunden vs. gestaltbar (100 %-Stapel)</h3>
+            <p class="web-panel__note">Welcher Anteil der operativen
+              Ausgaben ist kurzfristig kaum beweglich? Personal,
+              Pflichtumlagen und Finanzaufwand gelten als gebunden;
+              freie Sachausgaben als gestaltbar. <strong>Pflichtumlagen
+              sind heuristisch erkannt (per Bezeichnungs-Regex)
+              — Fehlklassifikationen moeglich.</strong></p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_bindung_a" class="dash-chart" style="height:240px"></div>
+          </div>
+        </section>
+        <section class="web-panel">
+          <div class="web-panel__head">
+            <h3>Variante B · Bindung je Aufwandsart (gestapelte Saeulen)</h3>
+            <p class="web-panel__note">Pro Aufwandsart der gebundene und
+              gestaltbare Anteil — detaillierter, weniger plakativ.</p>
+          </div>
+          <div class="web-panel__body">
+            <div id="c_bindung_b" class="dash-chart" style="height:360px"></div>
+          </div>
+        </section>
+      </div>
+
       <div class="callout gat-card gat-card--primary">
         <div class="callout-label gat-card__title">Wichtige Einordnung</div>
         <p class="gat-card__body">Diese Auswertung ist eine

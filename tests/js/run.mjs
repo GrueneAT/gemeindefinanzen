@@ -505,6 +505,49 @@ async function teste() {
       "eineuro_ein_a" in ersterDok && "eineuro_ein_b" in ersterDok,
   )
 
+  // R9 — Bindungs-Aggregation und Pflichtumlagen-Helper.
+  const { istPflichtumlage } = await import(
+    "../../web/js/dashboard-data.js"
+  )
+  pruefe(
+    "istPflichtumlage('Sozialhilfeumlage') -> true",
+    istPflichtumlage("Sozialhilfeumlage") === true,
+  )
+  pruefe(
+    "istPflichtumlage('NOEKAS-Beitrag') -> true (Umlaut-variante)",
+    istPflichtumlage("NÖKAS-Beitrag") === true ||
+      istPflichtumlage("Nokas-Beitrag") === true,
+  )
+  pruefe(
+    "istPflichtumlage('Sachaufwand') -> false",
+    istPflichtumlage("Sachaufwand") === false,
+  )
+  pruefe(
+    "istPflichtumlage(null) -> false (defensive)",
+    istPflichtumlage(null) === false,
+  )
+
+  const bindung = aggBase.bindung
+  const erwarteteSchluessel = [
+    "personal", "pflichtumlagen", "finanz",
+    "freiwilligeTransfers", "freieSachaus", "unklar",
+  ]
+  pruefe(
+    "agg.bindung hat alle sechs Schluessel",
+    bindung && erwarteteSchluessel.every((k) => k in bindung),
+    JSON.stringify(bindung && Object.keys(bindung)),
+  )
+  pruefe(
+    "agg.bindung: alle Komponenten >= 0",
+    bindung && erwarteteSchluessel.every((k) => bindung[k] >= 0),
+    JSON.stringify(bindung),
+  )
+
+  pruefe(
+    "CFG: dok_charts hat bindung_a, bindung_b",
+    "bindung_a" in ersterDok && "bindung_b" in ersterDok,
+  )
+
   // R11 — Sankey-Abschlussknoten: bei Ueberschuss "Ueberschuss /
   // Ruecklagenzufuhr" als Knoten, bei Abgang "Abgangsdeckung".
   const { chartSankey } = await import("../../web/js/dashboard-charts.js")

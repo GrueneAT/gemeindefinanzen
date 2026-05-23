@@ -12,6 +12,17 @@ const ORDER =
 
 const KOMM = "833000"
 
+// Pflichtumlagen-Heuristik (R9). Bislang stand der Regex inline in
+// dashboard.js (Zeilen 160-161); fuer die Bindungs-Aggregation (R9) wird
+// dieselbe Logik in dashboard-data.js gebraucht. Zentraler Helfer, der
+// von beiden Stellen genutzt wird (window.istPflichtumlage in
+// dashboard-app.js fuer den klassischen Skript-Pfad).
+export function istPflichtumlage(bezeichnung) {
+  return /umlage|nökas|nokas|sozialhilfe|krankenanstalt/i.test(
+    String(bezeichnung || ""),
+  )
+}
+
 function rows(db, sql) {
   return db.abfrage(sql).map((r) => Object.values(r))
 }
@@ -315,6 +326,48 @@ function aggregateDok(db, did) {
   const investDarlehen = Math.max(0, finAufnahme - finTilgung)
   const investEigen = Math.max(0, investAus - foerderung - investDarlehen)
 
+  // R9 — Gebunden vs. gestaltbar. Klassifikation der operativen Ausgaben
+  // in Personal (MVAG 221), Pflichtumlagen (MVAG 223 + Regex), Finanz
+  // (MVAG 224), freiwillige Transfers (Rest MVAG 223), freie Sachaus
+  // (MVAG 222 ausserhalb der nicht-zahlungswirksamen). Kategorie "unklar"
+  // sammelt nicht zugeordnete oder nicht zahlungswirksame Posten.
+  const bindungsZeilen = rows(
+    db,
+    `SELECT bezeichnung, mvag_eh, konto, eh_wert FROM v_detail
+     WHERE richtung='ausgabe' AND gebarung='operativ'
+       AND eh_wert > 0 AND dokument_id=${did}`,
+  )
+  const bindung = {
+    personal: 0,
+    pflichtumlagen: 0,
+    finanz: 0,
+    freiwilligeTransfers: 0,
+    freieSachaus: 0,
+    unklar: 0,
+  }
+  for (const [bez, mvag, konto, wert] of bindungsZeilen) {
+    const m3 = String(mvag || "").slice(0, 3)
+    if (m3 === "221") {
+      bindung.personal += wert
+    } else if (m3 === "224") {
+      bindung.finanz += wert
+    } else if (m3 === "223") {
+      if (istPflichtumlage(bez)) bindung.pflichtumlagen += wert
+      else bindung.freiwilligeTransfers += wert
+    } else if (m3 === "222") {
+      // Korridor-Filter spiegeln: nicht zahlungswirksame Posten ausnehmen
+      // (Abschreibungen u.ae. — Konten 68* und "errechnungsr*").
+      const nichtZahlung =
+        String(konto || "").startsWith("68") ||
+        /errechnungsr/i.test(String(bez || ""))
+      if (!nichtZahlung) bindung.freieSachaus += wert
+      else bindung.unklar += wert
+    } else {
+      bindung.unklar += wert
+    }
+  }
+  for (const k of Object.keys(bindung)) bindung[k] = round(bindung[k])
+
   // R7 — Saldo je Aufgabenbereich. Einnahmen und Ausgaben je Gruppe;
   // Saldo = Einnahmen - Ausgaben. Portierung von web/sql/02-gruppen-
   // uebersicht.sql, parametriert auf dokument_id.
@@ -482,6 +535,8 @@ function aggregateDok(db, did) {
       round(r[3] || 0),
       round(r[4] || 0),
     ]),
+    // R9 — Bindungs-Aggregation (gebunden vs. gestaltbar).
+    bindung,
     // R8 — auf 100 normalisiert. einEuroAuf aus aufwand_art (Personal,
     // Sachaufwand, Transfers, Finanz, Sonstige); einEuroEin aus den
     // aggregierten sankey.quellen.
