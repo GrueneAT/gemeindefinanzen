@@ -892,3 +892,65 @@ Panel-Chart-Breite exakt wieder her; Vollbild auf einem Diagramm verlassen
 und dann ein anderes oeffnen funktioniert sauber.
 
 **Tests gruen** (`npm run test:js` 61/61, `npm run test:e2e` 7/7).
+
+### Iteration 19 — Migration auf design-system v2.0 (Abschluss)
+
+Die org-weite **DS v2.0** (`grueneat/design-system`,
+[v2.0.0](https://github.com/GrueneAT/design-system/releases/tag/v2.0.0))
+hat eine `--gat-web-*`-Token-Schicht und die `.gat-*`-Komponenten erhalten,
+die diese App in den Iterationen 1–18 lokal pflegte. Iteration 19 raeumt
+die doppelte Pflege auf und schliesst die Konvergenz ab.
+
+- **Tokens.** Lokale `--web-*`-Schicht in `web/css/app.css` ausgebaut.
+  Alle 26 Tokens (Flaechenfarben, Identitaet, Chart-Palette, Radien,
+  Schatten, Fokusring, Page-Max, Focus-Offset) sind jetzt
+  `--gat-web-*` aus dem DS — Hex-Werte 1:1 identisch (die App war die
+  Vorlage gewesen). Die App-Adapter-Aliase `--app-hair`/`--app-soft`/
+  `--app-akzent-primaer`/`--app-risiko` zeigen jetzt auf `--gat-web-*`-
+  Tokens und bleiben als duenne Bruecke.
+- **Komponenten.** `.web-panel`/`.metric-card`/`.web-callout`/
+  `.web-section-head`/`.web-hero`/`.web-brandbar*` durch
+  `.gat-panel`/`.gat-metric-card`/`.gat-callout`/`.gat-section-head`/
+  `.gat-hero`/`.gat-header*` ersetzt. Markup in `web/index.html` und
+  Vollbild-Selektoren in `web/js/app.js` mitgezogen; `web-panel__fs-btn`
+  zu `app-panel-fs-btn` umbenannt (App-eigener Vollbild-Knopf, kein
+  DS-Pendant). Lokale Komponenten-CSS (~600 LOC) entfernt — DS
+  uebernimmt. **Tabs/Switcher** tragen Doppel-Klassen
+  (`class="tab-btn gat-tab"`, `class="switch-btn gat-switch-btn"`) —
+  Funktionsklassen bleiben fuer `dashboard.js`, optisch greift der
+  DS-Default. Visuelle `.tabs`/`.switcher`-Bloecke aus
+  `web/vendor/dashboard/dashboard.css` entfernt, weil sie sonst den
+  DS-Default ueberdeckt haetten (gleiche Spezifitaet, spaeter geladen
+  gewinnt). `.tab-panel.is-active`-Animation bleibt lokal, weil
+  `dashboard.js` die `is-active`-Klasse auf `.tab-panel` setzt, nicht
+  auf `.gat-tab-panel`.
+- **Charts.** `web/js/dashboard-charts.js` und `web/js/sankey-drill.js`
+  importieren Konstanten und Helfer aus
+  `https://grueneat.github.io/design-system/gat-charts.js`. Lokale
+  `PALETTE`/`INK`/`LABEL_SIZE`/`AXIS_SIZE`/`BAR_MAX_*`/`VA_DECAL`/
+  `tip()`/`legende()`/`grid()`/`planIstLegende()` entfernt. Ein duenner
+  App-Adapter mappt DS-`INK` (tonal: `text`/`soft`/`axis`/`gridline`)
+  auf die App-Rollen (`green`/`blue`/`orange`/`red`/`soft`/`paper`);
+  `legende_app({ bottom: 0, ...extra })` haengt den App-Default an die
+  DS-`legende()`. App-spezifische Helfer (`catAxis()` mit Ellipse,
+  `valAxis()` mit EUR-Formatter, `round()`, `bar()`, `trendBalken()`,
+  `MEHRJAHR_PALETTE`) bleiben lokal. Fuer die Node-Unit-Tests existiert
+  ein Loader-Hook (`tests/js/gat-charts-shim.mjs` plus Stub) — keine
+  Vendoring im Produktiv-Code.
+- **A11y.** `.gat-mode-hc`-Toggle-Knopf in der Brandbar
+  (`gat-header__a11y-toggle`, Icon + Label „Kontrast", `aria-pressed`).
+  FOWT-Prevention durch ein Inline-`<script>` im `<head>`, das die
+  Klasse vor dem ersten Paint auf `<html>` setzt (mit try/catch fuer den
+  Privatmodus-`SecurityError`). Persistenz im `localStorage`-Key
+  `gat-mode-hc` (`"1"`/`""`).
+- **Status: Doku historisch.** Dieses Dokument
+  (`docs/web-design-system.md`) hat seinen Zweck erfuellt — es war die
+  App-interne Begleitung der Iterationen 1–18, in deren Verlauf die
+  DS-`--gat-web-*`-Schicht entstand. Ab Iteration 19 leben neue
+  Konventionen im DS-Repo (`grueneat/design-system`,
+  [v2.0.0](https://github.com/GrueneAT/design-system/releases/tag/v2.0.0)),
+  nicht hier. Pflege der App beschraenkt sich auf die App-spezifische
+  Schicht (`--app-*`-Aliase, `.app-*`-Klassen).
+
+**Tests gruen** (`npm run test:js` 105/105, `npm run test:e2e` 16/16
+mit dem neuen `hc-toggle.spec.mjs`).
