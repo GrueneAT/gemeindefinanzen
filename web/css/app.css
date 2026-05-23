@@ -1,12 +1,13 @@
 /* Browser-App — Stil der Upload-Oberflaeche, des Dashboards und der
    Dokumentverwaltung.
 
-   Quellschicht ist das Web-Design-System (--web-*-Token, hier definiert).
-   Es baut auf den --gat-*-Tokens des Gruene-AT-Design-Systems auf (per CDN
-   geladen) und ergaenzt die Basisstile, die das DS bewusst nicht mitliefert.
+   Quellschicht ist das Gruene-AT-Design-System v2.0 (--gat-*-/--gat-web-*-
+   Token, per CDN geladen). Diese Datei ergaenzt nur App-spezifische
+   Adapter-Aliase (--app-*) und die Basisstile, die das DS bewusst nicht
+   mitliefert.
 
    Aufbau:
-     1. Design-Token (:root)
+     1. App-Adapter-Token (:root)
      2. Basis- / Element-Stile
      3. Layout & Container
      4. Komponenten (.metric-card, .web-panel, .web-callout,
@@ -18,69 +19,17 @@
 /* ===========================================================================
    1. DESIGN-TOKEN
    ===========================================================================
-   Bewusst unabhaengig von den --gat-*-Marken-Tokens, damit die Entsaettigung
-   an einer Stelle steuerbar ist. Quelle und Begruendung:
-   docs/web-design-system.md. */
+   Die Web-Token-Schicht (--gat-web-*) liefert das org-weite DS v2.0 ueber
+   das CDN-Stylesheet (design-system.css). Die App fuegt nur eine duenne
+   Adapter-Schicht hinzu: semantische --app-*-Aliase, die aelterer App-Code
+   mehrfach nutzt. --hair/--soft sind reine Flaechen-/Textaliase;
+   --akzent-primaer/--risiko benennen Status-Rollen (Fortschritt, Sankey).
+   Einmalig genutzte Aliase wurden auf die --gat-web-*-Token inline aufgeloest. */
 :root {
-  /* Flaeche & Text */
-  --web-bg: #f3f5f0;
-  --web-surface: #ffffff;
-  --web-surface-sunk: #f7f9f4;
-  --web-hairline: #e1e4db;
-  --web-shadow: 0 1px 2px rgba(31,38,28,.05), 0 4px 14px rgba(31,38,28,.05);
-  --web-text: #23271f;
-  --web-text-soft: #5e6358;
-  /* --web-text-mute auf AA-Kontrast nachgezogen (Iteration 8): 8b8f82 lag
-     mit 3.0-3.3 unter dem 4.5er-Schwellwert fuer Fliesstext; 6b6f63 erreicht
-     auf --web-bg / --web-surface / --web-surface-sunk 4.7-5.2 und bleibt
-     dabei ein ruhiger, entsaettigter Grauton. */
-  --web-text-mute: #6b6f63;
-
-  /* Gruene Identitaet (entsaettigt) */
-  --web-green-deep: #2c6e40;
-  --web-green: #4a8a52;
-  --web-green-tint: #e7efe3;
-  --web-yellow: #ecd64a;
-
-  /* Risiko-/Fehler-Ton fuer Text und gefuellte Flaechen. --web-chart-clay
-     (#b9744f) ist als Diagrammfuellung gut, als Textfarbe auf hellem Grund
-     aber zu hell (AA-Kontrast nur ~3.2-3.7). --web-clay-text ist die
-     abgedunkelte Variante fuer Text/Rahmen: ~4.7 auf der Fehl-Tint-Flaeche,
-     ~5.3 auf Weiss, weiss darauf ~5.5. */
-  --web-clay-text: #9c5a38;
-
-  /* Diagramm-Palette (kategorial, niedrige Saettigung).
-     Doku-Token: --web-yellow (oben) sowie --web-chart-leaf/-teal/-gold/
-     -plum/-sage werden von keiner CSS-Regel referenziert. Sie halten die
-     Spec-Tabelle fest; die Chart-Module lesen die gleichen Hex-Werte
-     direkt im JS. --web-chart-green/-clay/-slate werden dagegen auch in
-     CSS genutzt (Metric-Card-Akzente, Risiko-Ton). */
-  --web-chart-green: #3f7d4f;
-  --web-chart-leaf: #6ba368;
-  --web-chart-teal: #4f93a0;
-  --web-chart-gold: #c9a24b;
-  --web-chart-clay: #b9744f;
-  --web-chart-plum: #9c5b7d;
-  --web-chart-slate: #5d6b8a;
-  --web-chart-sage: #8a8f7d;
-
-  /* Radien — eine konsistente Skala fuer die ganze App.
-     --web-radius-control fuer Bedienelemente (Buttons, Felder, Reiter,
-     Segmente), --web-radius-card fuer Karten/Panels/Dialoge. */
-  --web-radius-control: 6px;
-  --web-radius-card: 10px;
-
-  /* Fokusring — einheitlich fuer alle fokussierbaren Bedienelemente. */
-  --web-focus-ring: 0 0 0 3px color-mix(in srgb, var(--web-green) 38%, transparent);
-
-  /* Adapterschicht: semantische --app-*-Aliase, die aelterer App-Code
-     mehrfach nutzt. --hair/--soft sind reine Flaechen-/Textaliase;
-     --akzent-primaer/--risiko benennen Status-Rollen (Fortschritt, Sankey).
-     Einmalig genutzte Aliase wurden auf die --web-*-Token inline aufgeloest. */
-  --app-hair: var(--web-hairline);
-  --app-soft: var(--web-text-soft);
-  --app-akzent-primaer: var(--web-green-deep);
-  --app-risiko: var(--web-chart-clay);
+  --app-hair: var(--gat-web-hairline);
+  --app-soft: var(--gat-web-text-soft);
+  --app-akzent-primaer: var(--gat-web-green-deep);
+  --app-risiko: var(--gat-web-chart-5);
 }
 
 
@@ -92,9 +41,9 @@
    Ueberschriften, Tabellen und Formularfelder direkt aus den Tokens. */
 body {
   font-family: var(--gat-font-copy);
-  color: var(--web-text);
+  color: var(--gat-web-text);
   /* Ruhiger, leicht gruenstichiger Grundton statt hartem Weiss. */
-  background: var(--web-bg);
+  background: var(--gat-web-bg);
   line-height: var(--gat-leading-copy);
   margin: 0;
   font-size: var(--gat-text-copy);
@@ -103,14 +52,14 @@ body {
 /* Ueberschriften-Typografie: Barlow Semi Condensed ist von Natur aus schmal —
    Gewicht 900 macht es zusaetzlich laut. Ruhigere Skala laut
    docs/web-design-system.md: h1 -> 800, h2 -> 700, h3 -> 700 (kleiner).
-   Farbe --web-text statt schwarz. Vertikaler Rhythmus: h2 beginnt einen
+   Farbe --gat-web-text statt schwarz. Vertikaler Rhythmus: h2 beginnt einen
    Abschnitt (grosser Oberabstand), h3 sitzt eng an seinem Inhalt. */
 h1, h2, h3 {
   font-family: var(--gat-font-headline);
   /* Bewusst nicht --gat-leading-headline (0.9) — zu eng fuer mehrzeilige
      Dashboard-Ueberschriften. */
   line-height: 1.18;
-  color: var(--web-text);
+  color: var(--gat-web-text);
 }
 h1 {
   font-size: var(--gat-text-h1);
@@ -158,12 +107,9 @@ input, select { font-family: var(--gat-font-copy); }
    Fliesstextes wird separat pro Komponente gedeckelt (~70rem), nicht
    ueber den Container. Die breite 15-Spalten-Suchtabelle scrollt intern
    ueber .table-scroll und braucht den Container nicht zu sprengen.
-   --web-page-max ist die gemeinsame Quelle fuer .page und den Header. */
-:root {
-  --web-page-max: min(2040px, 94vw);
-}
+   --gat-web-page-max liefert das DS v2.0 (CDN-Stylesheet). */
 .page {
-  max-width: var(--web-page-max);
+  max-width: var(--gat-web-page-max);
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 2.5rem);
 }
@@ -203,12 +149,12 @@ input, select { font-family: var(--gat-font-copy); }
 
 /* Seitentitel im Inhaltsbereich — Abstand zum Header. Die DS-Klasse
    .gat-headline traegt Gewicht 900 und schwarze Schrift; hier auf die
-   ruhigere Skala (h1 -> 800, --web-text) gebracht. */
+   ruhigere Skala (h1 -> 800, --gat-web-text) gebracht. */
 .gat-headline {
   margin: var(--gat-space-5) 0 var(--gat-space-2);
   font-weight: 800;
   line-height: 1.18;
-  color: var(--web-text);
+  color: var(--gat-web-text);
 }
 
 /* Seitenfuss — dezente Grundzeile. */
@@ -237,14 +183,14 @@ input, select { font-family: var(--gat-font-copy); }
    Linie ist der eigentliche Trenner zum gruenstichigen Seitengrund.
    Die DS-Klassen bleiben am Element und funktionsfaehig. */
 .web-brandbar {
-  background: var(--web-surface);
-  border-bottom: 3px solid var(--web-green);
+  background: var(--gat-web-surface);
+  border-bottom: 3px solid var(--gat-web-green);
   box-shadow: 0 1px 3px rgba(31, 38, 28, .06);
 }
 /* Header-Inhalt auf dieselbe Breite wie der Seiteninhalt bringen, damit
    Header und Body einen gemeinsamen linken Rand teilen. */
 .gat-header__inner {
-  max-width: var(--web-page-max);
+  max-width: var(--gat-web-page-max);
   padding-inline: clamp(1rem, 4vw, 2.5rem);
   padding-block: 0.85rem;
   gap: var(--gat-space-3);
@@ -270,7 +216,7 @@ input, select { font-family: var(--gat-font-copy); }
   font-weight: 700;
   font-size: 1.5rem;
   line-height: 1;
-  color: var(--web-text);
+  color: var(--gat-web-text);
   letter-spacing: 0.01em;
 }
 /* Navigationszone rechts — gruene Links wie bei gruene.at. Als Liste
@@ -289,7 +235,7 @@ input, select { font-family: var(--gat-font-copy); }
   font-family: var(--gat-font-headline);
   font-weight: 600;
   font-size: 1.05rem;
-  color: var(--web-green-deep);
+  color: var(--gat-web-green-deep);
   text-decoration: none;
 }
 .web-brandbar__nav-list a:hover {
@@ -297,7 +243,7 @@ input, select { font-family: var(--gat-font-copy); }
 }
 /* Aktueller App-Kontext — gruen, leicht hervorgehoben als aktiver Eintrag. */
 .web-brandbar__nav-current {
-  border-bottom: 2px solid var(--web-green);
+  border-bottom: 2px solid var(--gat-web-green);
   padding-bottom: 2px;
 }
 @media (max-width: 30rem) {
@@ -330,10 +276,10 @@ input, select { font-family: var(--gat-font-copy); }
 }
 .metric-card {
   position: relative;
-  background: var(--web-surface);
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  box-shadow: var(--web-shadow);
+  background: var(--gat-web-surface);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-card);
+  box-shadow: var(--gat-web-shadow);
   padding: var(--gat-space-3);
   overflow: hidden;
 }
@@ -343,53 +289,53 @@ input, select { font-family: var(--gat-font-copy); }
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: var(--metric-accent, var(--web-green));
+  background: var(--metric-accent, var(--gat-web-green));
 }
 /* Semantische Akzente je Kennzahl: der Akzentbalken unterscheidet die vier
    Lagebild-Karten — Ertraege gruen, Aufwendungen Clay, Nettoergebnis
    Schiefer; der Kommunalsteuer-Anteil bleibt Hero. */
 .metric-card--ertrag {
-  --metric-accent: var(--web-chart-green);
+  --metric-accent: var(--gat-web-chart-1);
 }
 .metric-card--aufwand {
-  --metric-accent: var(--web-chart-clay);
+  --metric-accent: var(--gat-web-chart-5);
 }
 .metric-card--netto {
-  --metric-accent: var(--web-chart-slate);
+  --metric-accent: var(--gat-web-chart-7);
 }
 .metric-card--hero {
-  background: var(--web-green-tint);
-  --metric-accent: var(--web-green-deep);
+  background: var(--gat-web-green-tint);
+  --metric-accent: var(--gat-web-green-deep);
 }
 .stat-num {
   font-size: var(--gat-text-h2);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  color: var(--web-text);
+  color: var(--gat-web-text);
   margin-top: 0.2rem;
 }
 .stat-label {
   font-size: var(--gat-text-small);
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
 }
 /* .stat-delta — sekundaere Zeile auf der Kennzahlen-Karte: Vorjahres-
    bzw. Soll-Ist-Delta in Prozent. Gruen wenn der Wert positiv waechst,
    clay wenn er sinkt (semantisch konsistent mit der Diagramm-Palette). */
 .stat-delta {
   font-size: 0.86rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-variant-numeric: tabular-nums;
   margin-top: 0.18rem;
 }
-.stat-delta.is-up   { color: var(--web-chart-green); }
-.stat-delta.is-down { color: var(--web-clay-text); }
+.stat-delta.is-up   { color: var(--gat-web-chart-1); }
+.stat-delta.is-down { color: var(--gat-web-clay-text); }
 /* .stat-pk — Pro-Kopf-Zeile. Erscheint nur, wenn fuer das Dokument eine
    Einwohnerzahl erfasst ist (sonst hidden via JS). */
 .stat-pk {
   font-size: 0.85rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-variant-numeric: tabular-nums;
   margin-top: 0.18rem;
 }
@@ -401,10 +347,10 @@ input, select { font-family: var(--gat-font-copy); }
    keinen eigenen Rahmen mehr (sonst Karte-in-Karte). */
 .web-panel {
   display: block;
-  background: var(--web-surface);
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  box-shadow: var(--web-shadow);
+  background: var(--gat-web-surface);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-card);
+  box-shadow: var(--gat-web-shadow);
   margin: var(--gat-space-4) 0;
   overflow: hidden;
 }
@@ -417,7 +363,7 @@ input, select { font-family: var(--gat-font-copy); }
    subtiler Haarlinie zum Diagrammkoerper. */
 .web-panel__head {
   padding: var(--gat-space-3) var(--gat-space-3) var(--gat-space-2);
-  border-bottom: 1px solid var(--web-hairline);
+  border-bottom: 1px solid var(--gat-web-hairline);
 }
 .web-panel__head h3 {
   margin: 0;
@@ -426,7 +372,7 @@ input, select { font-family: var(--gat-font-copy); }
 .web-panel__note {
   margin: var(--gat-space-1) 0 0;
   font-size: var(--gat-text-small);
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   max-width: 70rem;
 }
 /* Koerper: haelt das Diagramm, ruhiger Innenabstand. */
@@ -495,22 +441,22 @@ input, select { font-family: var(--gat-font-copy); }
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--web-hairline);
-  background: var(--web-surface);
-  color: var(--web-green-deep);
-  border-radius: var(--web-radius-control);
+  border: 1px solid var(--gat-web-hairline);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-green-deep);
+  border-radius: var(--gat-web-radius-control);
   padding: 0.28rem 0.7rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s,
     box-shadow 0.15s;
 }
 .web-panel__fs-btn:hover {
-  background: var(--web-green-tint);
-  border-color: var(--web-green-deep);
+  background: var(--gat-web-green-tint);
+  border-color: var(--gat-web-green-deep);
 }
 .web-panel__fs-btn:focus-visible {
-  outline: 2px solid var(--web-green-deep);
+  outline: 2px solid var(--gat-web-green-deep);
   outline-offset: 2px;
-  box-shadow: var(--web-focus-ring);
+  box-shadow: var(--gat-web-focus-ring);
 }
 
 /* --- Diagramm-Panel im Vollbild -------------------------------------------
@@ -524,7 +470,7 @@ input, select { font-family: var(--gat-font-copy); }
   border: none;
   border-radius: 0;
   box-shadow: none;
-  background: var(--web-surface);
+  background: var(--gat-web-surface);
   display: flex;
   flex-direction: column;
   overflow: auto;
@@ -568,7 +514,7 @@ input, select { font-family: var(--gat-font-copy); }
 .web-section-head p {
   margin: 0;
   max-width: 70rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
 }
 
 /* --- Callout "Wichtige Einordnung" ----------------------------------------
@@ -593,16 +539,16 @@ input, select { font-family: var(--gat-font-copy); }
   font-weight: 600;
 }
 .mark-positiv {
-  background: color-mix(in srgb, var(--web-green-deep) 14%, white);
-  border-bottom: 2px solid var(--web-green-deep);
+  background: color-mix(in srgb, var(--gat-web-green-deep) 14%, white);
+  border-bottom: 2px solid var(--gat-web-green-deep);
 }
 .mark-neutral {
-  background: color-mix(in srgb, var(--web-green) 16%, white);
-  border-bottom: 2px solid var(--web-green);
+  background: color-mix(in srgb, var(--gat-web-green) 16%, white);
+  border-bottom: 2px solid var(--gat-web-green);
 }
 .mark-risiko {
-  background: color-mix(in srgb, var(--web-chart-clay) 14%, white);
-  border-bottom: 2px solid var(--web-chart-clay);
+  background: color-mix(in srgb, var(--gat-web-chart-5) 14%, white);
+  border-bottom: 2px solid var(--gat-web-chart-5);
 }
 
 /* --- Boot-Fehlerbanner / Empty-State --------------------------------------
@@ -624,10 +570,10 @@ input, select { font-family: var(--gat-font-copy); }
 .dashboard-leer {
   margin: var(--gat-space-4) 0 var(--gat-space-5);
   padding: var(--gat-space-4);
-  border: 1px dashed var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  background: var(--web-surface-sunk);
-  color: var(--web-text-soft);
+  border: 1px dashed var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-card);
+  background: var(--gat-web-surface-sunk);
+  color: var(--gat-web-text-soft);
   text-align: center;
 }
 .dashboard-leer p {
@@ -643,11 +589,11 @@ input, select { font-family: var(--gat-font-copy); }
 
 /* --- Buttons --------------------------------------------------------------
    Das DS faerbt .gat-btn--primary/--secondary mit der vollgesaettigten
-   Markenfarbe. Hier auf die entsaettigte --web-*-Palette gebracht, mit
+   Markenfarbe. Hier auf die entsaettigte --gat-web-*-Palette gebracht, mit
    einheitlichem Radius und sichtbarem Fokusring. Die DS-Klassen bleiben am
    Element; nur die Optik wird ueberschrieben. */
 .gat-btn {
-  border-radius: var(--web-radius-control);
+  border-radius: var(--gat-web-radius-control);
   transition: background 0.15s, border-color 0.15s, color 0.15s,
     box-shadow 0.15s, transform 0.1s;
 }
@@ -658,24 +604,24 @@ input, select { font-family: var(--gat-font-copy); }
 }
 /* Primaer — gedaempfte gruene Flaeche, weisse Schrift. */
 .gat-btn--primary {
-  background: var(--web-green-deep);
-  border-color: var(--web-green-deep);
+  background: var(--gat-web-green-deep);
+  border-color: var(--gat-web-green-deep);
   color: var(--gat-color-weiss);
 }
 .gat-btn--primary:hover {
   filter: none;
-  background: color-mix(in srgb, var(--web-green-deep) 85%, black);
-  border-color: color-mix(in srgb, var(--web-green-deep) 85%, black);
+  background: color-mix(in srgb, var(--gat-web-green-deep) 85%, black);
+  border-color: color-mix(in srgb, var(--gat-web-green-deep) 85%, black);
 }
 /* Sekundaer — Umriss auf heller Flaeche, gruene Schrift. */
 .gat-btn--secondary {
-  background: var(--web-surface);
-  border-color: var(--web-green-deep);
-  color: var(--web-green-deep);
+  background: var(--gat-web-surface);
+  border-color: var(--gat-web-green-deep);
+  color: var(--gat-web-green-deep);
 }
 .gat-btn--secondary:hover {
-  background: var(--web-green-tint);
-  color: var(--web-green-deep);
+  background: var(--gat-web-green-tint);
+  color: var(--gat-web-green-deep);
 }
 .gat-btn:disabled,
 .doc-clear-btn:disabled {
@@ -684,9 +630,9 @@ input, select { font-family: var(--gat-font-copy); }
 }
 /* --- Einheitlicher Tastatur-Fokus -----------------------------------------
    Jedes interaktive Element traegt denselben sichtbaren Fokus: eine
-   2px-Kontur in --web-green-deep plus den weichen --web-focus-ring. Der
+   2px-Kontur in --gat-web-green-deep plus den weichen --gat-web-focus-ring. Der
    Ring hebt den Fokus auch dort ab, wo die Kontur knapp am Rand sitzt.
-   --web-focus-offset haelt den Abstand konsistent; Elemente, die an einer
+   --gat-web-focus-offset haelt den Abstand konsistent; Elemente, die an einer
    Kante sitzen (Reiter, sortierbare Spaltenkoepfe), setzen ihn lokal auf
    einen negativen Wert, der Ring bleibt aussen sichtbar. */
 .gat-btn:focus-visible,
@@ -706,31 +652,31 @@ input, select { font-family: var(--gat-font-copy); }
 .filterbar select:focus-visible,
 .dtable .pick input:focus-visible,
 input.search:focus-visible {
-  outline: 2px solid var(--web-green-deep);
-  outline-offset: var(--web-focus-offset, 2px);
-  box-shadow: var(--web-focus-ring);
+  outline: 2px solid var(--gat-web-green-deep);
+  outline-offset: var(--gat-web-focus-offset, 2px);
+  box-shadow: var(--gat-web-focus-ring);
 }
 /* Felder mit eigenem Rahmen: der Fokus ersetzt zusaetzlich die Rahmenfarbe,
    damit Kontur, Rahmen und Ring eine ruhige Einheit bilden. */
 .filterbar input:focus-visible,
 .filterbar select:focus-visible,
 input.search:focus-visible {
-  border-color: var(--web-green-deep);
+  border-color: var(--gat-web-green-deep);
 }
 /* Marken-Link im Header sitzt auf weisser Flaeche — der gruene Standard-
    Fokusring wie bei allen uebrigen interaktiven Elementen. */
 .web-brandbar__brand:focus-visible {
-  outline: 2px solid var(--web-green-deep);
+  outline: 2px solid var(--gat-web-green-deep);
   outline-offset: 3px;
   border-radius: 2px;
-  box-shadow: var(--web-focus-ring);
+  box-shadow: var(--gat-web-focus-ring);
 }
 
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
 .doc-manager {
   border: 1px solid var(--app-hair);
-  border-radius: var(--web-radius-card);
-  background: var(--web-surface-sunk);
+  border-radius: var(--gat-web-radius-card);
+  background: var(--gat-web-surface-sunk);
   margin: 1.4rem 0;
 }
 .doc-manager-summary {
@@ -757,16 +703,16 @@ input.search:focus-visible {
   transform: rotate(90deg);
 }
 .doc-manager-summary:hover {
-  background: color-mix(in srgb, var(--web-green) 8%, transparent);
+  background: color-mix(in srgb, var(--gat-web-green) 8%, transparent);
 }
 /* Summary sitzt buendig im Karten-Rahmen — Fokus-Offset negativ; Kontur,
    Ring und Radius halten den Fokus innerhalb der Karte sichtbar. Die
    Kontur-/Ring-Optik liefert der gemeinsame Fokus-Block. */
 .doc-manager-summary {
-  --web-focus-offset: -2px;
+  --gat-web-focus-offset: -2px;
 }
 .doc-manager-summary:focus-visible {
-  border-radius: var(--web-radius-card);
+  border-radius: var(--gat-web-radius-card);
 }
 .doc-manager-title {
   font-weight: 600;
@@ -790,24 +736,24 @@ input.search:focus-visible {
 
 /* --- Drag-&-Drop-Zone ---------------------------------------------------- */
 .dropzone {
-  border: 2px dashed var(--web-hairline);
-  border-radius: var(--web-radius-card);
-  background: var(--web-surface-sunk);
+  border: 2px dashed var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-card);
+  background: var(--gat-web-surface-sunk);
   padding: 2.4rem 1.4rem;
   text-align: center;
   margin: 1.2rem 0;
   transition: border-color 0.15s, background 0.15s;
 }
 .dropzone.is-over {
-  border-color: var(--web-green-deep);
-  background: var(--web-green-tint);
+  border-color: var(--gat-web-green-deep);
+  background: var(--gat-web-green-tint);
 }
 .dropzone-title {
   font-size: 1.05rem;
   margin: 0 0 0.3rem;
 }
 .dropzone-hint {
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-size: 0.85rem;
   margin: 0 0 0.9rem;
 }
@@ -827,9 +773,9 @@ input.search:focus-visible {
   margin: 1rem 0;
 }
 .progress-item {
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-control);
-  background: var(--web-surface);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  background: var(--gat-web-surface);
   padding: 0.6rem 0.85rem;
   margin-bottom: 0.5rem;
 }
@@ -847,7 +793,7 @@ input.search:focus-visible {
 }
 .progress-bar {
   height: 5px;
-  background: var(--web-hairline);
+  background: var(--gat-web-hairline);
   border-radius: 999px;
   margin-top: 0.45rem;
   overflow: hidden;
@@ -862,10 +808,10 @@ input.search:focus-visible {
   background: var(--app-risiko);
 }
 .progress-item.is-done .progress-fill {
-  background: var(--web-green-deep);
+  background: var(--gat-web-green-deep);
 }
 .progress-error {
-  color: var(--web-clay-text);
+  color: var(--gat-web-clay-text);
   font-size: 0.82rem;
   margin: 0.35rem 0 0;
 }
@@ -887,16 +833,16 @@ input.search:focus-visible {
 .doc-table td {
   text-align: left;
   padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid var(--web-hairline);
+  border-bottom: 1px solid var(--gat-web-hairline);
 }
 .doc-table th {
   font-size: 0.72rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
 }
 .doc-table tbody tr:hover {
-  background: color-mix(in srgb, var(--web-green) 7%, transparent);
+  background: color-mix(in srgb, var(--gat-web-green) 7%, transparent);
 }
 .doc-table td.num {
   text-align: right;
@@ -911,14 +857,14 @@ input.search:focus-visible {
   border: 1px solid;
 }
 .doc-status.ok {
-  color: var(--web-green-deep);
-  border-color: color-mix(in srgb, var(--web-green) 45%, var(--web-hairline));
-  background: var(--web-green-tint);
+  color: var(--gat-web-green-deep);
+  border-color: color-mix(in srgb, var(--gat-web-green) 45%, var(--gat-web-hairline));
+  background: var(--gat-web-green-tint);
 }
 .doc-status.fehl {
-  color: var(--web-clay-text);
-  border-color: color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
-  background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
+  color: var(--gat-web-clay-text);
+  border-color: color-mix(in srgb, var(--gat-web-chart-5) 45%, var(--gat-web-hairline));
+  background: color-mix(in srgb, var(--gat-web-chart-5) 12%, white);
 }
 /* .doc-einwohner-input (Variante A) — Inline-Feld in der Dokumentliste.
    Schmaler Number-Input, eingebettet ins Tabellen-Layout. */
@@ -927,15 +873,15 @@ input.search:focus-visible {
   font: inherit;
   font-size: 0.85rem;
   padding: 0.2rem 0.4rem;
-  border: 1px solid var(--web-hairline);
-  border-radius: var(--web-radius-control);
-  background: var(--web-surface);
-  color: var(--web-text);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-text);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .doc-einwohner-input:focus-visible {
-  outline: 2px solid var(--web-green);
+  outline: 2px solid var(--gat-web-green);
   outline-offset: 1px;
 }
 /* .doc-edit-btn (Variante B) — gleiches Pattern wie .doc-remove, aber
@@ -944,25 +890,25 @@ input.search:focus-visible {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  border: 1px solid var(--web-hairline);
-  background: var(--web-surface);
-  color: var(--web-text-soft);
-  border-radius: var(--web-radius-control);
+  border: 1px solid var(--gat-web-hairline);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-text-soft);
+  border-radius: var(--gat-web-radius-control);
   padding: 0.2rem 0.6rem;
   margin-right: 0.35rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .doc-edit-btn:hover {
-  border-color: var(--web-green);
-  background: color-mix(in srgb, var(--web-green) 8%, white);
-  color: var(--web-green-deep);
+  border-color: var(--gat-web-green);
+  background: color-mix(in srgb, var(--gat-web-green) 8%, white);
+  color: var(--gat-web-green-deep);
 }
 /* Einwohner-Dialog (Variante B) — natives <dialog>, knapp und ruhig. */
 .doc-einwohner-dialog {
   padding: 0;
   border: 0;
-  border-radius: var(--web-radius-card);
-  box-shadow: var(--web-shadow);
+  border-radius: var(--gat-web-radius-card);
+  box-shadow: var(--gat-web-shadow);
   max-width: 28rem;
 }
 .doc-einwohner-dialog::backdrop {
@@ -980,7 +926,7 @@ input.search:focus-visible {
 }
 .doc-einwohner-sub {
   margin: 0;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-size: 0.85rem;
 }
 .doc-einwohner-label {
@@ -988,12 +934,12 @@ input.search:focus-visible {
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.85rem;
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
 }
 .doc-einwohner-hint {
   margin: 0;
   font-size: 0.78rem;
-  color: var(--web-text-mute);
+  color: var(--gat-web-text-mute);
 }
 .doc-einwohner-actions {
   display: flex;
@@ -1007,19 +953,19 @@ input.search:focus-visible {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  border: 1px solid var(--web-hairline);
-  background: var(--web-surface);
-  color: var(--web-clay-text);
-  border-radius: var(--web-radius-control);
+  border: 1px solid var(--gat-web-hairline);
+  background: var(--gat-web-surface);
+  color: var(--gat-web-clay-text);
+  border-radius: var(--gat-web-radius-control);
   padding: 0.2rem 0.6rem;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .doc-remove:hover {
-  border-color: var(--web-chart-clay);
-  background: color-mix(in srgb, var(--web-chart-clay) 10%, white);
+  border-color: var(--gat-web-chart-5);
+  background: color-mix(in srgb, var(--gat-web-chart-5) 10%, white);
 }
 .doc-empty {
-  color: var(--web-text-soft);
+  color: var(--gat-web-text-soft);
   font-style: italic;
 }
 .doc-clear-zeile {
@@ -1029,12 +975,12 @@ input.search:focus-visible {
    Risiko-Toenung statt der gruenen Sekundaerfarbe und die Feingroesse. */
 .doc-clear-btn {
   font-size: 0.85rem;
-  border-color: var(--web-clay-text);
-  color: var(--web-clay-text);
+  border-color: var(--gat-web-clay-text);
+  color: var(--gat-web-clay-text);
 }
 .doc-clear-btn:hover {
-  background: var(--web-clay-text);
-  border-color: var(--web-clay-text);
+  background: var(--gat-web-clay-text);
+  border-color: var(--gat-web-clay-text);
   color: var(--gat-color-weiss);
 }
 .persist-note {
@@ -1046,18 +992,18 @@ input.search:focus-visible {
 .toast {
   font-size: 0.85rem;
   padding: 0.5rem 0.85rem;
-  border-radius: var(--web-radius-control);
+  border-radius: var(--gat-web-radius-control);
   margin: 0.6rem 0;
 }
 .toast.ok {
-  background: var(--web-green-tint);
-  border: 1px solid color-mix(in srgb, var(--web-green) 45%, var(--web-hairline));
-  color: var(--web-green-deep);
+  background: var(--gat-web-green-tint);
+  border: 1px solid color-mix(in srgb, var(--gat-web-green) 45%, var(--gat-web-hairline));
+  color: var(--gat-web-green-deep);
 }
 .toast.fehl {
-  background: color-mix(in srgb, var(--web-chart-clay) 12%, white);
-  border: 1px solid color-mix(in srgb, var(--web-chart-clay) 45%, var(--web-hairline));
-  color: var(--web-clay-text);
+  background: color-mix(in srgb, var(--gat-web-chart-5) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--gat-web-chart-5) 45%, var(--gat-web-hairline));
+  color: var(--gat-web-clay-text);
 }
 
 /* --- Geldfluss-Sankey: Drill-down-Leiste --------------------------------- */

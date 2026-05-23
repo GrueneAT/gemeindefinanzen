@@ -2,7 +2,7 @@
    Mehrjahres-Overlay.
 
    dashboard.css laedt vor app.css und kann daher nicht auf dessen
-   --app-*-Aliase zugreifen. Es liest direkt die --web-*-Token (mit
+   --app-*-Aliase zugreifen. Es liest direkt die --gat-web-*-Token (mit
    Fallback-Literalen, falls app.css noch nicht da ist).
 
    Funktionsklassen (.tab-btn/.tab-panel/.is-active, .switch-btn, .dtable,
@@ -20,9 +20,9 @@
 
 /* === 1. LOKALE TOKEN ====================================================== */
 :root {
-  /* --hair spiegelt --web-hairline; gleicher Wert als Fallback, falls
-     app.css noch nicht geladen ist. */
-  --hair: var(--web-hairline, #e1e4db);
+  /* --hair spiegelt --gat-web-hairline; gleicher Wert als Fallback, falls
+     die DS-CSS noch nicht geladen ist. */
+  --hair: var(--gat-web-hairline, #e1e4db);
 }
 
 
@@ -35,7 +35,7 @@
 /* Sticky Steuerleiste — sitzt auf der weissen Kartenflaeche, durch
    Haarlinie vom Inhalt getrennt. */
 .dash-controls { position: sticky; top: 0; z-index: 20;
-  background: var(--web-bg, #f3f5f0); padding: .6rem 0 .3rem;
+  background: var(--gat-web-bg, #f3f5f0); padding: .6rem 0 .3rem;
   border-bottom: 1px solid var(--hair); margin-bottom: 1.2rem; }
 
 /* Zweispaltiges Diagramm-Raster — faellt unter 48rem auf eine Spalte. */
@@ -52,20 +52,20 @@
   border-bottom: 1px solid var(--hair); }
 .tab-btn { font: inherit; font-size: 1.08rem; cursor: pointer;
   padding: .62rem 1.2rem; border: 1px solid transparent; border-bottom: none;
-  background: transparent; color: var(--web-text-soft, #5e6358);
-  border-radius: var(--web-radius-control, 6px) var(--web-radius-control, 6px) 0 0;
+  background: transparent; color: var(--gat-web-text-soft, #5e6358);
+  border-radius: var(--gat-web-radius-control, 6px) var(--gat-web-radius-control, 6px) 0 0;
   margin-bottom: -1px;
   transition: background .15s, color .15s, box-shadow .15s; }
-.tab-btn:hover { color: var(--web-text, #23271f);
-  background: color-mix(in srgb, var(--web-green, #4a8a52) 9%, transparent); }
-.tab-btn.is-active { background: var(--web-surface, #fff);
-  border-color: var(--hair); color: var(--web-green-deep, #2c6e40);
+.tab-btn:hover { color: var(--gat-web-text, #23271f);
+  background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 9%, transparent); }
+.tab-btn.is-active { background: var(--gat-web-surface, #fff);
+  border-color: var(--hair); color: var(--gat-web-green-deep, #2c6e40);
   font-weight: 700;
-  box-shadow: inset 0 -3px 0 var(--web-green-deep, #2c6e40); }
+  box-shadow: inset 0 -3px 0 var(--gat-web-green-deep, #2c6e40); }
 /* Der Reiter sitzt buendig an der Tableisten-Kante — der Fokus-Offset wird
    negativ gesetzt, damit die Kontur nicht abgeschnitten wird. Die Kontur-
    und Ring-Optik selbst liefert der gemeinsame Block in app.css. */
-.tab-btn { --web-focus-offset: -2px; }
+.tab-btn { --gat-web-focus-offset: -2px; }
 
 .tab-panel { display: none; }
 /* Weicher, schneller Panel-Wechsel: beim Aktivwerden blendet das Panel
@@ -84,27 +84,27 @@
 .switcher { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .55rem;
   align-items: baseline; }
 .switcher-label { font-size: .82rem; letter-spacing: .09em;
-  text-transform: uppercase; color: var(--web-text-soft, #5e6358);
+  text-transform: uppercase; color: var(--gat-web-text-soft, #5e6358);
   margin-right: .35rem; }
 .switcher #switcher-buttons { display: inline-flex; flex-wrap: wrap;
   gap: .3rem; }
 .switch-btn { font: inherit; font-size: .98rem; cursor: pointer;
   padding: .42rem 1rem; border: 1px solid var(--hair);
-  background: var(--web-surface, #fff); color: var(--web-text, #23271f);
-  border-radius: var(--web-radius-control, 6px); line-height: 1.2;
+  background: var(--gat-web-surface, #fff); color: var(--gat-web-text, #23271f);
+  border-radius: var(--gat-web-radius-control, 6px); line-height: 1.2;
   transition: background .15s, border-color .15s, color .15s,
     transform .1s; }
-.switch-btn:hover { border-color: var(--web-green, #4a8a52);
-  background: var(--web-green-tint, #e7efe3); }
+.switch-btn:hover { border-color: var(--gat-web-green, #4a8a52);
+  background: var(--gat-web-green-tint, #e7efe3); }
 /* Active-Zustand: das Segment wird beim Klick kurz minimal eingedrueckt —
    klare, zurueckhaltende Rueckmeldung. */
 .switch-btn:not(.is-active):active {
-  background: color-mix(in srgb, var(--web-green, #4a8a52) 22%, white);
+  background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 22%, white);
   transform: translateY(1px); }
-.switch-btn.is-active { background: var(--web-green-deep, #2c6e40);
-  border-color: var(--web-green-deep, #2c6e40);
+.switch-btn.is-active { background: var(--gat-web-green-deep, #2c6e40);
+  border-color: var(--gat-web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); font-weight: 600; }
-.switch-btn.is-active:hover { background: var(--web-green-deep, #2c6e40);
+.switch-btn.is-active:hover { background: var(--gat-web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); }
 /* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 
@@ -117,20 +117,20 @@
 .dtable { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .dtable th, .dtable td { padding: .4rem .55rem;
   border-bottom: 1px solid var(--hair); text-align: left; }
-.dtable thead th { background: var(--web-surface-sunk, #f7f9f4);
+.dtable thead th { background: var(--gat-web-surface-sunk, #f7f9f4);
   position: sticky; top: 0; z-index: 1;
   border-bottom: 2px solid var(--hair);
   font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--web-text-soft, #5e6358); font-weight: 600; }
+  color: var(--gat-web-text-soft, #5e6358); font-weight: 600; }
 .dtable td.num, .dtable th.num { text-align: right;
   font-variant-numeric: tabular-nums; }
-.dtable tbody tr:hover { background: color-mix(in srgb, var(--web-green, #4a8a52) 8%, transparent); }
+.dtable tbody tr:hover { background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 8%, transparent); }
 
 /* Sortierbare Spaltenkoepfe sitzen buendig in der sticky Kopfzeile — der
    Fokus-Offset wird negativ gesetzt (Optik kommt aus app.css). */
-.sortable { cursor: pointer; user-select: none; --web-focus-offset: -2px; }
-.sortable:hover { color: var(--web-green-deep, #2c6e40); }
-.sortable .arrow { color: var(--web-text-mute, #6b6f63); font-size: .75rem; }
+.sortable { cursor: pointer; user-select: none; --gat-web-focus-offset: -2px; }
+.sortable:hover { color: var(--gat-web-green-deep, #2c6e40); }
+.sortable .arrow { color: var(--gat-web-text-mute, #6b6f63); font-size: .75rem; }
 
 th.pick, td.pick { width: 2rem; text-align: center; }
 td.pick input, th.pick input { cursor: pointer; }
@@ -138,32 +138,32 @@ td.pick input, th.pick input { cursor: pointer; }
 /* --- Filterleiste & Suche — einheitliche Feldoptik ----------------------- */
 .filterbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
   margin: .6rem 0 .8rem; }
-.filterbar label { font-size: .74rem; color: var(--web-text-soft, #5e6358);
+.filterbar label { font-size: .74rem; color: var(--gat-web-text-soft, #5e6358);
   display: flex; flex-direction: column; gap: .18rem; }
 .filterbar input, .filterbar select { font: inherit; font-size: .84rem;
   padding: .34rem .5rem; border: 1px solid var(--hair);
-  background: var(--web-surface, #fff); color: var(--web-text, #23271f);
-  border-radius: var(--web-radius-control, 6px);
+  background: var(--gat-web-surface, #fff); color: var(--gat-web-text, #23271f);
+  border-radius: var(--gat-web-radius-control, 6px);
   transition: border-color .15s, box-shadow .15s; }
 .filterbar input:hover, .filterbar select:hover {
-  border-color: color-mix(in srgb, var(--web-green, #4a8a52) 45%, var(--hair)); }
+  border-color: color-mix(in srgb, var(--gat-web-green, #4a8a52) 45%, var(--hair)); }
 /* Tastatur-Fokus (Kontur + Rahmenfarbe + Ring) liefert der gemeinsame
    Block in app.css. */
 .filterbar input.search { min-width: 16rem; }
 .filterbar input.betrag { width: 7rem; }
 
-.result-meta { font-size: .86rem; color: var(--web-text-soft, #5e6358);
+.result-meta { font-size: .86rem; color: var(--gat-web-text-soft, #5e6358);
   margin: .3rem 0 .5rem; }
-.result-meta strong { color: var(--web-text, #23271f); }
+.result-meta strong { color: var(--gat-web-text, #23271f); }
 
 /* Die breite 15-Spalten-Suchtabelle bekommt eine Mindestbreite, damit ihre
    Spalten lesbar bleiben statt zusammenzustauchen. Reicht der Platz nicht,
    scrollt .table-scroll horizontal — die Seite selbst bleibt schmal. */
 .table-scroll { max-height: 70vh; overflow: auto;
-  border: 1px solid var(--hair); border-radius: var(--web-radius-card, 10px);
-  background: var(--web-surface, #fff); }
+  border: 1px solid var(--hair); border-radius: var(--gat-web-radius-card, 10px);
+  background: var(--gat-web-surface, #fff); }
 .table-scroll .dtable { min-width: 56rem; }
-.table-hint { font-size: .8rem; color: var(--web-text-soft, #5e6358); margin-top: .4rem; }
+.table-hint { font-size: .8rem; color: var(--gat-web-text-soft, #5e6358); margin-top: .4rem; }
 
 
 /* === 5. DRILL-DOWN ======================================================== */
@@ -171,13 +171,13 @@ td.pick input, th.pick input { cursor: pointer; }
 /* Breadcrumb-Pfad — Knoepfe mit Fokusring. */
 .crumbs { font-size: .85rem; margin: .5rem 0; }
 .crumbs button { font: inherit; font-size: .85rem; cursor: pointer;
-  background: none; border: none; color: var(--web-green-deep, #2c6e40);
+  background: none; border: none; color: var(--gat-web-green-deep, #2c6e40);
   text-decoration: underline; padding: 0; }
-.crumbs button:disabled { color: var(--web-text-soft, #5e6358);
+.crumbs button:disabled { color: var(--gat-web-text-soft, #5e6358);
   text-decoration: none; cursor: default; }
 /* Fokus-Optik aus app.css; nur der Radius haelt den Ring abgerundet. */
 .crumbs button:focus-visible { border-radius: 2px; }
-.crumbs .sep { color: var(--web-text-mute, #6b6f63); margin: 0 .3rem; }
+.crumbs .sep { color: var(--gat-web-text-mute, #6b6f63); margin: 0 .3rem; }
 
 /* Drill-down-Liste — klickbare Zeilen mit sanftem Hover. */
 .drill-list { list-style: none; padding: 0; margin: .3rem 0 0; }
@@ -189,21 +189,21 @@ td.pick input, th.pick input { cursor: pointer; }
    als klare Rueckmeldung beim Aufklappen der naechsten Ebene. */
 .drill-row.is-clickable { cursor: pointer;
   transition: background .12s; }
-.drill-row.is-clickable:hover { background: color-mix(in srgb, var(--web-green, #4a8a52) 8%, transparent); }
-.drill-row.is-clickable:active { background: color-mix(in srgb, var(--web-green, #4a8a52) 15%, transparent); }
+.drill-row.is-clickable:hover { background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 8%, transparent); }
+.drill-row.is-clickable:active { background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 15%, transparent); }
 .drill-row .label { flex: 1; }
-.drill-row .label .code { color: var(--web-text-mute, #6b6f63); font-size: .8rem;
+.drill-row .label .code { color: var(--gat-web-text-mute, #6b6f63); font-size: .8rem;
   margin-right: .4rem; font-variant-numeric: tabular-nums; }
 .drill-row .betrag { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.drill-row .chev { color: var(--web-text-mute, #6b6f63); margin-left: .5rem; }
+.drill-row .chev { color: var(--gat-web-text-mute, #6b6f63); margin-left: .5rem; }
 .drill-row .mj-drill { font: inherit; font-size: .76rem; cursor: pointer;
   padding: .12rem .5rem; border: 1px solid var(--hair);
-  background: var(--web-surface, #fff); color: var(--web-green-deep, #2c6e40);
-  border-radius: var(--web-radius-control, 6px);
+  background: var(--gat-web-surface, #fff); color: var(--gat-web-green-deep, #2c6e40);
+  border-radius: var(--gat-web-radius-control, 6px);
   margin-left: .5rem; white-space: nowrap;
   transition: background .15s, border-color .15s; }
-.drill-row .mj-drill:hover { border-color: var(--web-green, #4a8a52);
-  background: var(--web-green-tint, #e7efe3); }
+.drill-row .mj-drill:hover { border-color: var(--gat-web-green, #4a8a52);
+  background: var(--gat-web-green-tint, #e7efe3); }
 /* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 
 
@@ -216,36 +216,36 @@ td.pick input, th.pick input { cursor: pointer; }
   margin: .6rem 0 .4rem; }
 .mj-btn { font: inherit; font-size: .82rem; cursor: pointer;
   padding: .3rem .8rem; border: 1px solid var(--hair);
-  background: var(--web-surface, #fff); color: var(--web-text, #23271f);
-  border-radius: var(--web-radius-control, 6px); line-height: 1.2;
+  background: var(--gat-web-surface, #fff); color: var(--gat-web-text, #23271f);
+  border-radius: var(--gat-web-radius-control, 6px); line-height: 1.2;
   transition: background .15s, border-color .15s, color .15s; }
-.mj-btn:hover { border-color: var(--web-green, #4a8a52);
-  background: var(--web-green-tint, #e7efe3); }
-.mj-btn.is-primary { background: var(--web-green-deep, #2c6e40);
-  border-color: var(--web-green-deep, #2c6e40);
+.mj-btn:hover { border-color: var(--gat-web-green, #4a8a52);
+  background: var(--gat-web-green-tint, #e7efe3); }
+.mj-btn.is-primary { background: var(--gat-web-green-deep, #2c6e40);
+  border-color: var(--gat-web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); font-weight: 600; }
-.mj-btn.is-primary:hover { background: var(--web-green-deep, #2c6e40);
+.mj-btn.is-primary:hover { background: var(--gat-web-green-deep, #2c6e40);
   color: var(--gat-color-weiss, #fff); }
 /* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 .mj-btn:disabled { opacity: .5; cursor: default; }
-.mj-btn:disabled:hover { background: var(--web-surface, #fff);
+.mj-btn:disabled:hover { background: var(--gat-web-surface, #fff);
   border-color: var(--hair); }
 .mj-btn.is-primary:disabled,
 .mj-btn.is-primary:disabled:hover {
-  background: color-mix(in srgb, var(--web-green-deep, #2c6e40) 45%, white);
-  border-color: color-mix(in srgb, var(--web-green-deep, #2c6e40) 45%, white);
+  background: color-mix(in srgb, var(--gat-web-green-deep, #2c6e40) 45%, white);
+  border-color: color-mix(in srgb, var(--gat-web-green-deep, #2c6e40) 45%, white);
   color: var(--gat-color-weiss, #fff); }
-.mj-count { font-size: .8rem; color: var(--web-text-soft, #5e6358); }
+.mj-count { font-size: .8rem; color: var(--gat-web-text-soft, #5e6358); }
 
 /* --- Overlay — Dialog auf Komponentensprache ------------------------------
    Ruhig abgedunkelter Hintergrund, Dialog als Karte mit Kartenradius und
    weichem Schatten; Schliessen-Knopf mit sichtbarem Fokus. */
 .mj-overlay { position: fixed; inset: 0; z-index: 60; display: none;
-  background: color-mix(in srgb, var(--web-text, #23271f) 52%, transparent); }
+  background: color-mix(in srgb, var(--gat-web-text, #23271f) 52%, transparent); }
 .mj-overlay.is-open { display: flex; align-items: center;
   justify-content: center; }
-.mj-dialog { background: var(--web-surface, #fff); border: 1px solid var(--hair);
-  border-radius: var(--web-radius-card, 10px); width: min(880px, 94vw);
+.mj-dialog { background: var(--gat-web-surface, #fff); border: 1px solid var(--hair);
+  border-radius: var(--gat-web-radius-card, 10px); width: min(880px, 94vw);
   max-height: 92vh; overflow: auto; padding: 1.1rem 1.3rem 1.3rem;
   box-shadow: 0 16px 48px rgba(31,38,28,.22); }
 .mj-dialog-head { display: flex; justify-content: space-between;
@@ -253,15 +253,15 @@ td.pick input, th.pick input { cursor: pointer; }
 .mj-dialog-head h3 { margin: 0; }
 .mj-close { font: inherit; font-size: 1.3rem; line-height: 1; cursor: pointer;
   background: none; border: 1px solid transparent;
-  border-radius: var(--web-radius-control, 6px);
-  color: var(--web-text-soft, #5e6358); padding: .1rem .35rem;
+  border-radius: var(--gat-web-radius-control, 6px);
+  color: var(--gat-web-text-soft, #5e6358); padding: .1rem .35rem;
   transition: background .15s, color .15s; }
-.mj-close:hover { color: var(--web-text, #23271f);
-  background: var(--web-surface-sunk, #f7f9f4); }
+.mj-close:hover { color: var(--gat-web-text, #23271f);
+  background: var(--gat-web-surface-sunk, #f7f9f4); }
 /* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
-.mj-sub { font-size: .85rem; color: var(--web-text-soft, #5e6358);
+.mj-sub { font-size: .85rem; color: var(--gat-web-text-soft, #5e6358);
   margin: .3rem 0 .2rem; }
 .mj-chart { height: 420px; margin-top: .4rem;
-  border: 1px solid var(--hair); border-radius: var(--web-radius-card, 10px);
-  background: var(--web-surface, #fff); padding: 6px; }
-.mj-empty { font-size: .85rem; color: var(--web-text-soft, #5e6358); margin: .5rem 0; }
+  border: 1px solid var(--hair); border-radius: var(--gat-web-radius-card, 10px);
+  background: var(--gat-web-surface, #fff); padding: 6px; }
+.mj-empty { font-size: .85rem; color: var(--gat-web-text-soft, #5e6358); margin: .5rem 0; }
