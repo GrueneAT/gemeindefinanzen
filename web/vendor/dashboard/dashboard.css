@@ -45,68 +45,25 @@
 
 /* === 3. TABLEISTE & DOKUMENT-UMSCHALTER =================================== */
 
-/* --- Tableiste — ruhige Reiter --------------------------------------------
-   Inaktive Reiter sind flach; der aktive Reiter ist klar gruen markiert
-   (gefuellte Flaeche, gruene Unterkante). Sichtbarer Tastatur-Fokus. */
-.tabs { display: flex; flex-wrap: wrap; gap: .15rem;
-  border-bottom: 1px solid var(--hair); }
-.tab-btn { font: inherit; font-size: 1.08rem; cursor: pointer;
-  padding: .62rem 1.2rem; border: 1px solid transparent; border-bottom: none;
-  background: transparent; color: var(--gat-web-text-soft, #5e6358);
-  border-radius: var(--gat-web-radius-control, 6px) var(--gat-web-radius-control, 6px) 0 0;
-  margin-bottom: -1px;
-  transition: background .15s, color .15s, box-shadow .15s; }
-.tab-btn:hover { color: var(--gat-web-text, #23271f);
-  background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 9%, transparent); }
-.tab-btn.is-active { background: var(--gat-web-surface, #fff);
-  border-color: var(--hair); color: var(--gat-web-green-deep, #2c6e40);
-  font-weight: 700;
-  box-shadow: inset 0 -3px 0 var(--gat-web-green-deep, #2c6e40); }
-/* Der Reiter sitzt buendig an der Tableisten-Kante — der Fokus-Offset wird
-   negativ gesetzt, damit die Kontur nicht abgeschnitten wird. Die Kontur-
-   und Ring-Optik selbst liefert der gemeinsame Block in app.css. */
-.tab-btn { --gat-web-focus-offset: -2px; }
+/* DS v2.0 liefert .gat-tab/.gat-tabbar und .gat-switcher/.gat-switch-btn
+   mit identischer Optik (gruene Unterkante, Inset-Schatten beim aktiven
+   Reiter, gefuelltes Segment, gemeinsame Fokus-Optik). Die Doppel-Klassen
+   am Element (class="tab-btn gat-tab", class="switch-btn gat-switch-btn")
+   binden Funktionsklasse und DS-Stil zusammen — die fruehere lokale
+   visuelle Schicht hier ist entfallen.
 
+   Die Funktionsklasse .tab-panel bleibt erhalten, weil dashboard.js
+   genau dieser Klasse das is-active-Toggle setzt. Ohne lokale Regel
+   griffe .tab-panel.is-active gar nicht (DS hat nur .gat-tab-panel). */
 .tab-panel { display: none; }
-/* Weicher, schneller Panel-Wechsel: beim Aktivwerden blendet das Panel
-   kurz auf und schiebt sich minimal nach oben. display laesst sich nicht
-   uebergangen, daher eine Einblend-Animation auf .is-active. Bei
-   reduzierter Bewegung wird sie ueber den Block in app.css neutralisiert. */
 .tab-panel.is-active { display: block; animation: tab-panel-ein .18s ease-out; }
 @keyframes tab-panel-ein {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-/* --- Dokument-Umschalter — ruhige Segmente --------------------------------
-   Die Buttons sitzen als zusammenhaengende Segmentleiste auf einer hellen
-   Flaeche; das aktive Segment ist gruen markiert. */
-.switcher { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .55rem;
-  align-items: baseline; }
-.switcher-label { font-size: .82rem; letter-spacing: .09em;
-  text-transform: uppercase; color: var(--gat-web-text-soft, #5e6358);
-  margin-right: .35rem; }
+/* Innenraum-Layout fuer das Dokument-Umschalter-Wrapper-Element. */
 .switcher #switcher-buttons { display: inline-flex; flex-wrap: wrap;
   gap: .3rem; }
-.switch-btn { font: inherit; font-size: .98rem; cursor: pointer;
-  padding: .42rem 1rem; border: 1px solid var(--hair);
-  background: var(--gat-web-surface, #fff); color: var(--gat-web-text, #23271f);
-  border-radius: var(--gat-web-radius-control, 6px); line-height: 1.2;
-  transition: background .15s, border-color .15s, color .15s,
-    transform .1s; }
-.switch-btn:hover { border-color: var(--gat-web-green, #4a8a52);
-  background: var(--gat-web-green-tint, #e7efe3); }
-/* Active-Zustand: das Segment wird beim Klick kurz minimal eingedrueckt —
-   klare, zurueckhaltende Rueckmeldung. */
-.switch-btn:not(.is-active):active {
-  background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 22%, white);
-  transform: translateY(1px); }
-.switch-btn.is-active { background: var(--gat-web-green-deep, #2c6e40);
-  border-color: var(--gat-web-green-deep, #2c6e40);
-  color: var(--gat-color-weiss, #fff); font-weight: 600; }
-.switch-btn.is-active:hover { background: var(--gat-web-green-deep, #2c6e40);
-  color: var(--gat-color-weiss, #fff); }
-/* Fokus-Optik (Kontur + Ring) liefert der gemeinsame Block in app.css. */
 
 
 /* === 4. TABELLEN & FILTER ================================================= */
