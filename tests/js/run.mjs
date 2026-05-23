@@ -305,6 +305,57 @@ async function teste() {
   pruefe("DATA: einwohner persistent gesetzt", dokMitEW.einwohner === 9000,
     String(dokMitEW.einwohner))
 
+  // R1 — Vergleichssummen und Prozent-Delta sind im eckwerte-Block.
+  const eckMitEW = datenPK.aggregate[String(datenPK.meta.default_dok)]
+    .eckwerte
+  pruefe(
+    "agg.eckwerte.ertraege_vgl ist eine Zahl",
+    typeof eckMitEW.ertraege_vgl === "number",
+    String(eckMitEW.ertraege_vgl),
+  )
+  pruefe(
+    "agg.eckwerte.aufwand_vgl ist eine Zahl",
+    typeof eckMitEW.aufwand_vgl === "number",
+    String(eckMitEW.aufwand_vgl),
+  )
+  pruefe(
+    "agg.eckwerte.delta_ertraege_proz ist eine Zahl",
+    typeof eckMitEW.delta_ertraege_proz === "number",
+    String(eckMitEW.delta_ertraege_proz),
+  )
+  pruefe(
+    "agg.eckwerte.delta_aufwand_proz ist eine Zahl",
+    typeof eckMitEW.delta_aufwand_proz === "number",
+    String(eckMitEW.delta_aufwand_proz),
+  )
+
+  // R5 — Pro-Kopf-Felder erscheinen, sobald einwohner > 0.
+  pruefe(
+    "agg.eckwerte.ertraege_pk ist eine Zahl bei gesetzter Einwohnerzahl",
+    typeof eckMitEW.ertraege_pk === "number",
+    String(eckMitEW.ertraege_pk),
+  )
+  pruefe(
+    "agg.eckwerte.aufwand_pk ist eine Zahl bei gesetzter Einwohnerzahl",
+    typeof eckMitEW.aufwand_pk === "number",
+    String(eckMitEW.aufwand_pk),
+  )
+  pruefe(
+    "agg.eckwerte.netto_pk ist eine Zahl bei gesetzter Einwohnerzahl",
+    typeof eckMitEW.netto_pk === "number",
+    String(eckMitEW.netto_pk),
+  )
+  // R5 — Pro-Kopf bleibt null bei Dokumenten ohne einwohner.
+  const andereDokId = datenPK.dokumente.find(
+    (d) => String(d.id) !== String(datenPK.meta.default_dok),
+  ).id
+  const eckOhneEW = datenPK.aggregate[String(andereDokId)].eckwerte
+  pruefe(
+    "agg.eckwerte.ertraege_pk ist null ohne Einwohnerzahl",
+    eckOhneEW.ertraege_pk === null,
+    String(eckOhneEW.ertraege_pk),
+  )
+
   console.log("\nsankey-drill — Geldfluss-Drill-down")
   // quelleVonPosten — Portierung der CASE-Logik aus dashboard-data.js.
   pruefe(

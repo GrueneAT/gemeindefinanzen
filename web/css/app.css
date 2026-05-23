@@ -369,6 +369,25 @@ input, select { font-family: var(--gat-font-copy); }
   text-transform: uppercase;
   color: var(--web-text-soft);
 }
+/* .stat-delta — sekundaere Zeile auf der Kennzahlen-Karte: Vorjahres-
+   bzw. Soll-Ist-Delta in Prozent. Gruen wenn der Wert positiv waechst,
+   clay wenn er sinkt (semantisch konsistent mit der Diagramm-Palette). */
+.stat-delta {
+  font-size: 0.86rem;
+  color: var(--web-text-soft);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.18rem;
+}
+.stat-delta.is-up   { color: var(--web-chart-green); }
+.stat-delta.is-down { color: var(--web-clay-text); }
+/* .stat-pk — Pro-Kopf-Zeile. Erscheint nur, wenn fuer das Dokument eine
+   Einwohnerzahl erfasst ist (sonst hidden via JS). */
+.stat-pk {
+  font-size: 0.85rem;
+  color: var(--web-text-soft);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.18rem;
+}
 
 /* --- .web-panel — Diagramm-/Inhaltsrahmen ---------------------------------
    Jedes Diagramm sitzt mit seiner h3-Ueberschrift in einer Karte: weisse

@@ -170,6 +170,38 @@ function aggregateDok(db, did) {
   )
   const netto = ertraege - aufwand
 
+  // R1 — Vergleichssummen aus eh_vergleich-Spalte. Bei VA = Vorjahresplan,
+  // bei RA = Soll laut VA (siehe Schema-Kommentar). Daraus Delta-Prozent.
+  const ertraegeVgl = scalar(
+    db,
+    `SELECT SUM(eh_vergleich) FROM v_detail
+     WHERE richtung='einnahme' AND dokument_id=${did}`,
+  )
+  const aufwandVgl = scalar(
+    db,
+    `SELECT SUM(eh_vergleich) FROM v_detail
+     WHERE richtung='ausgabe' AND dokument_id=${did}`,
+  )
+  const kommVgl = scalar(
+    db,
+    `SELECT eh_vergleich FROM v_detail
+     WHERE konto='${KOMM}' AND dokument_id=${did}`,
+  )
+  const nettoVgl = ertraegeVgl - aufwandVgl
+  // Hilfsfunktion: Prozent-Delta gegenueber Vergleichswert. Bei 0 = null
+  // (keine sinnvolle Prozent-Aussage).
+  const deltaProz = (jetzt, vgl) =>
+    vgl !== 0 ? roundHalfEven((100 * (jetzt - vgl)) / Math.abs(vgl), 1) : null
+
+  // R5 — Pro-Kopf-Werte (nur wenn Einwohnerzahl gesetzt).
+  const einwohner = db.wert(
+    `SELECT einwohner FROM dokument WHERE dokument_id=${did}`,
+  )
+  const ew = (n) =>
+    einwohner != null && Number(einwohner) > 0
+      ? round(n / Number(einwohner))
+      : null
+
   const einnahmen = rows(
     db,
     `SELECT bezeichnung, eh_wert FROM v_detail
@@ -250,6 +282,29 @@ function aggregateDok(db, did) {
       komm_anteil: ertraege
         ? roundHalfEven((100 * komm) / ertraege, 1)
         : 0.0,
+      // R1 — Vergleichssummen + Prozent-Delta. Labeling im UI greift
+      // dokument.spalte_vergleich ab (VA=Vorjahr, RA=Soll laut VA).
+      ertraege_vgl: round(ertraegeVgl),
+      aufwand_vgl: round(aufwandVgl),
+      netto_vgl: round(nettoVgl),
+      komm_vgl: round(kommVgl),
+      delta_ertraege_proz: deltaProz(ertraege, ertraegeVgl),
+      delta_aufwand_proz: deltaProz(aufwand, aufwandVgl),
+      delta_netto_proz: deltaProz(netto, nettoVgl),
+      delta_komm_proz: deltaProz(komm, kommVgl),
+      // Komm-Anteil: Differenz in Prozentpunkten (nicht Prozent), wenn
+      // sich Komm-Anteil-Wert messbar veraendert hat.
+      delta_komm_anteil_pp: ertraegeVgl
+        ? roundHalfEven(
+            (100 * komm) / (ertraege || 1) - (100 * kommVgl) / ertraegeVgl,
+            1,
+          )
+        : null,
+      // R5 — Pro-Kopf-Werte, null wenn keine Einwohnerzahl gesetzt.
+      ertraege_pk: ew(ertraege),
+      aufwand_pk: ew(aufwand),
+      netto_pk: ew(netto),
+      komm_pk: ew(komm),
     },
     einnahmen: (() => {
       // R10: Anteil am Gesamtertrag mitgeben. Gesamtertrag = Summe ALLER

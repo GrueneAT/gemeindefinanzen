@@ -113,6 +113,36 @@
     if (el) el.textContent = value;
   }
 
+  // Hilfen fuer die Delta- und Pro-Kopf-Zeile auf den Kennzahlen-Karten.
+  // R1: Delta in Prozent gegenueber dem Vergleichswert (VA: Vorjahr,
+  // RA: Soll). is-up/is-down faerben den Text gruen/clay.
+  function deltaText(d, einheit, vglLabel) {
+    if (d == null) return "";
+    var pfeil = d >= 0 ? "↑ +" : "↓ ";
+    var zahl = Math.abs(d).toLocaleString("de-AT", {
+      minimumFractionDigits: 1, maximumFractionDigits: 1
+    });
+    return pfeil + (d >= 0 ? zahl : zahl) + " " + einheit +
+      " ggü. " + vglLabel;
+  }
+  function setDelta(id, d, einheit, vglLabel) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (d == null) { el.hidden = true; return; }
+    el.textContent = deltaText(d, einheit, vglLabel);
+    el.classList.toggle("is-up", d >= 0);
+    el.classList.toggle("is-down", d < 0);
+    el.hidden = false;
+  }
+  // R5: Pro-Kopf-Zeile. Nur einblenden, wenn der Wert verfuegbar ist.
+  function setPk(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (val == null) { el.hidden = true; return; }
+    el.textContent = "je Einwohner:in: " + euro(val);
+    el.hidden = false;
+  }
+
   function rerenderStats(dokId) {
     var e = aggs[dokId].eckwerte;
     fillText("st-ertraege", euro(e.ertraege, true));
@@ -126,6 +156,24 @@
     }
     fillText("kennzahl-dok", dokLabel(dokId));
     fillText("kennzahl-netto", euro(e.netto));
+
+    // R1 — Delta-Zeile je Karte. Vergleichslabel aus spalte_vergleich
+    // (z. B. "VA 2025" bei einem VA, "VA 2025" beim RA = Soll).
+    var dokEntry = docs.find(function (x) {
+      return String(x.id) === String(dokId);
+    });
+    var vglLabel = dokEntry ? dokEntry.spalte_vergleich : "Vergleich";
+    setDelta("st-ertraege-delta", e.delta_ertraege_proz, "%", vglLabel);
+    setDelta("st-aufwand-delta",  e.delta_aufwand_proz,  "%", vglLabel);
+    setDelta("st-netto-delta",    e.delta_netto_proz,    "%", vglLabel);
+    setDelta("st-komm-anteil-delta", e.delta_komm_anteil_pp, "Pp",
+             vglLabel);
+
+    // R5 — Pro-Kopf-Zeile je Karte (verschwindet, wenn kein einwohner).
+    setPk("st-ertraege-pk", e.ertraege_pk);
+    setPk("st-aufwand-pk",  e.aufwand_pk);
+    setPk("st-netto-pk",    e.netto_pk);
+    setPk("st-komm-pk",     e.komm_pk);
   }
 
   // --- Tabellen je Dokument ------------------------------------------------

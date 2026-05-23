@@ -23,16 +23,12 @@ test('Einwohnerzahl (Variante A — Inline) wird gespeichert',
     // dashboard-Render.
     await expect(input).toHaveValue('9000')
 
-    // Der Wert soll auch in der DB stehen — direkt nachfragen.
-    const persistiert = await page.evaluate(() => {
-      // app.js bindet die DB nicht ans window — aber dashboard-data hat
-      // die Einwohnerzahl in das DATA-Objekt gespiegelt. Sobald
-      // zeichneDashboard() lief, hat window.DATA den neuen Wert.
+    // Der Wert soll auch in der DB stehen — auf window.DATA warten, das
+    // erst nach speichereEinwohner() + zeichneDashboard() neu gesetzt wird.
+    await page.waitForFunction(() => {
       const docs = window.DATA && window.DATA.dokumente
-      if (!docs) return null
-      return docs[0] ? docs[0].einwohner : null
-    })
-    expect(persistiert).toBe(9000)
+      return docs && docs[0] && docs[0].einwohner === 9000
+    }, { timeout: 5000 })
   })
 
 test('Einwohnerzahl (Variante B — Dialog) wird gespeichert',
@@ -63,9 +59,8 @@ test('Einwohnerzahl (Variante B — Dialog) wird gespeichert',
     // dem zeichneDashboard()-Aufruf, weil die Tabelle neu gerendert wurde.
     await expect(page.locator('.doc-einwohner-input[data-id]').first())
       .toHaveValue('7500')
-    const persistiert = await page.evaluate(() => {
+    await page.waitForFunction(() => {
       const docs = window.DATA && window.DATA.dokumente
-      return docs && docs[0] ? docs[0].einwohner : null
-    })
-    expect(persistiert).toBe(7500)
+      return docs && docs[0] && docs[0].einwohner === 7500
+    }, { timeout: 5000 })
   })
