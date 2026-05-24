@@ -464,67 +464,33 @@
         </div>
       </div>
 
-      <!-- R2 Variante A: drei separate Panels (Aufnahme/Tilgung, Stand-Linie) -->
-      <section class="gat-panel">
-        <div class="gat-panel__head">
-          <h3>Variante A · Aufnahme vs. Tilgung (Saeulen)</h3>
-          <p class="gat-panel__note">Saeulen fuer das gewaehlte Dokument:
-            Darlehensaufnahme (Einnahme) und Tilgung (Ausgabe) aus
-            <code>gebarung = "finanzierung"</code>.</p>
-        </div>
-        <div class="gat-panel__body">
-          <div id="c_fin_saeulen" class="dash-chart" style="height:440px"></div>
-        </div>
-      </section>
-
-      <section class="gat-panel">
-        <div class="gat-panel__head">
-          <h3>Variante A · Schuldenstand kumuliert (Linie)</h3>
-          <p class="gat-panel__note">Kumulierte Netto-Veraenderung
-            (Aufnahme &minus; Tilgung) ueber alle Dokumente.
-            <strong>Kein Bilanzstichtags-Stand</strong> — nur die kumulative
-            Bewegung aus den eingelesenen Dokumenten.</p>
-        </div>
-        <div class="gat-panel__body">
-          <div id="c_schuldenstand" class="dash-chart" style="height:440px"></div>
-        </div>
-      </section>
-
-      <!-- R2 Variante B: Combo-Chart Saeulen + Linie auf zwei y-Achsen -->
-      <section class="gat-panel">
-        <div class="gat-panel__head">
-          <h3>Variante B · Aufnahme/Tilgung + Stand (Combo)</h3>
-          <p class="gat-panel__note">Saeulen Aufnahme/Tilgung pro Dokument,
-            Linie kumulierter Stand auf zweiter y-Achse — alles in einem
-            Chart.</p>
-        </div>
-        <div class="gat-panel__body">
-          <div id="c_fin_combo" class="dash-chart" style="height:460px"></div>
-        </div>
-      </section>
-
-      <!-- R12 — Investitions-Finanzierung: Variante A + B nebeneinander -->
+      <!-- Schulden-Sicht: Aufnahme/Tilgung-Saeulen UND kumulierter
+           Schuldenstand nebeneinander. Combo-Chart war zu dicht, die
+           Trennung der beiden Diagramme macht die Bewegung pro Dokument
+           und die kumulierte Linie unabhaengig voneinander lesbar. -->
       <div class="dash-grid">
         <section class="gat-panel">
           <div class="gat-panel__head">
-            <h3>Variante A · Investitions-Finanzierung (Stapel)</h3>
-            <p class="gat-panel__note">Gestapelter Balken: Foerderungen,
-              Darlehen (Aufnahme minus Tilgung, gedeckelt auf 0),
-              Eigenmittel (Restgroesse). <strong>Eigenmittel als
-              Restgroesse abgeleitet</strong> — Heuristik mit Disclaimer.</p>
+            <h3>Aufnahme vs. Tilgung (Saeulen)</h3>
+            <p class="gat-panel__note">Saeulen fuer das gewaehlte Dokument:
+              Darlehensaufnahme (Einnahme) und Tilgung (Ausgabe) aus
+              <code>gebarung = "finanzierung"</code>.</p>
           </div>
           <div class="gat-panel__body">
-            <div id="c_investfin_a" class="dash-chart" style="height:380px"></div>
+            <div id="c_fin_saeulen" class="dash-chart" style="height:440px"></div>
           </div>
         </section>
+
         <section class="gat-panel">
           <div class="gat-panel__head">
-            <h3>Variante B · Investitions-Finanzierung (Mini-Sankey)</h3>
-            <p class="gat-panel__note">Quellen links, Investitionen rechts —
-              eine vereinfachte Sankey-Darstellung derselben Daten.</p>
+            <h3>Schuldenstand kumuliert (Linie)</h3>
+            <p class="gat-panel__note">Kumulierte Netto-Veraenderung
+              (Aufnahme &minus; Tilgung) ueber alle Dokumente.
+              <strong>Kein Bilanzstichtags-Stand</strong> — nur die kumulative
+              Bewegung aus den eingelesenen Dokumenten.</p>
           </div>
           <div class="gat-panel__body">
-            <div id="c_investfin_b" class="dash-chart" style="height:380px"></div>
+            <div id="c_schuldenstand" class="dash-chart" style="height:440px"></div>
           </div>
         </section>
       </div>

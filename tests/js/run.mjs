@@ -410,9 +410,12 @@ async function teste() {
   const ersterDokSchluessel = Object.keys(cfg2.dok_charts)[0]
   const ersterDok = cfg2.dok_charts[ersterDokSchluessel]
   pruefe(
-    "CFG: dok_charts hat fin_saeulen, fin_combo, investfin_a, investfin_b",
-    "fin_saeulen" in ersterDok && "fin_combo" in ersterDok &&
-      "investfin_a" in ersterDok && "investfin_b" in ersterDok,
+    "CFG: dok_charts hat fin_saeulen + investfin_b (sankey)",
+    "fin_saeulen" in ersterDok && "investfin_b" in ersterDok,
+  )
+  pruefe(
+    "CFG: fin_combo wurde entfernt (Schulden-Combo raus)",
+    !("fin_combo" in ersterDok),
   )
   pruefe(
     "CFG: trend_charts hat schuldenstand",

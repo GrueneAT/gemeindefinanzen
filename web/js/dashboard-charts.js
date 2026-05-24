@@ -762,76 +762,6 @@ export function chartSchuldenstand(trend) {
   }
 }
 
-// R2 Variante B: Combo-Chart — Saeulen Aufnahme/Tilgung pro Dokument,
-// Linie kumulierter Stand auf zweiter y-Achse.
-export function chartSchuldenCombo(_agg, trend) {
-  const reihe = (trend && trend.schuldenstand) || []
-  const labels = reihe.map((r) => r[0])
-  const auf = reihe.map((r) => r[1] || 0)
-  const til = reihe.map((r) => r[2] || 0)
-  const kum = reihe.map((r) => r[3])
-  return {
-    textStyle: baseText(),
-    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende_app(),
-    grid: grid({ bottom: 56, top: 30, right: 60 }),
-    xAxis: catAxis(labels),
-    yAxis: [
-      // links: Aufnahme/Tilgung in Mio EUR
-      valAxis(),
-      // rechts: kumulierter Stand in Mio EUR (eigene Achse, weil Linie und
-      // Saeulen sonst optisch zusammenfallen)
-      {
-        type: "value",
-        position: "right",
-        axisLabel: {
-          fontFamily: CHART_FONT,
-          fontSize: AXIS_SIZE,
-          color: ACHSE_TEXT_SOFT,
-          formatter:
-            "(v)=>(v/1e6).toLocaleString('de-AT'," +
-            "{minimumFractionDigits:1,maximumFractionDigits:1})+' Mio'",
-        },
-        splitLine: { show: false },
-      },
-    ],
-    series: [
-      {
-        name: "Aufnahme",
-        type: "bar",
-        yAxisIndex: 0,
-        data: auf.map((v) => ({
-          value: round(v),
-          itemStyle: { color: INK.green, borderRadius: 2 },
-        })),
-        barMaxWidth: BAR_MAX_WEIT,
-        itemStyle: { color: INK.green },
-      },
-      {
-        name: "Tilgung",
-        type: "bar",
-        yAxisIndex: 0,
-        data: til.map((v) => ({
-          value: round(v),
-          itemStyle: { color: INK.red, borderRadius: 2 },
-        })),
-        barMaxWidth: BAR_MAX_WEIT,
-        itemStyle: { color: INK.red },
-      },
-      {
-        name: "kumulierter Stand",
-        type: "line",
-        yAxisIndex: 1,
-        data: kum,
-        smooth: true,
-        symbolSize: 8,
-        itemStyle: { color: INK.blue },
-        lineStyle: { color: INK.blue, width: 2.5 },
-      },
-    ],
-  }
-}
-
 // R12 Variante A: Investitions-Finanzierung als ein einzelner gestapelter
 // horizontaler Balken — Foerderung, Darlehen, Eigenmittel.
 export function chartInvestFinanzierungStapel(agg) {
@@ -1403,9 +1333,9 @@ export function alleCharts(daten) {
       korridor: chartKorridor(agg),
       treiber: chartTreiber(agg),
       investitionen: chartInvestitionen(agg),
-      // R2 — Schulden & Finanzierung
+      // Schulden & Finanzierung — Aufnahme/Tilgung-Saeulen je Dokument.
+      // Der kumulierte Stand laeuft als Zeitreihe in trend_charts.schuldenstand.
       fin_saeulen: chartFinanzierung(agg),
-      fin_combo: chartSchuldenCombo(agg, daten.trend),
       // R12 — Investitions-Finanzierung
       investfin_a: chartInvestFinanzierungStapel(agg),
       investfin_b: chartInvestFinanzierungSankey(agg),

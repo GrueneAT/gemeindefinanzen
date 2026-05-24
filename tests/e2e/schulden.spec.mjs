@@ -1,13 +1,13 @@
-// e2e — Schulden & Finanzierung als neuer Tab (Variante A + B fuer R2,
-// Variante A + B fuer R12). Pro Variante muss ein Canvas sichtbar sein.
+// e2e — Schulden & Finanzierung Tab.
+// Layout: Aufnahme/Tilgung-Saeulen + kumulierter Schuldenstand
+// nebeneinander in einem .dash-grid. Combo-Chart-Variante entfernt.
 import { test, expect } from '@playwright/test'
 import { ladeFixturePdf } from './helpers.mjs'
 
-test('Schulden-Tab oeffnet und alle Variante-Charts sind sichtbar',
+test('Schulden-Tab oeffnet und beide Diagramme sind nebeneinander sichtbar',
   async ({ page }) => {
     await ladeFixturePdf(page)
 
-    // Tab-Button vorhanden und klickbar.
     const tabBtn = page.locator('.tab-btn[data-tab="schulden"]')
     await expect(tabBtn).toBeVisible()
     await tabBtn.click()
@@ -16,15 +16,16 @@ test('Schulden-Tab oeffnet und alle Variante-Charts sind sichtbar',
     const panel = page.locator('.tab-panel[data-panel="schulden"]')
     await expect(panel).toBeVisible()
 
-    // R2 Variante A: drei Panels (Saeulen, Stand-Linie, ...)
+    // Beide Diagramme sind sichtbar — Saeulen-Chart + Schuldenstand-Linie.
     await expect(page.locator('#c_fin_saeulen canvas')).toBeVisible()
     await expect(page.locator('#c_schuldenstand canvas')).toBeVisible()
-    // R2 Variante B: Combo-Chart
-    await expect(page.locator('#c_fin_combo canvas')).toBeVisible()
 
-    // R12 Variante A + B
-    await expect(page.locator('#c_investfin_a canvas')).toBeVisible()
-    await expect(page.locator('#c_investfin_b canvas')).toBeVisible()
+    // Combo-Chart wurde entfernt: kein #c_fin_combo mehr im Markup.
+    await expect(page.locator('#c_fin_combo')).toHaveCount(0)
+
+    // Beide Panels liegen in einem .dash-grid (zweispaltiges Layout).
+    const grid = panel.locator('.dash-grid:has(#c_fin_saeulen)')
+    await expect(grid.locator('#c_schuldenstand')).toHaveCount(1)
 
     // Schuldendienst-Karte ist sichtbar.
     await expect(page.locator('#st-schuldendienst')).toBeVisible()
