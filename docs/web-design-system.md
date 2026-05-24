@@ -954,3 +954,64 @@ die doppelte Pflege auf und schliesst die Konvergenz ab.
 
 **Tests gruen** (`npm run test:js` 105/105, `npm run test:e2e` 16/16
 mit dem neuen `hc-toggle.spec.mjs`).
+
+### Iteration 20 — v2.2-Adoption (Table / Toast / Dropzone / Toolbar)
+
+DS v2.2 hat drei der vier Komponenten geliefert, auf die diese App in
+Iteration 19 lokal gewartet hatte — `.gat-table`-Familie, `.gat-toast`/
+`.gat-toaster` und `.gat-dropzone`. Iteration 20 zieht das Markup und
+das app-eigene CSS nach.
+
+- **Table.** Alle `<table class="dtable">`-Elemente tragen zusaetzlich
+  `.gat-table` mit den passenden Modifiern: die vier Panel-Tabellen
+  (`t-einnahmen`/`t-ausgaben`/`t-investitionen`/`t-transfers`) mit
+  `--zebra --compact`, die breite 15-Spalten-Suchtabelle mit
+  `--zebra --dense --sticky-col` (die `pick`-Checkbox-Spalte bleibt
+  beim horizontalen Scrollen sichtbar). Die Header-Numerik-Spalten
+  tragen `gat-table__num`. Die Suchtabelle sitzt in einem
+  `.gat-table-scroll`-Wrapper, der lokale `.table-scroll` deckelt nur
+  noch die Hoehe.
+
+  Die `.dtable`-Stilebene in `web/vendor/dashboard/dashboard.css` ist
+  deutlich geschrumpft — Layout, Kopfzeile, Hover und Numerik-Defaults
+  kommen aus dem DS. Lokal verbleiben drei Bruecken, die `dashboard.js`
+  (TABU) mit emittiertem Markup ohne DS-Klassen versorgen:
+  Body-Numerik (`<td class="num">`), Pick-Spalte (`<td class="pick">`),
+  Sortier-Pfeil-Span (`.sortable .arrow`).
+
+  Bewusst **nicht** uebernommen: `.gat-table__sortable` auf den
+  Spaltenkoepfen — `dashboard.js` pflegt einen aktiven Sortier-Pfeil
+  ueber den `.arrow`-Span (▲/▼), und der passive DS-Chevron via
+  `::after` wuerde damit doppeln. Da `dashboard.js` nicht aenderbar
+  ist, bleibt die Sortier-Optik App-spezifisch.
+
+- **Toast.** `#toast-box` traegt jetzt `.gat-toaster` (DS fixiert ihn
+  unten-rechts) und `aria-live="polite"`. Der `toast()`-Helper in
+  `web/js/app.js` emittiert das DS-Markup
+  `.gat-toast.gat-toast--{art}` mit `__body` und `__close`-Knopf.
+  Aufrufer mappen Semantik: "kein PDF uebersprungen" -> `warn`,
+  "Dokument(e) konnten nicht geladen werden" -> `error`,
+  Initialisierungsfehler -> `error`. Die lokale `.toast.ok`/`.toast.fehl`-
+  Stilebene ist entfallen.
+
+- **Dropzone.** `#dropzone` traegt jetzt `.gat-dropzone` mit den
+  Sub-Elementen `__icon` (Upload-Pfeil-SVG, `aria-hidden`), `__label`,
+  `__hint` und `__trigger` am Sekundaer-Button. Das Drag-Handling
+  toggelt jetzt `.is-dragover` statt des frueher lokalen `.is-over`
+  (DS-Vertrag). Die lokale Border-/Hintergrund-/Padding-/Hover-Schicht
+  ist entfallen; lokal verbleibt nur der Aussenabstand und die
+  Sichtbarkeit des verdeckten File-Inputs.
+
+- **Toolbar — bewusst ausgelassen.** Die `.mj-actions`-Reihe im
+  Such-Tab (Mehrjahres-Auswahl-Aktionen + Anzahl-Anzeige) war der
+  einzige Kandidat fuer `.gat-toolbar`, ist aber semantisch eine
+  inline Aktionsleiste am Ende des Filterbereichs und keine
+  bildschirm-sticky Bottom-Toolbar (DS-Default ist
+  `position: sticky; bottom: 0`). Eine Adoption wuerde die Buttons
+  dauerhaft am Viewport-Unterrand verkleben — auch wenn der User in
+  anderen Tabs oder weit ausserhalb des Suchpanels arbeitet. Das
+  passt nicht zur App-UX. Komponente bleibt App-spezifisch
+  (`.mj-actions`/`.mj-btn`/`.mj-count`); spaeter ggf. erneut
+  bewerten, wenn DS einen nicht-stickyn Toolbar-Modifier ergaenzt.
+
+**Tests gruen** (`npm run test:js` 105/105, `npm run test:e2e` 16/16).
