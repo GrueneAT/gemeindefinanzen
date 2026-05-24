@@ -86,3 +86,34 @@ test('PNG-Export: alle Diagramm-Panels haben einen Export-Knopf',
     ).count()
     expect(exportBtns).toBe(panels)
   })
+
+test('PNG-Export: Branding-Footer ist groesser als das nackte Diagramm',
+  async ({ page }) => {
+    await ladeFixturePdf(page)
+    // Die brandePngMitFooter-Funktion wird ueber window.__brandFooter
+    // exponiert. Test: ein synthetisches 200x200-Bild durchlaufen lassen und
+    // pruefen, dass die Hoehe um den Footer waechst.
+    const dims = await page.evaluate(async () => {
+      const canvas = document.createElement("canvas")
+      canvas.width = 200
+      canvas.height = 200
+      const ctx = canvas.getContext("2d")
+      ctx.fillStyle = "#000"
+      ctx.fillRect(0, 0, 200, 200)
+      const ohne = canvas.toDataURL("image/png")
+      const panel = document.querySelector('.gat-panel:has(.dash-chart)')
+      const mit = await window.__brandFooter.brandePngMitFooter(ohne, panel)
+      async function dim(d) {
+        return new Promise((r) => {
+          const img = new Image()
+          img.onload = () => r({ w: img.width, h: img.height })
+          img.src = d
+        })
+      }
+      return { ohne: await dim(ohne), mit: await dim(mit) }
+    })
+    expect(dims.mit.w).toBe(dims.ohne.w)
+    expect(dims.mit.h).toBeGreaterThan(dims.ohne.h)
+    // Footer ist 96 px hoch (Pixel-Ratio 2 ist bereits im Diagramm-PNG drin).
+    expect(dims.mit.h - dims.ohne.h).toBe(96)
+  })

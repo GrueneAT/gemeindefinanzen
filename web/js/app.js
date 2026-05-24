@@ -415,7 +415,7 @@ function baueExportKnopf(panel, herkunft) {
   return btn
 }
 
-function exportierePanelAlsPng(panel) {
+async function exportierePanelAlsPng(panel) {
   const chart = panel.querySelector(".dash-chart")
   if (!chart) {
     toast("Diagramm nicht gefunden — Export abgebrochen.", "error")
@@ -443,14 +443,177 @@ function exportierePanelAlsPng(panel) {
     toast(`Export fehlgeschlagen: ${e.message || String(e)}`, "error")
     return
   }
+  // Branding-Footer ueber Off-Screen-Canvas montieren — Titel, Dokument
+  // und Datum unter dem Diagramm, URL rechts. Das exportierte Bild ist
+  // damit eigenstaendig brauchbar (Social-Media-tauglich), das nackte
+  // Diagramm wird nicht mehr ausgegeben.
+  let finalUrl = dataUrl
+  try {
+    finalUrl = await brandePngMitFooter(dataUrl, panel)
+  } catch (e) {
+    // Footer-Komposition scheitert (z. B. CSP, Canvas-Tainting): das
+    // nackte ECharts-PNG bleibt als Fallback erhalten — der Export geht
+    // immer noch durch, nur ohne Beschriftung.
+    if (typeof console !== "undefined" && console.warn) {
+      console.warn("Branding-Footer fehlgeschlagen — exportiere ohne Footer:",
+        e && e.message)
+    }
+  }
   const dateiname = baueExportDateiname(panel)
   const a = document.createElement("a")
-  a.href = dataUrl
+  a.href = finalUrl
   a.download = dateiname
   document.body.appendChild(a)
   a.click()
   a.remove()
   toast(`PNG gespeichert: ${dateiname}`, "success")
+}
+
+// --- PNG-Branding-Footer ------------------------------------------------- //
+// Das nackte ECharts-PNG ueber ein Off-Screen-Canvas montieren und einen
+// Branding-Footer (Titel, Dokument/Jahr, Datum, URL) unter dem Diagramm
+// einziehen. Pixel-Ratio 2 fuer Retina/Social-Media-Aufloesung; Hintergrund
+// weiss, Schrift Barlow (Design-System), Farben aus den DS-Tokens.
+//
+// Layout (skaliert mit dem PixelRatio 2):
+//   - Footer-Hoehe ~96px (Logischpixel ~48), zweispaltig
+//   - Links: Diagrammtitel (Barlow Semi Condensed, kraeftig)
+//           + Dokument-Label und Datum daruntersitzend (weicher Ton)
+//   - Rechts: URL `gemeindefinanzen.gruene.at` (zurueckhaltend)
+//   - Trennlinie als duenner Strich oben am Footer
+const FOOTER_PIXEL_RATIO = 2
+
+function ladeBild(src) {
+  return new Promise((aufloesen, ablehnen) => {
+    const img = new Image()
+    img.onload = () => aufloesen(img)
+    img.onerror = () => ablehnen(new Error("Bild konnte nicht geladen werden"))
+    img.src = src
+  })
+}
+
+async function brandePngMitFooter(dataUrl, panel) {
+  const bild = await ladeBild(dataUrl)
+  const titel = leseTitelAusPanel(panel)
+  const dokLabel = leseAktivesDokLabel()
+  const datum = formatHeute()
+  const url = "gemeindefinanzen.gruene.at"
+
+  // Footer-Geometrie in Bild-Pixeln (das Diagramm hat bereits Pixel-Ratio 2).
+  const FOOTER_H = 96     // px (footer height at pixelRatio=2)
+  const PAD_X = 36
+  const PAD_Y = 22
+  const titelSize = 28
+  const metaSize = 18
+  const urlSize = 18
+
+  const canvas = document.createElement("canvas")
+  canvas.width = bild.width
+  canvas.height = bild.height + FOOTER_H
+  const ctx = canvas.getContext("2d")
+
+  // Hintergrund weiss (Diagramm-Hintergrund + Footer-Hintergrund).
+  ctx.fillStyle = "#ffffff"
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  // Diagramm einzeichnen.
+  ctx.drawImage(bild, 0, 0)
+
+  // Trennlinie zwischen Diagramm und Footer.
+  ctx.fillStyle = "#d7e0d3"
+  ctx.fillRect(0, bild.height, canvas.width, 1)
+
+  // Footer-Text: Barlow Semi Condensed (Headline-Schrift des DS) fuer den
+  // Titel, Inter/System fuer Meta und URL — Fonts vom DS bereits geladen.
+  // CanvasContext kennt keine generischen DS-Tokens; die Werte sind
+  // konsistent mit den DS-Variablen (--gat-web-text / --gat-web-text-soft /
+  // --gat-web-green-deep).
+  const TEXT = "#1f261c"
+  const TEXT_SOFT = "#4a5a3f"
+  const GREEN_DEEP = "#2c6e40"
+  const FONT_HEAD = "'Barlow Semi Condensed', 'Barlow', sans-serif"
+  const FONT_COPY = "'Barlow', 'Inter', system-ui, sans-serif"
+
+  const footerTop = bild.height
+
+  // Linke Spalte: Titel + Meta-Zeile darunter.
+  ctx.textBaseline = "alphabetic"
+  ctx.fillStyle = TEXT
+  ctx.font = `700 ${titelSize}px ${FONT_HEAD}`
+  const titelText = kuerzeText(ctx, titel, canvas.width - PAD_X * 2 - 280)
+  ctx.fillText(titelText, PAD_X, footerTop + PAD_Y + titelSize - 4)
+
+  ctx.fillStyle = TEXT_SOFT
+  ctx.font = `400 ${metaSize}px ${FONT_COPY}`
+  const metaText = dokLabel
+    ? `${dokLabel} · ${datum}`
+    : datum
+  ctx.fillText(metaText, PAD_X, footerTop + PAD_Y + titelSize + metaSize + 4)
+
+  // Rechte Spalte: URL, rechtsbuendig.
+  ctx.fillStyle = GREEN_DEEP
+  ctx.font = `600 ${urlSize}px ${FONT_HEAD}`
+  ctx.textAlign = "right"
+  ctx.fillText(url, canvas.width - PAD_X,
+    footerTop + PAD_Y + titelSize + metaSize + 4)
+  ctx.textAlign = "left"
+
+  return canvas.toDataURL("image/png")
+}
+
+function kuerzeText(ctx, text, maxBreite) {
+  if (!text) return ""
+  if (ctx.measureText(text).width <= maxBreite) return text
+  const ellipsis = "…"
+  let lo = 0
+  let hi = text.length
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    const kandidat = text.slice(0, mid) + ellipsis
+    if (ctx.measureText(kandidat).width <= maxBreite) {
+      lo = mid
+    } else {
+      hi = mid - 1
+    }
+  }
+  return text.slice(0, lo) + ellipsis
+}
+
+function leseTitelAusPanel(panel) {
+  const h3 = panel.querySelector(".gat-panel__head h3")
+  if (h3) {
+    return (h3.textContent || "").trim().replace(/\s+/g, " ")
+  }
+  return "Diagramm"
+}
+
+function leseAktivesDokLabel() {
+  const switcherBtn = document.querySelector(".switch-btn.is-active")
+  return switcherBtn && switcherBtn.textContent
+    ? switcherBtn.textContent.trim()
+    : ""
+}
+
+function formatHeute() {
+  const heute = new Date()
+  return [
+    heute.getFullYear(),
+    String(heute.getMonth() + 1).padStart(2, "0"),
+    String(heute.getDate()).padStart(2, "0"),
+  ].join("-")
+}
+
+// Werte fuer Tests/Diagnose ueber `window.__brandFooter` exponieren — der
+// E2E-Test kann so den Branding-Anteil pruefen, ohne den PNG-Inhalt zu
+// dekodieren.
+if (typeof window !== "undefined") {
+  window.__brandFooter = {
+    brandePngMitFooter,
+    leseTitelAusPanel,
+    leseAktivesDokLabel,
+    formatHeute,
+    FOOTER_PIXEL_RATIO,
+  }
 }
 
 // Dateinamen-Schema fuer den PNG-Export: `<panel-id>-<dokument>-<YYYY-MM-DD>.png`.
