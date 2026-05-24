@@ -756,8 +756,10 @@
           <p class="gat-panel__note">Aus der aktuellen Filtermenge der
             Suche ein eigenes Diagramm bauen. Gruppierung nach Kategorie,
             Wert aus einer der Betragsspalten, Aggregation nach Summe,
-            Durchschnitt oder Anzahl. Diagrammtypen: Balken (horizontal
-            oder vertikal), Linie, Kreis/Ring.</p>
+            Durchschnitt, Median, Minimum, Maximum oder Anzahl.
+            Diagrammtypen: Balken (horizontal oder vertikal), Linie,
+            Kreis/Ring und gestapelte Balken. Gestapelte Balken nutzen
+            zusaetzlich eine sekundaere Gruppierung.</p>
         </div>
         <div class="gat-panel__body">
           <div class="builder-conf">
@@ -767,9 +769,25 @@
                 <option value="bar-v">Balken (vertikal)</option>
                 <option value="line">Linie</option>
                 <option value="pie">Kreis/Ring</option>
+                <option value="bar-stacked">Balken gestapelt</option>
               </select></label>
             <label>Gruppieren nach
               <select id="builder-dim">
+                <option value="gruppe">Aufgabengruppe</option>
+                <option value="ansatz">Ansatz</option>
+                <option value="bezeichnung">Bezeichnung</option>
+                <option value="dok">Dokument</option>
+                <option value="richtung">Richtung</option>
+                <option value="gebarung">Gebarung</option>
+              </select></label>
+            <!-- Sekundaere Gruppierung — sichtbar nur fuer
+                 Diagrammtypen, die eine zweite Achse brauchen (bisher
+                 gestapelte Balken; spaetere Diagrammtypen schalten sich
+                 ueber BUILDER_TYPEN_MIT_DIM2 in app.js dazu). app.js
+                 toggelt das [hidden]-Attribut beim Typ-Wechsel. -->
+            <label id="builder-stack-wrap" hidden>Sekundaere Gruppierung
+              <select id="builder-stack">
+                <option value="">— (keine)</option>
                 <option value="gruppe">Aufgabengruppe</option>
                 <option value="ansatz">Ansatz</option>
                 <option value="bezeichnung">Bezeichnung</option>
