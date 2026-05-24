@@ -740,7 +740,10 @@ function builderKategorieLabel(p, dim) {
 function builderAggregiere(posten, dim, wertfeld, agg) {
   // Gruppieren nach Kategorie, dann aggregieren. Liefert ein Array
   // [{ name, wert, anzahl }] absteigend nach wert sortiert.
+  // Aggregationen: summe, durchschnitt, anzahl, median, min, max.
+  // Fuer median/min/max wird die Wertliste pro Kategorie gesammelt.
   const eimer = new Map()
+  const brauchListe = agg === "median" || agg === "min" || agg === "max"
   for (const p of posten) {
     const name = builderKategorieLabel(p, dim)
     if (!name) continue
@@ -749,8 +752,13 @@ function builderAggregiere(posten, dim, wertfeld, agg) {
     if (e) {
       e.summe += v
       e.anzahl += 1
+      if (brauchListe) e.werte.push(v)
     } else {
-      eimer.set(name, { summe: v, anzahl: 1 })
+      eimer.set(name, {
+        summe: v,
+        anzahl: 1,
+        werte: brauchListe ? [v] : null,
+      })
     }
   }
   const ergebnis = []
@@ -760,11 +768,27 @@ function builderAggregiere(posten, dim, wertfeld, agg) {
     else if (agg === "durchschnitt") {
       wert = e.anzahl > 0 ? e.summe / e.anzahl : 0
     } else if (agg === "anzahl") wert = e.anzahl
+    else if (agg === "median") wert = berechneMedian(e.werte)
+    else if (agg === "min") wert = e.werte.length ? Math.min(...e.werte) : 0
+    else if (agg === "max") wert = e.werte.length ? Math.max(...e.werte) : 0
     else wert = e.summe
     ergebnis.push({ name, wert, anzahl: e.anzahl })
   }
   ergebnis.sort((a, b) => b.wert - a.wert)
   return ergebnis
+}
+
+function berechneMedian(werte) {
+  // Median ueber eine Werteliste — bei gerader Laenge der Mittelwert der
+  // beiden mittleren Werte, sonst der mittlere Wert. Liefert 0 fuer leere
+  // Liste.
+  if (!werte || werte.length === 0) return 0
+  const sortiert = werte.slice().sort((a, b) => a - b)
+  const m = Math.floor(sortiert.length / 2)
+  if (sortiert.length % 2 === 0) {
+    return (sortiert[m - 1] + sortiert[m]) / 2
+  }
+  return sortiert[m]
 }
 
 function builderEchartsOption(typ, daten, achsTitel, wertTitel) {
