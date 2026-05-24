@@ -19,6 +19,14 @@
       document.documentElement.classList.add("gat-mode-hc");
     }
   } catch (e) { /* localStorage gesperrt (Privatmodus) — egal */ }
+  // Chart-Theme analog vorab als data-Attribut auf <html> setzen — fuer
+  // CSS-Hooks und damit das ECharts-Theme von der ersten setOption an
+  // konsistent ist (die ESM-Init in chart-themes.js laeuft erst, wenn
+  // app.js geladen wurde).
+  try {
+    var t = localStorage.getItem("app-chart-theme") || "standard";
+    document.documentElement.setAttribute("data-chart-theme", t);
+  } catch (e) { /* egal */ }
 </script>
 <link rel="stylesheet" href="https://grueneat.github.io/design-system/design-system.css">
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
@@ -55,6 +63,17 @@
         </svg>
         <span class="gat-header__support-label">florian.motlik@gruene.at</span>
       </a>
+      <label class="gat-header__theme" for="theme-picker">
+        <span class="gat-header__theme-label">Farben</span>
+        <select class="gat-input gat-input--compact gat-header__theme-select"
+                id="theme-picker"
+                aria-label="Farbpalette fuer alle Diagramme">
+          <option value="standard">Standard</option>
+          <option value="hochkontrast">Hoher Kontrast</option>
+          <option value="druck">Druckfreundlich</option>
+          <option value="barrierefrei">Barrierefrei</option>
+        </select>
+      </label>
       <button type="button" class="gat-header__a11y-toggle" id="hc-toggle"
               aria-pressed="false" aria-label="Hohen Kontrast einschalten">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"

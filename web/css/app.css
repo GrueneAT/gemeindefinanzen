@@ -488,6 +488,42 @@ input, select { font-family: var(--gat-font-copy); }
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
+
+/* --- Theme-Picker im Header ----------------------------------------------
+   Dropdown rechts neben dem Kontrast-Toggle. Label + Select, kompakte
+   Optik analog zum Toggle. Im HC-Modus auf Gelb/Anthrazit gehoben fuer
+   gleiche Kontrast-Qualitaet wie der Toggle. */
+.gat-header__theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  color: var(--gat-web-green-deep);
+}
+.gat-header__theme-label {
+  font-family: var(--gat-font-headline);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.gat-header__theme-select {
+  font: inherit;
+  font-family: var(--gat-font-headline);
+  font-size: 0.95rem;
+  padding: 0.18rem 0.45rem;
+  background: var(--gat-web-surface);
+  color: var(--gat-web-text);
+  border: 1px solid var(--gat-web-hairline);
+  border-radius: var(--gat-web-radius-control);
+  cursor: pointer;
+}
+.gat-mode-hc .gat-header__theme,
+.gat-mode-hc .gat-header__theme-select {
+  color: var(--gat-color-gelb);
+}
+.gat-mode-hc .gat-header__theme-select {
+  background: var(--gat-color-anthrazit);
+  border-color: var(--gat-color-gelb);
+}
 .gat-header__a11y-toggle:hover {
   border-color: var(--gat-web-green);
   background: var(--gat-web-green-tint);

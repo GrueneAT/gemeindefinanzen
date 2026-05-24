@@ -14,6 +14,13 @@ import {
 } from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
 import { baueDashboard } from "./dashboard-app.js"
+import {
+  CHART_THEMES, holeAktivenThemeName, holeAktivesTheme,
+  setzeTheme, aktualisiereThemeBeiHc, initChartTheme,
+} from "./chart-themes.js"
+
+// Chart-Theme global bereitstellen, bevor irgendein Chart-Builder laeuft.
+initChartTheme()
 
 const STUFEN = {
   extraktion: "Text wird extrahiert",
@@ -61,6 +68,7 @@ async function init() {
   verdrahtePngExport()
   verdrahteBuilder()
   verdrahteHcToggle()
+  verdrahteThemePicker()
   verdrahteAusgabenDrillSync()
   window.__appBereit = true
   zeigeBuildStempel()
@@ -76,7 +84,7 @@ async function init() {
 function verdrahteHcToggle() {
   const btn = document.getElementById("hc-toggle")
   if (!btn) return
-  const set = (an) => {
+  const set = (an, ausUserInteraktion) => {
     document.body.classList.toggle("gat-mode-hc", an)
     document.documentElement.classList.toggle("gat-mode-hc", an)
     btn.setAttribute("aria-pressed", an ? "true" : "false")
@@ -87,12 +95,94 @@ function verdrahteHcToggle() {
     try {
       localStorage.setItem("gat-mode-hc", an ? "1" : "")
     } catch (e) { /* gesperrt (Privatmodus) — egal */ }
+    // HC-Auto-Switch: Chart-Theme an den HC-Modus koppeln. Nur bei einer
+    // expliziten User-Interaktion, nicht beim Initial-Sync, damit eine
+    // gespeicherte manuelle Theme-Wahl ueber Refreshes hinweg respektiert
+    // bleibt.
+    if (ausUserInteraktion) aktualisiereThemeBeiHc(an)
   }
   let aktiv = false
   try { aktiv = localStorage.getItem("gat-mode-hc") === "1" } catch (e) {}
-  set(aktiv)
+  set(aktiv, false)
   btn.addEventListener("click", () =>
-    set(!document.body.classList.contains("gat-mode-hc")))
+    set(!document.body.classList.contains("gat-mode-hc"), true))
+}
+
+// --- Chart-Theme-Picker --------------------------------------------------- //
+// Header-Dropdown rechts neben dem Kontrast-Toggle. Wechsel des Themes
+// schreibt in localStorage und dispatcht 'theme-change'; der Listener
+// re-rendert alle ECharts-Instanzen.
+function verdrahteThemePicker() {
+  const sel = document.getElementById("theme-picker")
+  if (!sel) return
+  // Initialwert aus localStorage.
+  const aktuell = holeAktivenThemeName()
+  sel.value = aktuell
+  sel.addEventListener("change", () => {
+    setzeTheme(sel.value)
+  })
+  // Re-Render aller Charts bei Theme-Wechsel. dashboard.js exponiert
+  // weder ein renderAll noch die Instanz-Sammlung — ueber den globalen
+  // window-Resize lassen sich Layout-Aktualisierungen anstossen, aber
+  // setOption mit neuer Palette geht nur ueber dashboard.js. Daher hier:
+  // alle ECharts-Instanzen direkt ueber getInstanceByDom abrufen und die
+  // aktuelle Option (inst.getOption()) mit der neuen color-Palette neu
+  // setzen. ECharts respektiert 'color' als Array von Default-Farben.
+  window.addEventListener("theme-change", () => {
+    aktualisiereAlleChartFarben()
+    // localStorage-Echo + data-Attribut auf <html> fuer CSS-Hooks.
+    try {
+      const name = holeAktivenThemeName()
+      document.documentElement.setAttribute("data-chart-theme", name)
+    } catch (e) {}
+    // Picker-UI synchron halten (falls Theme programmatisch geaendert wurde).
+    sel.value = holeAktivenThemeName()
+  })
+  // Globalen Picker-Pfad fuer Tests exponieren.
+  if (typeof window !== "undefined") {
+    window.__themePicker = {
+      setzeTheme,
+      holeAktivenThemeName,
+      holeAktivesTheme,
+      CHART_THEMES,
+      aktualisiereAlleChartFarben,
+    }
+  }
+}
+
+// Alle sichtbaren ECharts-Instanzen mit der aktuellen Palette neu farben.
+// ECharts ueber `setOption({ color: PALETTE })` ohne `notMerge=true`
+// uebernimmt nur die Top-Level-color — und die wird bei vielen unserer
+// Charts ueberschrieben durch series.itemStyle.color. Deshalb: zusaetzlich
+// ein leichtes Repaint anstossen, indem wir die aktuelle Option um die
+// color-Eigenschaft anreichern und neu setzen. Charts, die feste
+// Semantik-Farben tragen (Gruen = Ertraege, Clay = Aufwand), bleiben
+// dadurch unveraendert — das ist gewollt: die Semantik ueberlebt den
+// Theme-Wechsel. Drill-Sync-Charts (Treemap, Pie) lesen `window.__chartTheme`
+// und werden ueber `__ausgabenDrillSync.rendereBeide()` aktualisiert.
+function aktualisiereAlleChartFarben() {
+  const palette = (window.__chartTheme && window.__chartTheme.palette) ||
+    holeAktivesTheme().palette
+  for (const el of document.querySelectorAll(".dash-chart")) {
+    const inst = window.echarts && window.echarts.getInstanceByDom
+      ? window.echarts.getInstanceByDom(el)
+      : null
+    if (!inst) continue
+    try {
+      const opt = inst.getOption()
+      // Top-level-color setzen — die kategorialen Charts (Treemap-Default,
+      // Pie ohne explizite Slice-Farben, Mehrjahres-Linien) ziehen von hier.
+      inst.setOption({ color: palette }, false)
+      void opt
+    } catch (e) {
+      // ECharts-Instanz ohne setOption (frisch initialisiert) — egal.
+    }
+  }
+  // Drill-Sync-Charts neu zeichnen, damit ihre per-Slice/per-Tile-
+  // Palette das neue Theme spiegelt.
+  if (window.__ausgabenDrillSync) {
+    try { window.__ausgabenDrillSync.rendereBeide() } catch (e) {}
+  }
 }
 
 // --- Mehrjahres-Overlay: Fokusverwaltung --------------------------------- //
