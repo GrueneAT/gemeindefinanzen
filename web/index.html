@@ -284,8 +284,8 @@
       <section class="gat-panel">
         <div class="gat-panel__head"><h3>Tabelle der groessten Ertragsposten</h3></div>
         <div class="gat-panel__body gat-panel__body--table">
-          <table class="dtable" id="t-einnahmen">
-            <thead><tr><th>Posten</th><th class="num">Betrag</th></tr></thead>
+          <table class="dtable gat-table gat-table--zebra gat-table--compact" id="t-einnahmen">
+            <thead><tr><th>Posten</th><th class="num gat-table__num">Betrag</th></tr></thead>
             <tbody id="tbl-einnahmen"></tbody></table>
         </div>
       </section>
@@ -364,8 +364,8 @@
       <section class="gat-panel">
         <div class="gat-panel__head"><h3>Groesste Aufwandssteigerungen</h3></div>
         <div class="gat-panel__body gat-panel__body--table">
-          <table class="dtable" id="t-ausgaben">
-            <thead><tr><th>Posten</th><th class="num">Steigerung</th></tr></thead>
+          <table class="dtable gat-table gat-table--zebra gat-table--compact" id="t-ausgaben">
+            <thead><tr><th>Posten</th><th class="num gat-table__num">Steigerung</th></tr></thead>
             <tbody id="tbl-ausgaben"></tbody></table>
         </div>
       </section>
@@ -386,9 +386,9 @@
       <section class="gat-panel">
         <div class="gat-panel__head"><h3>Tabelle der groessten Investitionen</h3></div>
         <div class="gat-panel__body gat-panel__body--table">
-          <table class="dtable" id="t-investitionen">
+          <table class="dtable gat-table gat-table--zebra gat-table--compact" id="t-investitionen">
             <thead><tr><th>Posten</th><th>Ansatz</th>
-              <th class="num">Betrag</th></tr></thead>
+              <th class="num gat-table__num">Betrag</th></tr></thead>
             <tbody id="tbl-investitionen"></tbody></table>
         </div>
       </section>
@@ -404,9 +404,9 @@
       <section class="gat-panel">
         <div class="gat-panel__head"><h3>Transferaufwand im Detail</h3></div>
         <div class="gat-panel__body gat-panel__body--table">
-          <table class="dtable" id="t-transfers">
-            <thead><tr><th>Posten</th><th>Art</th><th class="num">Betrag</th>
-              <th class="num">Vergleich</th></tr></thead>
+          <table class="dtable gat-table gat-table--zebra gat-table--compact" id="t-transfers">
+            <thead><tr><th>Posten</th><th>Art</th><th class="num gat-table__num">Betrag</th>
+              <th class="num gat-table__num">Vergleich</th></tr></thead>
             <tbody id="tbl-transfers"></tbody></table>
         </div>
       </section>
@@ -679,8 +679,8 @@
       <section class="gat-panel">
         <div class="gat-panel__head"><h3>Detailposten</h3></div>
         <div class="gat-panel__body">
-      <div class="table-scroll">
-        <table class="dtable">
+      <div class="table-scroll gat-table-scroll">
+        <table class="dtable gat-table gat-table--zebra gat-table--dense gat-table--sticky-col">
           <thead><tr>
             <th class="pick" title="Zeile fuer den Mehrjahres-Vergleich waehlen">
               <input type="checkbox" id="such-pickall"></th>
@@ -696,17 +696,17 @@
               <span class="arrow"></span></th>
             <th class="sortable" data-key="bezeichnung">Bezeichnung
               <span class="arrow"></span></th>
-            <th class="sortable num" data-key="ew">EH wert
+            <th class="sortable num gat-table__num" data-key="ew">EH wert
               <span class="arrow"></span></th>
-            <th class="sortable num" data-key="ev">EH vergl.
+            <th class="sortable num gat-table__num" data-key="ev">EH vergl.
               <span class="arrow"></span></th>
-            <th class="sortable num" data-key="ed">EH dritte
+            <th class="sortable num gat-table__num" data-key="ed">EH dritte
               <span class="arrow"></span></th>
-            <th class="sortable num" data-key="fw">FH wert
+            <th class="sortable num gat-table__num" data-key="fw">FH wert
               <span class="arrow"></span></th>
-            <th class="sortable num" data-key="fv">FH vergl.
+            <th class="sortable num gat-table__num" data-key="fv">FH vergl.
               <span class="arrow"></span></th>
-            <th class="sortable num" data-key="fd">FH dritte
+            <th class="sortable num gat-table__num" data-key="fd">FH dritte
               <span class="arrow"></span></th>
             <th class="sortable" data-key="mvag">MVAG
               <span class="arrow"></span></th>
