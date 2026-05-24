@@ -27,6 +27,17 @@ function rows(db, sql) {
   return db.abfrage(sql).map((r) => Object.values(r))
 }
 
+// PDF-Parser-Artefakt: einzelne Kategorie- und Bezeichnungs-Texte aus dem
+// Detailnachweis enthalten gelegentlich Zeilenumbrueche (mehrzeilige
+// Zellen im Original). In Diagrammbeschriftungen (Pie-Slice-Label,
+// Treemap-Knoten, Achsen-Labels) erscheint das als Zeilenumbruch oder
+// — bei eingebetteten Formatter-Strings, die `\n` zur Zeilentrennung
+// nutzen — als ein zerrissenes Label. Beim Aggregieren der Charts-Daten
+// einmalig auf einzelne Leerzeichen normalisieren.
+function sauberName(s) {
+  return String(s || "").replace(/\r?\n+/g, " ").replace(/\s+/g, " ").trim()
+}
+
 function scalar(db, sql) {
   const v = db.wert(sql)
   return v === null || v === undefined ? 0.0 : Number(v)
@@ -116,12 +127,12 @@ function posten(db) {
       richtung,
       gebarung,
       gruppe: gruppe || "",
-      gruppe_text: gruppe_text || "",
+      gruppe_text: sauberName(gruppe_text),
       ansatz: ansatz || "",
-      ansatz_text: ansatz_text || "",
+      ansatz_text: sauberName(ansatz_text),
       konto: konto || "",
-      konto_text: konto_text || "",
-      bezeichnung: bezeichnung || "",
+      konto_text: sauberName(konto_text),
+      bezeichnung: sauberName(bezeichnung),
       mvag: mvag_eh || "",
       qu: qu || "",
       ew: round2(eh_wert || 0.0),
@@ -158,8 +169,9 @@ function sankey(db, did) {
      GROUP BY gruppe_text ORDER BY 2 DESC`,
   )
   return {
-    quellen: quellen.map(([q, v]) => [q, round(v)]),
-    gruppen: gruppen.map(([g, v]) => [g || "ohne Gruppe", round(v)]),
+    quellen: quellen.map(([q, v]) => [sauberName(q), round(v)]),
+    gruppen: gruppen.map(([g, v]) =>
+      [sauberName(g) || "ohne Gruppe", round(v)]),
   }
 }
 
@@ -406,8 +418,8 @@ function aggregateDok(db, did) {
          AND ABS(eh_wert - eh_vergleich) > 20000
        ORDER BY ABS(eh_wert - eh_vergleich) DESC LIMIT 20`,
     ).map((r) => [
-      r[0] || "",
-      r[1] || "",
+      sauberName(r[0]),
+      sauberName(r[1]),
       r[2] || "",
       round(r[3] || 0),
       round(r[4] || 0),
@@ -435,8 +447,8 @@ function aggregateDok(db, did) {
          AND dokument_id=${did}
        ORDER BY (eh_wert - eh_dritte) DESC LIMIT 20`,
     ).map((r) => [
-      r[0] || "",
-      r[1] || "",
+      sauberName(r[0]),
+      sauberName(r[1]),
       round(r[2] || 0),
       round(r[3] || 0),
       round(r[4] || 0),
@@ -486,28 +498,31 @@ function aggregateDok(db, did) {
       // die angezeigten Anteile auf >100 %).
       const total = ertraege || 1
       return einnahmen.map(([b, v]) => [
-        b,
+        sauberName(b),
         round(v),
         Math.round((100 * v) / total),
       ])
     })(),
-    aufwand_art: aufwandArt.map(([a, v]) => [a, round(v)]),
+    aufwand_art: aufwandArt.map(([a, v]) => [sauberName(a), round(v)]),
     treemap: treemap.map(([g, a, v]) => [
-      g || "ohne Gruppe",
-      a || "ohne Ansatz",
+      sauberName(g) || "ohne Gruppe",
+      sauberName(a) || "ohne Ansatz",
       round(v),
     ]),
     // Anstiege absteigend, danach Rueckgaenge (bereits aufsteigend, also
     // vom staerksten Minus zum schwaechsten) — eine durchgehend nach
     // eh_delta absteigend sortierte Liste fuer das zweiseitige Diagramm.
     treiber: [...treiberAnstieg, ...treiberRueckgang].map(([b, v]) => [
-      b,
+      sauberName(b),
       round(v),
     ]),
-    korridor: korridor.map(([b, v, k]) => [b, round(v), round(k)]),
-    transfers: transfers.map(([b, v, vg]) => [b, round(v), round(vg || 0)]),
-    investitionen: investitionen.map(([b, a, v]) => [b, a || "", round(v)]),
-    gruppen: gruppen.map(([g, gt, v]) => [g || "", gt || "", round(v)]),
+    korridor: korridor.map(([b, v, k]) => [sauberName(b), round(v), round(k)]),
+    transfers: transfers.map(([b, v, vg]) =>
+      [sauberName(b), round(v), round(vg || 0)]),
+    investitionen: investitionen.map(([b, a, v]) =>
+      [sauberName(b), sauberName(a), round(v)]),
+    gruppen: gruppen.map(([g, gt, v]) =>
+      [g || "", sauberName(gt), round(v)]),
     sankey: sankey(db, did),
     // R2 — Aufnahme/Tilgung/Schuldendienst je Dokument.
     finanzierung: {
@@ -530,7 +545,7 @@ function aggregateDok(db, did) {
     // ausgaben, saldo].
     gruppenSaldo: gruppenSaldoRows.map((r) => [
       r[0] || "",
-      r[1] || "",
+      sauberName(r[1]),
       round(r[2] || 0),
       round(r[3] || 0),
       round(r[4] || 0),
