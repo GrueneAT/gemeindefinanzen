@@ -266,6 +266,20 @@ input, select { font-family: var(--gat-font-copy); }
   box-shadow: var(--gat-web-focus-ring);
 }
 
+/* --- Drill-Zurueck-Knopf (Treemap + Pie auf dem Ausgaben-Tab) ------------
+   Im Gegensatz zu den ruhigen Vollbild-/Modal-/PNG-Knoepfen ist der
+   „Zurueck"-Knopf eine Aktion mit klarem Effekt (Drill-Ebene wechseln) —
+   etwas kraeftiger gezeichnet, damit er beim Drill sichtbar wird. */
+.app-drill-back-btn {
+  background: var(--gat-web-green-tint);
+  border-color: var(--gat-web-green-deep);
+  font-weight: 700;
+}
+.app-drill-back-btn:hover {
+  background: var(--gat-web-green-deep);
+  color: var(--gat-web-surface);
+}
+
 /* --- Diagramm-Vollbild-Modal — App-spezifische Layout-Erweiterungen ------
    Das DS-`.gat-modal` ist breit angelegt (max-width: min(64rem, 94vw)),
    aber fuer ein eingehaengtes Diagramm wollen wir den vollen Viewport

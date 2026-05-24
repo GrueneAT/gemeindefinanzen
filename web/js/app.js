@@ -1596,6 +1596,67 @@ function verdrahteAusgabenDrillSync() {
     })
   }
 
+  // „Zurueck"-Knopf je drillbarem Panel (Treemap + Pie). Der Text-Crumb-
+  // Pfad in `.drill-crumbs` ist raeumlich weit von den Charts entfernt —
+  // ein Knopf direkt im Panel-Kopf gibt dem User einen sichtbaren Rueckweg.
+  // Klick triggert intern den hoechsten *aktivierten* Crumb-Button, also
+  // genau eine Ebene flacher. Vendor `dashboard.js` reagiert wie beim
+  // direkten Klick auf einen Crumb (siehe Listener in dashboard.js Zeile
+  // 372 ff.), der MutationObserver re-rendert anschliessend Treemap und
+  // Pie aus dem neuen Drill-Scope.
+  function triggereDrillEbeneHoeher() {
+    const aktivierte = crumbsEl.querySelectorAll(
+      "button[data-level]:not([disabled])",
+    )
+    if (aktivierte.length === 0) return
+    // Der hoechste enabled-Level ist die naechste flachere Ebene
+    // (z. B. auf Drill-Tiefe 2 sind data-level=0 und data-level=1 enabled —
+    // wir wollen Level 1, also den letzten der Liste).
+    const ziel = aktivierte[aktivierte.length - 1]
+    ziel.click()
+  }
+
+  function baueDrillZurueckKnopf() {
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "app-panel-act-btn app-drill-back-btn"
+    btn.textContent = "⬆ Zurueck"
+    btn.setAttribute("aria-label", "Eine Drill-Ebene hoeher")
+    btn.hidden = true
+    btn.addEventListener("click", triggereDrillEbeneHoeher)
+    return btn
+  }
+
+  function haengeZurueckKnoepfeEin() {
+    // Idempotent — beim erneuten Aufruf nicht doppelt einhaengen.
+    for (const chartId of ["c_treemap", "c_aufwandart"]) {
+      const chartEl = document.getElementById(chartId)
+      if (!chartEl) continue
+      const panel = chartEl.closest(".gat-panel")
+      if (!panel) continue
+      let actions = panel.querySelector(".app-panel-actions")
+      if (!actions) {
+        // Aktionsleiste sollte bereits durch verdrahtePngExport gebaut
+        // worden sein; hier defensiv anlegen, falls die Reihenfolge sich
+        // mal aendert.
+        actions = holeOderBaueAktionsleiste(panel)
+      }
+      if (!actions) continue
+      if (actions.querySelector(".app-drill-back-btn")) continue
+      // Knopf links in die Reihe einhaengen, damit er bei aktivem Drill
+      // sofort auffaellt — die ruhigen Vollbild-/Modal-/PNG-Knoepfe
+      // bleiben rechts daneben.
+      actions.insertBefore(baueDrillZurueckKnopf(), actions.firstChild)
+    }
+  }
+
+  function aktualisiereZurueckKnoepfe() {
+    const tiefe = leseDrillTiefe()
+    for (const btn of document.querySelectorAll(".app-drill-back-btn")) {
+      btn.hidden = tiefe === 0
+    }
+  }
+
   // Initial-Render und Observer; aber erst nachdem das Dashboard
   // aufgebaut ist und die Charts ECharts-Instanzen haben. dashboard.js
   // setzt setupSankeyDrill am Ende — `__sankeyDrill` als Bereitschafts-
@@ -1604,6 +1665,8 @@ function verdrahteAusgabenDrillSync() {
     rendereBeide()
     haengeChartKlickHandler("c_treemap", baueChartDaten)
     haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+    haengeZurueckKnoepfeEin()
+    aktualisiereZurueckKnoepfe()
     const beobachter = new MutationObserver(() => {
       // Bei jeder Aenderung der Crumbs (drill-Tiefe gewechselt) oder
       // der Liste (Inhalte gewechselt) beide Charts neu zeichnen.
@@ -1612,6 +1675,8 @@ function verdrahteAusgabenDrillSync() {
       // bei einigen Versionen Handler beim setOption(true) ab.
       haengeChartKlickHandler("c_treemap", baueChartDaten)
       haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+      // Zurueck-Knopf-Sichtbarkeit an die aktuelle Drill-Tiefe koppeln.
+      aktualisiereZurueckKnoepfe()
     })
     beobachter.observe(crumbsEl, { childList: true, subtree: true })
     beobachter.observe(listEl, { childList: true })
@@ -1638,6 +1703,8 @@ function verdrahteAusgabenDrillSync() {
       rendereBeide,
       baueChartDaten,
       leseDrillTiefe,
+      triggereDrillEbeneHoeher,
+      aktualisiereZurueckKnoepfe,
     }
   }
 }
