@@ -160,7 +160,6 @@
         <button class="tab-btn gat-tab" data-tab="schulden">Schulden &amp; Finanzierung</button>
         <button class="tab-btn gat-tab" data-tab="sparpotenzial">Sparpotenzial</button>
         <button class="tab-btn gat-tab" data-tab="suche">Suche &amp; Daten</button>
-        <button class="tab-btn gat-tab" data-tab="galerie">Diagramme</button>
       </div>
     </div>
 
@@ -814,34 +813,6 @@
       </section>
     </section>
 
-    <!-- Diagramm-Galerie — sammelt alle Dashboard-Diagramme in einer
-         filterbaren Uebersicht. Beim Klick auf "Im Vollbild oeffnen"
-         laeuft die bestehende Modal-Verdrahtung (verdrahteModal), die den
-         echten .dash-chart-Knoten in den Modal-Body verschiebt; ECharts-
-         Instanz und Hover-Tooltips bleiben damit erhalten. -->
-    <section class="tab-panel" data-panel="galerie" id="galerie-panel">
-      <div class="gat-section-head">
-        <h2>Diagramm-Galerie</h2>
-        <p>Alle Dashboard-Diagramme gesammelt — durchsuch- und filterbar.
-          Ein Klick oeffnet das Diagramm im Vollbild-Modal samt
-          PNG-Export-Knopf.</p>
-      </div>
-      <section class="gat-panel">
-        <div class="gat-panel__head"><h3>Filter</h3></div>
-        <div class="gat-panel__body">
-          <div class="galerie-filterbar">
-            <label class="galerie-suchlabel">Volltextsuche
-              <input type="search" class="search galerie-suche"
-                id="galerie-suche"
-                placeholder="Diagramm-Titel suchen ..."></label>
-            <div class="galerie-tags" id="galerie-tags"
-                 role="group" aria-label="Thema-Filter"></div>
-          </div>
-          <p class="result-meta" id="galerie-meta"></p>
-        </div>
-      </section>
-      <div class="galerie-grid" id="galerie-grid"></div>
-    </section>
   </div>
 
   <footer class="footer">
