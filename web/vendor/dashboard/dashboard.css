@@ -68,27 +68,33 @@
 
 /* === 4. TABELLEN & FILTER ================================================= */
 
-/* --- Tabellen — leichte Kopfzeile, weiche Zeilen -------------------------
-   Die Kopfzeile bleibt sticky, traegt aber nur einen leichten Grundton und
-   eine etwas kraeftigere Unterlinie als Abgrenzung. Sanfter Zeilen-Hover. */
-.dtable { width: 100%; border-collapse: collapse; font-size: .86rem; }
-.dtable th, .dtable td { padding: .4rem .55rem;
-  border-bottom: 1px solid var(--hair); text-align: left; }
-.dtable thead th { background: var(--gat-web-surface-sunk, #f7f9f4);
-  position: sticky; top: 0; z-index: 1;
-  border-bottom: 2px solid var(--hair);
-  font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--gat-web-text-soft, #5e6358); font-weight: 600; }
-.dtable td.num, .dtable th.num { text-align: right;
-  font-variant-numeric: tabular-nums; }
-.dtable tbody tr:hover { background: color-mix(in srgb, var(--gat-web-green, #4a8a52) 8%, transparent); }
+/* --- Tabellen — DS v2.2 -.gat-table-Familie -----------------------------
+   DS v2.2 liefert .gat-table (mit --zebra/--compact/--dense/--sticky-col)
+   und .gat-table-scroll. Markup traegt jetzt class="dtable gat-table ..." —
+   die Funktionsklasse .dtable bleibt nur als Anker fuer die unten folgenden
+   App-spezifischen Detail-Regeln (Body-Zellen-Numerik, Pick-Spalte,
+   Sortier-Pfeil-Span, .table-scroll-Hoehencap).
 
-/* Sortierbare Spaltenkoepfe sitzen buendig in der sticky Kopfzeile — der
-   Fokus-Offset wird negativ gesetzt (Optik kommt aus app.css). */
+   Body-Numerik: dashboard.js emittiert <td class="num"> fuer die Suchtabelle
+   (dashboard.js ist nicht aenderbar, dort kann keine __num-Klasse hinzu),
+   daher hier eine kleine Bruecke, die das DS-Default `text-align: right;
+   font-variant-numeric: tabular-nums; white-space: nowrap;` auf
+   `.dtable td.num` legt — identisch zum DS-`.gat-table__num`. */
+.dtable td.num { text-align: right; font-variant-numeric: tabular-nums;
+  white-space: nowrap; }
+
+/* Sortierbare Spaltenkoepfe — dashboard.js liest th.sortable und pflegt
+   einen .arrow-Span mit ▲/▼ als Sortier-Indikator. Die DS-`.gat-table__sortable`
+   Optik (passiver Chevron via ::after) wuerde mit diesem aktiven Indikator
+   doppeln; daher tragen die Spaltenkoepfe bewusst nur die Funktionsklasse
+   .sortable und der Cursor/Hover bleibt lokal. Fokus-Offset negativ, damit
+   der Ring buendig in der sticky Kopfzeile sichtbar bleibt (Optik aus app.css). */
 .sortable { cursor: pointer; user-select: none; --gat-web-focus-offset: -2px; }
 .sortable:hover { color: var(--gat-web-green-deep, #2c6e40); }
 .sortable .arrow { color: var(--gat-web-text-mute, #6b6f63); font-size: .75rem; }
 
+/* Pick-Spalte — schmale Mehrjahres-Auswahl-Checkbox. dashboard.js emittiert
+   <td class="pick"> fuer Body-Zellen; bleibt App-spezifisch. */
 th.pick, td.pick { width: 2rem; text-align: center; }
 td.pick input, th.pick input { cursor: pointer; }
 
@@ -115,10 +121,11 @@ td.pick input, th.pick input { cursor: pointer; }
 
 /* Die breite 15-Spalten-Suchtabelle bekommt eine Mindestbreite, damit ihre
    Spalten lesbar bleiben statt zusammenzustauchen. Reicht der Platz nicht,
-   scrollt .table-scroll horizontal — die Seite selbst bleibt schmal. */
-.table-scroll { max-height: 70vh; overflow: auto;
-  border: 1px solid var(--hair); border-radius: var(--gat-web-radius-card, 10px);
-  background: var(--gat-web-surface, #fff); }
+   scrollt der DS-`.gat-table-scroll`-Wrapper horizontal — die Seite selbst
+   bleibt schmal. Lokal nur noch der Hoehencap, damit lange Treffermengen
+   intern scrollen statt die Seite zu sprengen (DS deckt overflow-x, border,
+   border-radius ab). */
+.table-scroll { max-height: 70vh; overflow: auto; }
 .table-scroll .dtable { min-width: 56rem; }
 .table-hint { font-size: .8rem; color: var(--gat-web-text-soft, #5e6358); margin-top: .4rem; }
 
