@@ -61,6 +61,7 @@ async function init() {
   verdrahtePngExport()
   verdrahteBuilder()
   verdrahteHcToggle()
+  verdrahteAusgabenDrillSync()
   window.__appBereit = true
   zeigeBuildStempel()
 }
@@ -1189,6 +1190,313 @@ function builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras) {
       label: { show: false },
       emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,0.3)" } },
     }],
+  }
+}
+
+// --- Ausgaben-Drill: Treemap und Pie an den Text-Drill koppeln ----------- //
+// Im Ausgaben-Tab existiert eine Text-Drill-Liste (`.drill-list` mit
+// `.drill-crumbs`), die der Vendor (dashboard.js) ueber drei Ebenen pflegt:
+// Aufgabengruppe -> Ansatz -> Posten. Treemap und Pie (`c_treemap`,
+// `c_aufwandart`) sind heute statisch — die Treemap auf zwei Ebenen
+// (gruppe -> ansatz aus agg.treemap), die Pie auf der Aufwandsart-
+// Klassifikation (Personal/Sachaufwand/...).
+//
+// Dieser Sync koppelt beide Charts bidirektional an die Text-Drill:
+//   - Klick auf Treemap-Zelle / Pie-Slice -> die passende `.drill-row`
+//     wird programmatisch geklickt (Vendor pflegt den State).
+//   - MutationObserver auf `.drill-crumbs` -> bei jeder Aenderung des
+//     Crumbs-Markups re-rendert dieser Code beide Charts aus dem
+//     aktuellen Drill-Scope (sichtbare drill-list-Rows).
+//
+// Damit ist die Verbindung in beide Richtungen tragend, ohne den
+// Vendor-Code anzufassen. Die Drill-Tiefe spiegelt exakt die Text-Drill:
+// Ebene 0 = Aufgabengruppen, Ebene 1 = Ansaetze, Ebene 2 = einzelne
+// Posten (Konto/Bezeichnung).
+function verdrahteAusgabenDrillSync() {
+  if (!("MutationObserver" in window)) return
+  const crumbsEl = document.getElementById("drill-crumbs")
+  const listEl = document.getElementById("drill-list")
+  if (!crumbsEl || !listEl) return
+
+  function leseDrillTiefe() {
+    // Anzahl `<button data-level="X" disabled>`-Eintraege mit X > 0 + 1
+    // entspricht NICHT exakt — stattdessen: das hoechste data-level eines
+    // disabled-Buttons gibt die Tiefe an. Wenn nur "data-level=0" disabled
+    // ist, sind wir auf Ebene 0 (keine Drill-Auswahl); ist auch
+    // data-level=1 disabled, dann auf Ebene 1; etc.
+    const buttons = crumbsEl.querySelectorAll("button[data-level]")
+    let tiefe = 0
+    for (const b of buttons) {
+      if (b.disabled) {
+        const lvl = parseInt(b.dataset.level || "0", 10)
+        if (lvl > tiefe) tiefe = lvl
+      }
+    }
+    return tiefe
+  }
+
+  function leseDrillRows() {
+    // Sichtbare Drill-Zeilen mit code/text/sum. sum ist im DOM nur
+    // formatiert (Euro-String) verfuegbar — wir aggregieren neu aus
+    // window.DATA.posten, weil die exakten Werte fuer das Chart noetig
+    // sind. Die DOM-Rows definieren das Label-Set (code/text); die
+    // Summen kommen aus den Posten, die zur aktuellen Drill-Auswahl
+    // passen.
+    return [...listEl.querySelectorAll("li.drill-row")].map((row) => {
+      const codeEl = row.querySelector(".code")
+      const labelEl = row.querySelector(".label")
+      const code = row.dataset.code ||
+        (codeEl ? codeEl.textContent.trim() : "") ||
+        (labelEl ? labelEl.textContent.trim() : "")
+      const text = row.dataset.text ||
+        (labelEl
+          ? labelEl.textContent.replace(/^\S+\s*/, "").trim()
+          : "")
+      return { code, text, row, klickbar: row.classList.contains("is-clickable") }
+    })
+  }
+
+  function leseAktivesDok() {
+    // dashboard.js setzt .switch-btn.is-active je Dokument; der Datawert
+    // ist die Dokument-ID, mit der window.DATA.aggregate indexiert ist.
+    const aktiv = document.querySelector(".switch-btn.is-active")
+    return aktiv ? aktiv.dataset.dok : null
+  }
+
+  function sammlePostenAusgaben(dokId) {
+    const alle = (window.DATA && window.DATA.posten) || []
+    return alle.filter(
+      (p) => String(p.dok) === String(dokId) &&
+        p.richtung === "ausgabe" && p.ew > 0,
+    )
+  }
+
+  function baueChartDaten() {
+    const tiefe = leseDrillTiefe()
+    const dokId = leseAktivesDok()
+    if (!dokId) return null
+    const rows = sammlePostenAusgaben(dokId)
+    if (rows.length === 0) return null
+    // Crumbs auslesen: bei Tiefe >= 1 ist drillPfad[0].code = aktive Gruppe.
+    // Wir lesen den Code aus dem disabled-Button am Crumb-Index direkt.
+    const crumbBtns = crumbsEl.querySelectorAll("button[data-level]")
+    let aktiveGruppe = null
+    let aktiverAnsatz = null
+    if (tiefe >= 1 && crumbBtns[1]) {
+      // Crumb auf Ebene 1 traegt den Text der gewaehlten Gruppe.
+      // Code ist nicht direkt im Crumb, aber: alle Posten mit gruppe_text
+      // = label finden den Code; einfacher den Code aus den .drill-row-
+      // data-Attributen ziehen, falls die Auswahl auf Ebene 1 = Ansaetze
+      // einer Gruppe gerendert ist.
+      // Fallback: ueber den Text-Vergleich mit gruppe_text.
+      const text = crumbBtns[1].textContent.trim()
+      for (const p of rows) {
+        if (p.gruppe_text === text) { aktiveGruppe = p.gruppe; break }
+      }
+    }
+    if (tiefe >= 2 && crumbBtns[2]) {
+      const text = crumbBtns[2].textContent.trim()
+      for (const p of rows) {
+        if (p.ansatz_text === text) { aktiverAnsatz = p.ansatz; break }
+      }
+    }
+    // Filter auf den aktuellen Scope einschraenken.
+    let scope = rows
+    if (aktiveGruppe) scope = scope.filter((p) => p.gruppe === aktiveGruppe)
+    if (aktiverAnsatz) scope = scope.filter((p) => p.ansatz === aktiverAnsatz)
+    // Aggregation je Ebene.
+    const eimer = new Map()
+    for (const p of scope) {
+      let key, label
+      if (tiefe === 0) {
+        key = p.gruppe
+        label = p.gruppe_text || ("Gruppe " + p.gruppe)
+      } else if (tiefe === 1) {
+        key = p.ansatz
+        label = p.ansatz_text || ("Ansatz " + p.ansatz)
+      } else {
+        // Auf Ebene 2 = einzelne Posten; Bezeichnung als Schluessel
+        // (gleichnamige Bezeichnung waere ungewoehnlich; konto waere
+        // technischer, aber Klick muss zur Drill-Row matchen — Vendor
+        // erzeugt die letzte Ebene auf Basis von p.konto als code und
+        // p.bezeichnung als text).
+        key = p.konto
+        label = p.bezeichnung || ("Konto " + p.konto)
+      }
+      if (!key) continue
+      const e = eimer.get(key)
+      if (e) e.wert += p.ew
+      else eimer.set(key, { code: key, label, wert: p.ew })
+    }
+    const liste = [...eimer.values()].sort((a, b) => b.wert - a.wert)
+    return { tiefe, items: liste }
+  }
+
+  // Aktive Theme-Palette lesen (Themes werden in einem spaeteren Commit
+  // eingefuehrt). Hier defensiv: Fallback auf entsaettigte Defaults, falls
+  // window.__chartTheme noch nicht existiert.
+  function holePalette() {
+    const t = (typeof window !== "undefined") && window.__chartTheme
+    if (t && Array.isArray(t.palette) && t.palette.length) return t.palette
+    return ["#3f7d4f", "#c9a24b", "#4f93a0", "#b9744f", "#6ba368",
+      "#9c5b7d", "#5d6b8a", "#8a8f7d", "#a7c4a3", "#c9a98c"]
+  }
+
+  function rendereTreemap(daten) {
+    const el = document.getElementById("c_treemap")
+    if (!el || !window.echarts) return
+    const inst = window.echarts.getInstanceByDom(el)
+    if (!inst) return
+    const palette = holePalette()
+    const knoten = daten.items.map((it, i) => ({
+      name: it.label,
+      value: Math.abs(it.wert),
+      itemStyle: { color: palette[i % palette.length] },
+    }))
+    inst.setOption({
+      tooltip: {
+        trigger: "item",
+        formatter: (info) =>
+          `${info.name}<br/><strong>${
+            Math.round(info.value).toLocaleString("de-AT")} €</strong>`,
+      },
+      series: [{
+        type: "treemap",
+        data: knoten,
+        roam: false,
+        nodeClick: false,
+        breadcrumb: { show: false },
+        top: 6, bottom: 6, left: 6, right: 6,
+        label: { show: true, formatter: "{b}" },
+      }],
+    }, true)
+  }
+
+  function renderePie(daten) {
+    const el = document.getElementById("c_aufwandart")
+    if (!el || !window.echarts) return
+    const inst = window.echarts.getInstanceByDom(el)
+    if (!inst) return
+    const palette = holePalette()
+    // Top-N + Sonstige, damit ein Pie mit 60 Konten nicht zu einem
+    // Konfetti-Stern wird. Bei tiefer Drill-Ebene helfen Top 10.
+    const TOPN = 10
+    const top = daten.items.slice(0, TOPN)
+    const rest = daten.items.slice(TOPN)
+    const restSumme = rest.reduce((s, r) => s + r.wert, 0)
+    const slices = top.map((it, i) => ({
+      name: it.label,
+      value: Math.abs(it.wert),
+      itemStyle: { color: palette[i % palette.length] },
+    }))
+    if (restSumme > 0) {
+      slices.push({
+        name: `Sonstige (${rest.length})`,
+        value: Math.abs(restSumme),
+        itemStyle: { color: palette[TOPN % palette.length] },
+      })
+    }
+    inst.setOption({
+      tooltip: {
+        trigger: "item",
+        formatter: (info) =>
+          `${info.name}<br/><strong>${
+            Math.round(info.value).toLocaleString("de-AT")} €</strong> ` +
+          `(${info.percent} %)`,
+      },
+      legend: { type: "scroll", bottom: 0 },
+      series: [{
+        type: "pie",
+        radius: ["42%", "70%"],
+        center: ["50%", "44%"],
+        padAngle: 2,
+        itemStyle: { borderRadius: 3 },
+        data: slices,
+        label: { formatter: "{b}: {d}%" },
+      }],
+    }, true)
+  }
+
+  function rendereBeide() {
+    const daten = baueChartDaten()
+    if (!daten) return
+    rendereTreemap(daten)
+    renderePie(daten)
+  }
+
+  function triggereDrillRowKlick(code) {
+    // Vendor reagiert auf clicks auf `.drill-row.is-clickable`; setzt das
+    // drillPfad-Array und re-rendered drill-list/drill-crumbs. Wir suchen
+    // die passende Zeile per data-code (=`p.gruppe` auf Ebene 0,
+    // `p.ansatz` auf Ebene 1). Auf Ebene 2 sind die Zeilen nicht klickbar
+    // (letzte Drill-Ebene).
+    const row = listEl.querySelector(
+      `li.drill-row.is-clickable[data-code="${cssEscape(code)}"]`,
+    )
+    if (row) row.click()
+  }
+
+  function cssEscape(s) {
+    if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+      return CSS.escape(s)
+    }
+    return String(s).replace(/(["\\\]\[])/g, "\\$1")
+  }
+
+  function haengeChartKlickHandler(elId, baueItemsCallback) {
+    const el = document.getElementById(elId)
+    if (!el || !window.echarts) return
+    const inst = window.echarts.getInstanceByDom(el)
+    if (!inst) return
+    inst.off("click")
+    inst.on("click", (param) => {
+      const items = baueItemsCallback()
+      if (!items) return
+      // Param.name traegt das Label; mit dem Label finden wir den Code
+      // (Items werden parallel im DOM gerendert, gleicher Order).
+      const treffer = items.items.find((it) => it.label === param.name)
+      if (treffer) triggereDrillRowKlick(treffer.code)
+    })
+  }
+
+  // Initial-Render und Observer; aber erst nachdem das Dashboard
+  // aufgebaut ist und die Charts ECharts-Instanzen haben. dashboard.js
+  // setzt setupSankeyDrill am Ende — `__sankeyDrill` als Bereitschafts-
+  // Signal nutzen.
+  function starte() {
+    rendereBeide()
+    haengeChartKlickHandler("c_treemap", baueChartDaten)
+    haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+    const beobachter = new MutationObserver(() => {
+      // Bei jeder Aenderung der Crumbs (drill-Tiefe gewechselt) oder
+      // der Liste (Inhalte gewechselt) beide Charts neu zeichnen.
+      rendereBeide()
+      // Click-Handler nach setOption neu registrieren — ECharts haengt
+      // bei einigen Versionen Handler beim setOption(true) ab.
+      haengeChartKlickHandler("c_treemap", baueChartDaten)
+      haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+    })
+    beobachter.observe(crumbsEl, { childList: true, subtree: true })
+    beobachter.observe(listEl, { childList: true })
+  }
+
+  // Auf das fertige Dashboard warten — dashboard.js expose `__sankeyDrill`
+  // ganz am Ende. Helpers.mjs der E2E-Tests nutzt dasselbe Signal.
+  function wartenAufBereit() {
+    if (typeof window.__sankeyDrill === "function") {
+      starte()
+      return
+    }
+    setTimeout(wartenAufBereit, 50)
+  }
+  wartenAufBereit()
+
+  if (typeof window !== "undefined") {
+    window.__ausgabenDrillSync = {
+      rendereBeide,
+      baueChartDaten,
+      leseDrillTiefe,
+    }
   }
 }
 
