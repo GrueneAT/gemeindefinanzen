@@ -1116,7 +1116,7 @@ function builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras) {
     return {
       title: {
         text: "Heatmap benoetigt sekundaere Gruppierung",
-        subtext: "Bitte ein Feld unter „Sekundaere Gruppierung" waehlen.",
+        subtext: "Bitte ein Feld unter „Sekundaere Gruppierung“ waehlen.",
         left: "center",
         top: "center",
       },
