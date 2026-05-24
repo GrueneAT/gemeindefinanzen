@@ -58,6 +58,7 @@ async function init() {
   zeichneDashboard()
   verdrahteVollbild()
   verdrahteModal()
+  verdrahtePngExport()
   verdrahteHcToggle()
   window.__appBereit = true
   zeigeBuildStempel()
@@ -357,6 +358,109 @@ function schliesseChartModal() {
     window.dispatchEvent(new Event("resize"))
   })
   setTimeout(() => window.dispatchEvent(new Event("resize")), 120)
+}
+
+// --- PNG-Export je Diagramm-Panel ---------------------------------------- //
+// Ein zweiter Aktions-Knopf "Als PNG speichern" im Panel-Kopf. ECharts hat
+// das eingebaut: `chart.getDataURL({ type: 'png', pixelRatio: 2,
+// backgroundColor: '#fff' })` liefert eine Data-URL, die ueber den
+// `<a download>`-Trick als Datei gespeichert wird.
+//
+// Dateinamen-Schema: `<panel-id>-<dokument>-<YYYY-MM-DD>.png`,
+// z. B. `c_wasserfall-VA-2026-Auflage-2026-05-24.png`. Der aktive
+// Dokumentname kommt aus dem Switcher (`.switch-btn.is-active`), den
+// dashboard.js pflegt. Fehlt er, fallen wir auf `dokument` zurueck.
+//
+// Hintergrund **immer weiss** — auch im Hochkontrast-Modus. Das exportierte
+// PNG ist fuer Berichte und Praesentationen gedacht (Druck-Default), und
+// HC-spezifische Farben wuerden in einem PDF-Anhang nur irritieren.
+function verdrahtePngExport() {
+  for (const panel of holeDiagrammPanels()) {
+    const actions = holeOderBaueAktionsleiste(panel)
+    if (!actions) continue
+    actions.appendChild(baueExportKnopf(panel, "panel"))
+  }
+}
+
+function baueExportKnopf(panel, herkunft) {
+  const btn = document.createElement("button")
+  btn.type = "button"
+  btn.className = "app-panel-act-btn app-panel-export-btn"
+  btn.textContent = "Als PNG speichern"
+  btn.setAttribute("aria-label", "Diagramm als PNG-Datei speichern")
+  btn.dataset.appExportHerkunft = herkunft
+  btn.addEventListener("click", () => exportierePanelAlsPng(panel))
+  return btn
+}
+
+function exportierePanelAlsPng(panel) {
+  const chart = panel.querySelector(".dash-chart")
+  if (!chart) {
+    toast("Diagramm nicht gefunden — Export abgebrochen.", "error")
+    return
+  }
+  // ECharts ist global ueber das CDN-Script eingebunden. Die Instanz holt
+  // sich `getInstanceByDom`, ohne dashboard.js antasten zu muessen.
+  const echartsRef = window.echarts
+  const inst = echartsRef && echartsRef.getInstanceByDom
+    ? echartsRef.getInstanceByDom(chart)
+    : null
+  if (!inst) {
+    toast("Diagramm noch nicht bereit — bitte gleich nochmal versuchen.",
+      "warn")
+    return
+  }
+  let dataUrl = ""
+  try {
+    dataUrl = inst.getDataURL({
+      type: "png",
+      pixelRatio: 2,
+      backgroundColor: "#fff",
+    })
+  } catch (e) {
+    toast(`Export fehlgeschlagen: ${e.message || String(e)}`, "error")
+    return
+  }
+  const dateiname = baueExportDateiname(panel)
+  const a = document.createElement("a")
+  a.href = dataUrl
+  a.download = dateiname
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  toast(`PNG gespeichert: ${dateiname}`, "success")
+}
+
+// Dateinamen-Schema fuer den PNG-Export: `<panel-id>-<dokument>-<YYYY-MM-DD>.png`.
+// `panel-id` ist die `id` des `.dash-chart`-Containers (panel-stabile
+// Kennung, wie sie auch dashboard.js nutzt). `dokument` ist die Beschriftung
+// des aktiven Switcher-Knopfs (`.switch-btn.is-active`); fehlt er,
+// fallen wir auf `dokument` zurueck (z. B. wenn nur ein Dokument geladen
+// ist und der Switcher keinen aktiven Eintrag hat).
+function baueExportDateiname(panel) {
+  const chart = panel.querySelector(".dash-chart")
+  const panelId = (chart && chart.id) ? chart.id : "diagramm"
+  const switcherBtn = document.querySelector(".switch-btn.is-active")
+  const dokName = switcherBtn && switcherBtn.textContent
+    ? switcherBtn.textContent.trim()
+    : "dokument"
+  const heute = new Date()
+  const datum = [
+    heute.getFullYear(),
+    String(heute.getMonth() + 1).padStart(2, "0"),
+    String(heute.getDate()).padStart(2, "0"),
+  ].join("-")
+  // Sicheres Dateinamens-Sanitizing: alles ausser ASCII-Buchstaben/Ziffern,
+  // Bindestrich, Punkt, Unterstrich auf `-` mappen. Mehrfach-Trennzeichen
+  // zusammenziehen. Das Ergebnis bleibt cross-OS-tauglich.
+  return saeubereDateiname(`${panelId}-${dokName}-${datum}.png`)
+}
+
+function saeubereDateiname(roh) {
+  return String(roh)
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
 }
 
 // Build-Commit aus version.json in die Fusszeile schreiben. Fehlt die Datei
