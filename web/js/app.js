@@ -879,13 +879,16 @@ function builderChartPalette() {
 
 function builderEchartsOption(typ, daten, achsTitel, wertTitel, extras) {
   // extras: { pivot, dim2Titel } — wird fuer Diagrammtypen mit
-  // sekundaerer Gruppierungsachse genutzt (bar-stacked, treemap).
+  // sekundaerer Gruppierungsachse genutzt (bar-stacked, treemap, heatmap).
   extras = extras || {}
   if (typ === "bar-stacked") {
     return builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras)
   }
   if (typ === "treemap") {
     return builderEchartsOptionTreemap(daten, achsTitel, wertTitel, extras)
+  }
+  if (typ === "heatmap") {
+    return builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras)
   }
   // Top 30 Kategorien — bei mehr Treffern den Rest unter "Sonstige"
   // buendeln. Vermeidet unleserliche Charts mit hunderten Zeilen.
@@ -965,9 +968,9 @@ function builderEchartsOption(typ, daten, achsTitel, wertTitel, extras) {
 
 // Diagrammtypen, die eine sekundaere Gruppierung brauchen — wird vom UI
 // genutzt, um das passende Dropdown zu zeigen oder zu verstecken. Treemap
-// nutzt dim2 optional: ohne sekundaere Gruppierung flacher Top-N-Treemap,
-// mit dim2 hierarchisch (Eltern -> Kinder).
-const BUILDER_TYPEN_MIT_DIM2 = new Set(["bar-stacked", "treemap"])
+// nutzt dim2 optional (ohne Sekundaer flacher Top-N-Treemap, mit dim2
+// hierarchisch). Heatmap braucht dim2 zwingend (sonst Hinweis-Chart).
+const BUILDER_TYPEN_MIT_DIM2 = new Set(["bar-stacked", "treemap", "heatmap"])
 
 function builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras) {
   // Gestapelte Balken (vertikal): primaere Gruppierung als x-Achse,
@@ -1100,6 +1103,88 @@ function builderEchartsOptionTreemap(daten, achsTitel, wertTitel, extras) {
       ],
       label: { show: true, formatter: "{b}" },
       upperLabel: { show: true, height: 22, color: "#fff" },
+    }],
+  }
+}
+
+function builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras) {
+  // Heatmap: Matrix-Ansicht (primaere Gruppierung als y-Achse, sekundaere
+  // als x-Achse, Zellwerte als Farbintensitaet). Braucht zwingend einen
+  // Pivot mit zwei Dimensionen — ohne dim2 zeigt das Diagramm einen
+  // erklaerenden Hinweis statt einer leeren Flaeche.
+  if (!extras.pivot) {
+    return {
+      title: {
+        text: "Heatmap benoetigt sekundaere Gruppierung",
+        subtext: "Bitte ein Feld unter „Sekundaere Gruppierung" waehlen.",
+        left: "center",
+        top: "center",
+      },
+    }
+  }
+  const { rowLabels, colLabels, matrix } = extras.pivot
+  const daten2 = []
+  let maxAbs = 0
+  for (let r = 0; r < rowLabels.length; r++) {
+    for (let c = 0; c < colLabels.length; c++) {
+      const v = matrix[r][c]
+      daten2.push([c, r, Math.round(v)])
+      if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v)
+    }
+  }
+  // Farbskala aus DS-Tokens: entsaettigte Oberflaeche -> Dunkelgruen.
+  // Liefert eine ruhige, DS-konforme Skala statt der ECharts-Defaults.
+  const root = document.documentElement
+  const stil = root && typeof getComputedStyle === "function"
+    ? getComputedStyle(root)
+    : null
+  const niedrig = (stil &&
+    stil.getPropertyValue("--gat-web-surface-sunk").trim()) ||
+    (stil && stil.getPropertyValue("--gat-web-surface").trim()) ||
+    "#f4f1ec"
+  const hoch = (stil &&
+    stil.getPropertyValue("--gat-color-dunkelgruen").trim()) ||
+    (stil && stil.getPropertyValue("--gat-web-chart-1").trim()) ||
+    "#2c6e40"
+  return {
+    title: { text: `${wertTitel}: ${achsTitel} × ` +
+      `${extras.dim2Titel || "Sekundaer"}`, left: "center" },
+    tooltip: {
+      position: "top",
+      formatter: (info) => {
+        const c = info.value[0]
+        const r = info.value[1]
+        const v = info.value[2]
+        return `${rowLabels[r]}<br/>${colLabels[c]}<br/>` +
+          `<strong>${Math.round(v).toLocaleString("de-AT")} €</strong>`
+      },
+    },
+    grid: { left: 180, right: 24, top: 60, bottom: 120, containLabel: true },
+    xAxis: { type: "category", data: colLabels,
+      axisLabel: { rotate: 35, fontSize: 11 },
+      splitArea: { show: true } },
+    yAxis: { type: "category", data: rowLabels,
+      axisLabel: { fontSize: 11 },
+      splitArea: { show: true } },
+    visualMap: {
+      min: 0,
+      max: maxAbs || 1,
+      calculable: true,
+      orient: "horizontal",
+      left: "center",
+      bottom: 30,
+      inRange: { color: [niedrig, hoch] },
+      formatter: (v) =>
+        typeof v === "number"
+          ? Math.round(v).toLocaleString("de-AT")
+          : String(v),
+    },
+    series: [{
+      name: wertTitel,
+      type: "heatmap",
+      data: daten2,
+      label: { show: false },
+      emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,0.3)" } },
     }],
   }
 }

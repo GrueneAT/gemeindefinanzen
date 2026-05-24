@@ -758,9 +758,10 @@
             Wert aus einer der Betragsspalten, Aggregation nach Summe,
             Durchschnitt, Median, Minimum, Maximum oder Anzahl.
             Diagrammtypen: Balken (horizontal oder vertikal), Linie,
-            Kreis/Ring, gestapelte Balken und Treemap. Gestapelte Balken
-            und Treemap nutzen zusaetzlich eine sekundaere Gruppierung
-            (Treemap optional — ohne Sekundaerwahl flacher Top-N-Treemap).</p>
+            Kreis/Ring, gestapelte Balken, Treemap und Heatmap.
+            Gestapelte Balken, Treemap und Heatmap nutzen zusaetzlich
+            eine sekundaere Gruppierung (Treemap optional; Heatmap
+            zwingend).</p>
         </div>
         <div class="gat-panel__body">
           <div class="builder-conf">
@@ -772,6 +773,7 @@
                 <option value="pie">Kreis/Ring</option>
                 <option value="bar-stacked">Balken gestapelt</option>
                 <option value="treemap">Treemap</option>
+                <option value="heatmap">Heatmap</option>
               </select></label>
             <label>Gruppieren nach
               <select id="builder-dim">
@@ -783,10 +785,10 @@
                 <option value="gebarung">Gebarung</option>
               </select></label>
             <!-- Sekundaere Gruppierung — sichtbar nur fuer
-                 Diagrammtypen, die eine zweite Achse brauchen (bisher
-                 gestapelte Balken; spaetere Diagrammtypen schalten sich
-                 ueber BUILDER_TYPEN_MIT_DIM2 in app.js dazu). app.js
-                 toggelt das [hidden]-Attribut beim Typ-Wechsel. -->
+                 Diagrammtypen, die eine zweite Achse brauchen
+                 (gestapelte Balken, Treemap, Heatmap; siehe
+                 BUILDER_TYPEN_MIT_DIM2 in app.js). app.js toggelt
+                 das [hidden]-Attribut beim Typ-Wechsel. -->
             <label id="builder-stack-wrap" hidden>Sekundaere Gruppierung
               <select id="builder-stack">
                 <option value="">— (keine)</option>
