@@ -440,6 +440,30 @@ input, select { font-family: var(--gat-font-copy); }
   color: var(--gat-color-anthrazit);
 }
 
+/* --- Support-Mailto in der Brandbar ---------------------------------------
+   Direkter Draht zum Betreuer des Werkzeugs: rechts in der Brandbar,
+   neben Werkzeuge-Link und Kontrast-Toggle. Desktop zeigt Briefumschlag +
+   Adresse, im Smartphone-Layout bleibt nur das Icon, damit die Brandbar
+   nicht umbricht. Optik: weiche Textfarbe in Ruhe, gruen beim Hover und
+   Fokus — dieselbe Logik wie der A11y-Toggle. */
+.gat-header__support {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--gat-web-text-soft);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.gat-header__support:hover,
+.gat-header__support:focus-visible {
+  color: var(--gat-web-green-deep);
+}
+.gat-header__support-icon { flex: none; }
+@media (max-width: 48rem) {
+  .gat-header__support-label { display: none; }
+}
+
 /* --- Einheitlicher Tastatur-Fokus -----------------------------------------
    Jedes interaktive Element traegt denselben sichtbaren Fokus: eine
    2px-Kontur in --gat-web-green-deep plus den weichen --gat-web-focus-ring. Der
@@ -449,6 +473,7 @@ input, select { font-family: var(--gat-font-copy); }
    einen negativen Wert, der Ring bleibt aussen sichtbar. */
 .gat-btn:focus-visible,
 .gat-header__a11y-toggle:focus-visible,
+.gat-header__support:focus-visible,
 .dropzone-btn:focus-visible,
 .doc-remove:focus-visible,
 .doc-clear-btn:focus-visible,
