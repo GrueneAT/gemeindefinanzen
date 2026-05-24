@@ -1015,3 +1015,55 @@ das app-eigene CSS nach.
   bewerten, wenn DS einen nicht-stickyn Toolbar-Modifier ergaenzt.
 
 **Tests gruen** (`npm run test:js` 105/105, `npm run test:e2e` 16/16).
+
+### Iteration 21 — Diagramm-Modal-Vollbild + PNG-Export (iPhone-tauglich)
+
+Zwei zusammenhaengende UX-Erweiterungen fuer die Diagramm-Panels —
+beide leben in `web/js/app.js` und lehnen sich an `.gat-modal` (DS v2.1)
+sowie `.gat-toast` (DS v2.2) an, ohne `dashboard.js` (TABU) anzufassen.
+
+- **Modal-Vollbild.** Neue Funktion `verdrahteModal()` haengt neben dem
+  bestehenden Native-Fullscreen-Knopf einen Modal-Knopf in den Kopf
+  jedes Diagramm-Panels. Klick oeffnet ein `<dialog class="gat-modal
+  gat-modal--wide app-chart-modal">` (zentrale Instanz in `index.html`)
+  und **verschiebt den `.dash-chart`-Knoten** per `appendChild` in den
+  Modal-Body; beim Schliessen wandert er an seinen Ursprungsort
+  zurueck. Dadurch bleiben ECharts-Instanz, Tooltips, Sankey-Drill-down
+  und Treemap-Drill-Handler vollstaendig erhalten — dashboard.js sieht
+  nur eine Reihe `resize()`-Events. Auf iPhone Safari (wo
+  `document.fullscreenEnabled === false` ist) bleibt nur dieser Knopf
+  sichtbar; auf Desktop und iPad sitzen Native-Fullscreen-Knopf und
+  Modal-Knopf nebeneinander, User entscheidet pro Klick.
+
+  Esc, Backdrop-Klick, das Schliess-Kreuz (`.gat-modal__close`) und ein
+  app-eigener „Verkleinern"-Knopf in `.gat-modal__actions` schliessen
+  das Modal — die HTML5-`<dialog>`-Mechanik liefert Esc und Modal-Stack
+  frei mit.
+
+- **PNG-Export.** Funktion `verdrahtePngExport()` haengt einen zweiten
+  Aktions-Knopf „Als PNG speichern" in jeden Diagramm-Panel-Kopf und
+  spiegelt ihn in den Modal-Header. Implementation nutzt ECharts'
+  eingebauten `chart.getDataURL({ type: 'png', pixelRatio: 2,
+  backgroundColor: '#fff' })` und triggert den Download ueber einen
+  `<a download>`-Anker. Die ECharts-Instanz wird per
+  `echarts.getInstanceByDom()` aus dem `.dash-chart`-Container geholt
+  — `dashboard.js` muss nicht angefasst werden.
+
+  Dateinamen-Schema `<panel-id>-<dokument>-<YYYY-MM-DD>.png` (z. B.
+  `c_wasserfall-VA-2026-Auflage-2026-05-24.png`). Der aktive
+  Dokumentname kommt aus dem Switcher (`.switch-btn.is-active`).
+  Hintergrund **immer weiss** — auch im Hochkontrast-Modus —, damit
+  das exportierte PNG fuer Sitzungs-Berichte ohne Nacharbeit nutzbar
+  ist. Sankey-Drill-down wird im aktuellen Zustand exportiert (was der
+  User sieht, das speichert er). Erfolg/Fehler-Feedback ueber den
+  bestehenden `gat-toast`-Helper.
+
+- **Geteilte Aktionsleiste.** Beide Features bauen ihre Knoepfe in eine
+  gemeinsame `.app-panel-actions`-Reihe rechts vom Titel
+  (`holeOderBaueAktionsleiste`), wodurch sie sich denselben
+  ruhigen Panel-Knopf-Stil teilen (`.app-panel-fs-btn` und
+  `.app-panel-act-btn` mit identischer Typografie und Hover-Optik).
+
+**Tests gruen** (`npm run test:js` 105/105, `npm run test:e2e` 21/21 —
+fuenf neue Smoke-Tests in
+`tests/e2e/chart-modal-export.spec.mjs`).
