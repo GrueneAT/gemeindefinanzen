@@ -307,6 +307,7 @@ function oeffneChartModal(panel) {
   const dialog = document.getElementById("chart-modal")
   const body = document.getElementById("chart-modal-body")
   const titelEl = document.getElementById("chart-modal-titel")
+  const aktionen = document.getElementById("chart-modal-actions")
   const chart = panel.querySelector(".dash-chart")
   if (!dialog || !body || !chart) return
 
@@ -319,6 +320,23 @@ function oeffneChartModal(panel) {
   const titelQuelle = panel.querySelector(".gat-panel__head h3")
   if (titelEl && titelQuelle) {
     titelEl.textContent = titelQuelle.textContent || "Diagramm"
+  }
+
+  // Aktionsleiste im Modal-Header neu aufbauen — PNG-Export und ein
+  // "Verkleinern"-Knopf (sichtbares Pendant zum DS-Schliess-Kreuz, gleiche
+  // Optik wie die Panel-Aktionen). Der PNG-Export operiert weiterhin auf
+  // dem Panel — der Chart-Knoten ist nur temporaer ins Modal verschoben,
+  // `chart.getDataURL` funktioniert dort genauso.
+  if (aktionen) {
+    aktionen.innerHTML = ""
+    aktionen.appendChild(baueExportKnopf(panel, "modal"))
+    const closeBtn = document.createElement("button")
+    closeBtn.type = "button"
+    closeBtn.className = "app-panel-act-btn app-modal-close-btn"
+    closeBtn.textContent = "Verkleinern"
+    closeBtn.setAttribute("aria-label", "Diagramm wieder verkleinern")
+    closeBtn.addEventListener("click", () => dialog.close())
+    aktionen.appendChild(closeBtn)
   }
 
   // Platzhalter merkt sich den Ursprungsort des Chart-Knotens.
@@ -353,6 +371,10 @@ function schliesseChartModal() {
     platzhalter.parentNode.insertBefore(chart, platzhalter)
     platzhalter.remove()
   }
+  // Modal-eigene Aktions-Knoepfe entfernen — sie werden bei `oeffneChartModal`
+  // fuer das jeweils aktuelle Panel frisch aufgebaut.
+  const aktionen = document.getElementById("chart-modal-actions")
+  if (aktionen) aktionen.innerHTML = ""
   // ECharts neu vermessen — der Container hat jetzt wieder seine Panel-Hoehe.
   requestAnimationFrame(() => {
     window.dispatchEvent(new Event("resize"))
