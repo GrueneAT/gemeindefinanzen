@@ -795,23 +795,12 @@ input.search:focus-visible {
   color: var(--app-soft);
 }
 
-/* --- Toast-Meldungen ----------------------------------------------------- */
-.toast {
-  font-size: 0.85rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: var(--gat-web-radius-control);
-  margin: 0.6rem 0;
-}
-.toast.ok {
-  background: var(--gat-web-green-tint);
-  border: 1px solid color-mix(in srgb, var(--gat-web-green) 45%, var(--gat-web-hairline));
-  color: var(--gat-web-green-deep);
-}
-.toast.fehl {
-  background: color-mix(in srgb, var(--gat-web-chart-5) 12%, white);
-  border: 1px solid color-mix(in srgb, var(--gat-web-chart-5) 45%, var(--gat-web-hairline));
-  color: var(--gat-web-clay-text);
-}
+/* --- Toast-Meldungen -----------------------------------------------------
+   DS v2.2 liefert `.gat-toaster` (Container, fixiert unten-rechts) und
+   `.gat-toast` mit semantischen Modifiern `--info`/`--success`/`--warn`/
+   `--error` sowie `__body`/`__close`. Markup im #toast-box und der
+   `toast()`-Helper in `web/js/app.js` sind auf das DS-Schema umgestellt;
+   die App haelt keine eigene Toast-Stilebene mehr. */
 
 /* --- Geldfluss-Sankey: Drill-down-Leiste --------------------------------- */
 .sankey-bar {

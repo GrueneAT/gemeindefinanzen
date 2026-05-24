@@ -499,7 +499,7 @@ async function verarbeiteDateien(dateien) {
   const verworfen = dateien.length - pdfs.length
   if (verworfen > 0) {
     toast(`${verworfen} Datei(en) uebersprungen — nur PDF wird verarbeitet.`,
-      "fehl")
+      "warn")
   }
   let erfolg = 0
   for (const datei of pdfs) {
@@ -523,7 +523,7 @@ async function verarbeiteDateien(dateien) {
           `geladenen erscheinen im Dashboard nach dem Neuladen der Seite.`
         : `${gescheitert} Dokument(e) konnten nicht geladen werden — ` +
           `Grund siehe unten in der Liste.`,
-      "fehl",
+      "error",
     )
   } else if (erfolg > 0) {
     // Alle PDFs erfolgreich verarbeitet — die Seite frisch aufbauen, damit
@@ -600,13 +600,30 @@ function fehler(item, nachricht) {
 }
 
 // --- Hilfen --------------------------------------------------------------- //
+// Toast — duenne Bruecke ueber das DS-v2.2-`.gat-toast`. Das Markup folgt
+// dem DS-Schema (`__body` + `__close`), der Container `#toast-box` traegt
+// die `.gat-toaster`-Klasse und richtet die Toasts unten-rechts aus. Das
+// Schliess-Kreuz erlaubt es, die Meldung vor dem Auto-Ablauf wegzuklicken.
 function toast(text, art) {
+  const variants = { info: "info", success: "success", warn: "warn", error: "error" }
+  const variant = variants[art] || "info"
   const box = document.getElementById("toast-box")
-  const div = document.createElement("div")
-  div.className = `toast ${art}`
-  div.textContent = text
-  box.appendChild(div)
-  setTimeout(() => div.remove(), 6000)
+  const wrap = document.createElement("div")
+  wrap.className = `gat-toast gat-toast--${variant}`
+  wrap.setAttribute("role", variant === "error" || variant === "warn" ? "alert" : "status")
+  const body = document.createElement("div")
+  body.className = "gat-toast__body"
+  body.textContent = text
+  const close = document.createElement("button")
+  close.type = "button"
+  close.className = "gat-toast__close"
+  close.setAttribute("aria-label", "Meldung schliessen")
+  close.textContent = "×"
+  close.addEventListener("click", () => wrap.remove())
+  wrap.appendChild(body)
+  wrap.appendChild(close)
+  box.appendChild(wrap)
+  setTimeout(() => wrap.remove(), 6000)
 }
 
 function escapeHtml(s) {
@@ -627,8 +644,5 @@ init().catch((e) => {
   // Start verlief mit Fehler — gilt fuer den Waechter dennoch als erledigt,
   // damit nicht zusaetzlich die allgemeine Ausbleiben-Meldung erscheint.
   window.__appBereit = true
-  document.getElementById("toast-box").innerHTML =
-    `<div class="toast fehl">Initialisierung fehlgeschlagen: ${escapeHtml(
-      e.message || String(e),
-    )}</div>`
+  toast(`Initialisierung fehlgeschlagen: ${e.message || String(e)}`, "error")
 })
