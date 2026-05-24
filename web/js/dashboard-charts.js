@@ -762,132 +762,59 @@ export function chartSchuldenstand(trend) {
   }
 }
 
-// R2 Variante B: Combo-Chart — Saeulen Aufnahme/Tilgung pro Dokument,
-// Linie kumulierter Stand auf zweiter y-Achse.
-export function chartSchuldenCombo(_agg, trend) {
-  const reihe = (trend && trend.schuldenstand) || []
-  const labels = reihe.map((r) => r[0])
-  const auf = reihe.map((r) => r[1] || 0)
-  const til = reihe.map((r) => r[2] || 0)
-  const kum = reihe.map((r) => r[3])
-  return {
-    textStyle: baseText(),
-    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
-    legend: legende_app(),
-    grid: grid({ bottom: 56, top: 30, right: 60 }),
-    xAxis: catAxis(labels),
-    yAxis: [
-      // links: Aufnahme/Tilgung in Mio EUR
-      valAxis(),
-      // rechts: kumulierter Stand in Mio EUR (eigene Achse, weil Linie und
-      // Saeulen sonst optisch zusammenfallen)
-      {
-        type: "value",
-        position: "right",
-        axisLabel: {
-          fontFamily: CHART_FONT,
-          fontSize: AXIS_SIZE,
-          color: ACHSE_TEXT_SOFT,
-          formatter:
-            "(v)=>(v/1e6).toLocaleString('de-AT'," +
-            "{minimumFractionDigits:1,maximumFractionDigits:1})+' Mio'",
-        },
-        splitLine: { show: false },
-      },
-    ],
-    series: [
-      {
-        name: "Aufnahme",
-        type: "bar",
-        yAxisIndex: 0,
-        data: auf.map((v) => ({
-          value: round(v),
-          itemStyle: { color: INK.green, borderRadius: 2 },
-        })),
-        barMaxWidth: BAR_MAX_WEIT,
-        itemStyle: { color: INK.green },
-      },
-      {
-        name: "Tilgung",
-        type: "bar",
-        yAxisIndex: 0,
-        data: til.map((v) => ({
-          value: round(v),
-          itemStyle: { color: INK.red, borderRadius: 2 },
-        })),
-        barMaxWidth: BAR_MAX_WEIT,
-        itemStyle: { color: INK.red },
-      },
-      {
-        name: "kumulierter Stand",
-        type: "line",
-        yAxisIndex: 1,
-        data: kum,
-        smooth: true,
-        symbolSize: 8,
-        itemStyle: { color: INK.blue },
-        lineStyle: { color: INK.blue, width: 2.5 },
-      },
-    ],
-  }
-}
+// Investitions-Finanzierung als Sankey: drei Quellknoten links
+// (Foerderung, Darlehen, Eigenmittel) → die einzelnen groessten Investitionen
+// rechts. Frueher fuehrten alle Quellen auf einen Sammel-Knoten
+// "Investitionsvolumen" — das verschenkte die Ausdruckskraft eines Sankeys.
+// Jetzt fliessen die Mittel proportional in die echten Investitions-Posten
+// (Top-N nach Volumen, Rest unter "Sonstige" gebuendelt).
+//
+// Proportionalitaet: pro Quelle wird der Quellen-Betrag auf die Ziel-Posten
+// im Verhaeltnis ihrer Volumina umgelegt. Damit summieren die abgehenden
+// Fluesse je Quelle exakt auf den Quellbetrag, und die ankommenden Fluesse
+// je Ziel-Posten exakt auf dessen Volumen — sankey-konform.
+const INVEST_TOP_N = 8
 
-// R12 Variante A: Investitions-Finanzierung als ein einzelner gestapelter
-// horizontaler Balken — Foerderung, Darlehen, Eigenmittel.
-export function chartInvestFinanzierungStapel(agg) {
-  const f = agg.investFinanzierung || { foerderung: 0, darlehen: 0, eigen: 0 }
-  const segmente = [
-    ["Foerderung / Kapitaltransfer", f.foerderung || 0, INK.green],
-    ["Darlehen (netto)", f.darlehen || 0, INK.blue],
-    ["Eigenmittel (Restgroesse)", f.eigen || 0, INK.soft],
-  ]
-  const total = segmente.reduce((s, [, v]) => s + v, 0) || 1
-  const opt = {
-    textStyle: baseText(),
-    tooltip: tip({
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      formatter:
-        "(arr)=>arr.map(p=>p.seriesName+': '+(p.value/1e3).toLocaleString" +
-        "('de-AT')+' k EUR ('+Math.round(100*p.value/" + (total || 1) +
-        ")+' %)').join('<br>')+'<br><br><em>Eigenmittel als Restgroesse abgeleitet.</em>'",
-    }),
-    legend: legende_app(),
-    grid: grid({ left: 16, right: 16, top: 32, bottom: 56 }),
-    xAxis: valAxis(),
-    yAxis: catAxis(["Investitionsvolumen"]),
-    series: segmente.map(([name, wert, farbe]) => ({
-      name,
-      type: "bar",
-      stack: "inv",
-      data: [round(wert)],
-      itemStyle: { color: farbe },
-      barWidth: "55%",
-      barMaxWidth: BAR_MAX_WEIT,
-    })),
-  }
-  if (total <= 1) {
-    opt.graphic = [leerHinweis("Keine investiven Posten in diesem Dokument.")]
-  }
-  return opt
-}
-
-// R12 Variante B: Mini-Sankey — drei Quellknoten links, ein Zielknoten
-// "Investitionsvolumen" rechts. Disclaimer im Knotennamen.
 export function chartInvestFinanzierungSankey(agg) {
   const f = agg.investFinanzierung || { foerderung: 0, darlehen: 0, eigen: 0 }
   const quellen = [
-    ["Foerderung", f.foerderung || 0, INK.green],
+    ["Foerderung / Kapitaltransfer", f.foerderung || 0, INK.green],
     ["Darlehen (netto)", f.darlehen || 0, INK.blue],
     ["Eigenmittel (Restgroesse)", f.eigen || 0, INK.soft],
   ].filter(([, v]) => v > 0)
-  const nodes = quellen.map(([n, , c]) => ({ name: n, itemStyle: { color: c } }))
-  nodes.push({ name: "Investitionsvolumen", itemStyle: { color: INK.orange } })
-  const links = quellen.map(([n, v]) => ({
-    source: n,
-    target: "Investitionsvolumen",
-    value: round(v),
-  }))
+  // Investitionen: Top-N + "Sonstige"-Buendel. agg.investitionen liefert
+  // bereits eine sortierte Liste (groesster zuerst, Limit 14 in
+  // dashboard-data.js).
+  const invListe = (agg.investitionen || []).filter(([, , v]) => v > 0)
+  const top = invListe.slice(0, INVEST_TOP_N)
+  const rest = invListe.slice(INVEST_TOP_N)
+  const restSumme = rest.reduce((s, [, , v]) => s + v, 0)
+  const ziele = top.map(([b, , v]) => [b, v])
+  if (restSumme > 0) {
+    ziele.push([`Sonstige (${rest.length})`, restSumme])
+  }
+  const zielSumme = ziele.reduce((s, [, v]) => s + v, 0)
+  const quellSumme = quellen.reduce((s, [, v]) => s + v, 0)
+
+  const nodes = quellen.map(([n, , c]) =>
+    ({ name: n, itemStyle: { color: c } }))
+  for (const [n] of ziele) {
+    nodes.push({ name: n, itemStyle: { color: INK.orange } })
+  }
+  // Links: jede Quelle splittet ihren Betrag proportional zu den Ziel-
+  // volumina. Falls Quell- und Zielsumme abweichen (z. B. wenn ein
+  // VA-Dokument keine ausreichenden Detailposten hat), bleibt der Quell-
+  // Betrag erhalten und die Ziele werden anteilsgewichtet.
+  const links = []
+  for (const [qName, qWert] of quellen) {
+    for (const [zName, zWert] of ziele) {
+      const anteil = zielSumme > 0 ? zWert / zielSumme : 0
+      const wert = round(qWert * anteil)
+      if (wert > 0) {
+        links.push({ source: qName, target: zName, value: wert })
+      }
+    }
+  }
   const opt = {
     textStyle: baseText(),
     tooltip: tip({ trigger: "item" }),
@@ -895,11 +822,11 @@ export function chartInvestFinanzierungSankey(agg) {
       {
         type: "sankey",
         left: 8,
-        right: 240,
+        right: 280,
         top: 16,
         bottom: 16,
-        nodeGap: 13,
-        nodeWidth: 26,
+        nodeGap: 11,
+        nodeWidth: 24,
         label: {
           fontFamily: CHART_FONT,
           fontSize: LABEL_SIZE,
@@ -912,7 +839,7 @@ export function chartInvestFinanzierungSankey(agg) {
       },
     ],
   }
-  if (quellen.length === 0) {
+  if (quellen.length === 0 || ziele.length === 0 || quellSumme === 0) {
     opt.graphic = [leerHinweis("Keine investiven Posten in diesem Dokument.")]
   }
   return opt
@@ -1403,11 +1330,10 @@ export function alleCharts(daten) {
       korridor: chartKorridor(agg),
       treiber: chartTreiber(agg),
       investitionen: chartInvestitionen(agg),
-      // R2 — Schulden & Finanzierung
+      // Schulden & Finanzierung — Aufnahme/Tilgung-Saeulen je Dokument.
+      // Der kumulierte Stand laeuft als Zeitreihe in trend_charts.schuldenstand.
       fin_saeulen: chartFinanzierung(agg),
-      fin_combo: chartSchuldenCombo(agg, daten.trend),
-      // R12 — Investitions-Finanzierung
-      investfin_a: chartInvestFinanzierungStapel(agg),
+      // Investitions-Finanzierung als Sankey (Quellen → einzelne Investitionen).
       investfin_b: chartInvestFinanzierungSankey(agg),
       // R3 — Soll-Ist (Variante A + B)
       sollist_a: chartSollIstDiverging(agg),

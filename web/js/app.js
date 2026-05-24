@@ -14,6 +14,13 @@ import {
 } from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
 import { baueDashboard } from "./dashboard-app.js"
+import {
+  CHART_THEMES, holeAktivenThemeName, holeAktivesTheme,
+  setzeTheme, aktualisiereThemeBeiHc, initChartTheme,
+} from "./chart-themes.js"
+
+// Chart-Theme global bereitstellen, bevor irgendein Chart-Builder laeuft.
+initChartTheme()
 
 const STUFEN = {
   extraktion: "Text wird extrahiert",
@@ -60,8 +67,9 @@ async function init() {
   verdrahteModal()
   verdrahtePngExport()
   verdrahteBuilder()
-  verdrahteGalerie()
   verdrahteHcToggle()
+  verdrahteThemePicker()
+  verdrahteAusgabenDrillSync()
   window.__appBereit = true
   zeigeBuildStempel()
 }
@@ -76,7 +84,7 @@ async function init() {
 function verdrahteHcToggle() {
   const btn = document.getElementById("hc-toggle")
   if (!btn) return
-  const set = (an) => {
+  const set = (an, ausUserInteraktion) => {
     document.body.classList.toggle("gat-mode-hc", an)
     document.documentElement.classList.toggle("gat-mode-hc", an)
     btn.setAttribute("aria-pressed", an ? "true" : "false")
@@ -87,12 +95,94 @@ function verdrahteHcToggle() {
     try {
       localStorage.setItem("gat-mode-hc", an ? "1" : "")
     } catch (e) { /* gesperrt (Privatmodus) — egal */ }
+    // HC-Auto-Switch: Chart-Theme an den HC-Modus koppeln. Nur bei einer
+    // expliziten User-Interaktion, nicht beim Initial-Sync, damit eine
+    // gespeicherte manuelle Theme-Wahl ueber Refreshes hinweg respektiert
+    // bleibt.
+    if (ausUserInteraktion) aktualisiereThemeBeiHc(an)
   }
   let aktiv = false
   try { aktiv = localStorage.getItem("gat-mode-hc") === "1" } catch (e) {}
-  set(aktiv)
+  set(aktiv, false)
   btn.addEventListener("click", () =>
-    set(!document.body.classList.contains("gat-mode-hc")))
+    set(!document.body.classList.contains("gat-mode-hc"), true))
+}
+
+// --- Chart-Theme-Picker --------------------------------------------------- //
+// Header-Dropdown rechts neben dem Kontrast-Toggle. Wechsel des Themes
+// schreibt in localStorage und dispatcht 'theme-change'; der Listener
+// re-rendert alle ECharts-Instanzen.
+function verdrahteThemePicker() {
+  const sel = document.getElementById("theme-picker")
+  if (!sel) return
+  // Initialwert aus localStorage.
+  const aktuell = holeAktivenThemeName()
+  sel.value = aktuell
+  sel.addEventListener("change", () => {
+    setzeTheme(sel.value)
+  })
+  // Re-Render aller Charts bei Theme-Wechsel. dashboard.js exponiert
+  // weder ein renderAll noch die Instanz-Sammlung — ueber den globalen
+  // window-Resize lassen sich Layout-Aktualisierungen anstossen, aber
+  // setOption mit neuer Palette geht nur ueber dashboard.js. Daher hier:
+  // alle ECharts-Instanzen direkt ueber getInstanceByDom abrufen und die
+  // aktuelle Option (inst.getOption()) mit der neuen color-Palette neu
+  // setzen. ECharts respektiert 'color' als Array von Default-Farben.
+  window.addEventListener("theme-change", () => {
+    aktualisiereAlleChartFarben()
+    // localStorage-Echo + data-Attribut auf <html> fuer CSS-Hooks.
+    try {
+      const name = holeAktivenThemeName()
+      document.documentElement.setAttribute("data-chart-theme", name)
+    } catch (e) {}
+    // Picker-UI synchron halten (falls Theme programmatisch geaendert wurde).
+    sel.value = holeAktivenThemeName()
+  })
+  // Globalen Picker-Pfad fuer Tests exponieren.
+  if (typeof window !== "undefined") {
+    window.__themePicker = {
+      setzeTheme,
+      holeAktivenThemeName,
+      holeAktivesTheme,
+      CHART_THEMES,
+      aktualisiereAlleChartFarben,
+    }
+  }
+}
+
+// Alle sichtbaren ECharts-Instanzen mit der aktuellen Palette neu farben.
+// ECharts ueber `setOption({ color: PALETTE })` ohne `notMerge=true`
+// uebernimmt nur die Top-Level-color — und die wird bei vielen unserer
+// Charts ueberschrieben durch series.itemStyle.color. Deshalb: zusaetzlich
+// ein leichtes Repaint anstossen, indem wir die aktuelle Option um die
+// color-Eigenschaft anreichern und neu setzen. Charts, die feste
+// Semantik-Farben tragen (Gruen = Ertraege, Clay = Aufwand), bleiben
+// dadurch unveraendert — das ist gewollt: die Semantik ueberlebt den
+// Theme-Wechsel. Drill-Sync-Charts (Treemap, Pie) lesen `window.__chartTheme`
+// und werden ueber `__ausgabenDrillSync.rendereBeide()` aktualisiert.
+function aktualisiereAlleChartFarben() {
+  const palette = (window.__chartTheme && window.__chartTheme.palette) ||
+    holeAktivesTheme().palette
+  for (const el of document.querySelectorAll(".dash-chart")) {
+    const inst = window.echarts && window.echarts.getInstanceByDom
+      ? window.echarts.getInstanceByDom(el)
+      : null
+    if (!inst) continue
+    try {
+      const opt = inst.getOption()
+      // Top-level-color setzen — die kategorialen Charts (Treemap-Default,
+      // Pie ohne explizite Slice-Farben, Mehrjahres-Linien) ziehen von hier.
+      inst.setOption({ color: palette }, false)
+      void opt
+    } catch (e) {
+      // ECharts-Instanz ohne setOption (frisch initialisiert) — egal.
+    }
+  }
+  // Drill-Sync-Charts neu zeichnen, damit ihre per-Slice/per-Tile-
+  // Palette das neue Theme spiegelt.
+  if (window.__ausgabenDrillSync) {
+    try { window.__ausgabenDrillSync.rendereBeide() } catch (e) {}
+  }
 }
 
 // --- Mehrjahres-Overlay: Fokusverwaltung --------------------------------- //
@@ -205,7 +295,6 @@ function verdrahteVollbild() {
     const btn = document.createElement("button")
     btn.type = "button"
     btn.className = "app-panel-fs-btn"
-    btn.textContent = "Vergroessern"
     setzeVollbildLabel(btn, false)
     btn.addEventListener("click", () => {
       if (document.fullscreenElement === panel) {
@@ -238,13 +327,17 @@ function verdrahteVollbild() {
 }
 
 // Knopfbeschriftung und Hilfstext je nach Vollbildzustand setzen.
+// Native Fullscreen-Knopf: Label "Vollbild" — semantisch der echte
+// Vollbildmodus (OS-Fullscreen, F11-aehnlich). Der Modal-Knopf nebenan
+// traegt "Vergroessern" (siehe oeffneChartModal-Verdrahtung unten) und
+// laesst den User in der App.
 function setzeVollbildLabel(btn, imVollbild) {
-  btn.textContent = imVollbild ? "Verkleinern" : "Vergroessern"
+  btn.textContent = imVollbild ? "Vollbild verlassen" : "Vollbild"
   btn.setAttribute(
     "aria-label",
     imVollbild
-      ? "Diagramm wieder verkleinern"
-      : "Diagramm auf Vollbild vergroessern",
+      ? "Vollbild verlassen"
+      : "Diagramm im Vollbild oeffnen (Browser-Fullscreen)",
   )
 }
 
@@ -283,8 +376,9 @@ function verdrahteModal() {
     const btn = document.createElement("button")
     btn.type = "button"
     btn.className = "app-panel-act-btn app-panel-modal-btn"
-    btn.textContent = "Im Vollbild oeffnen"
-    btn.setAttribute("aria-label", "Diagramm im Modal-Vollbild oeffnen")
+    btn.textContent = "Vergroessern"
+    btn.setAttribute("aria-label",
+      "Diagramm vergroessern (in einem Overlay)")
     btn.addEventListener("click", () => oeffneChartModal(panel))
     actions.appendChild(btn)
   }
@@ -1189,6 +1283,318 @@ function builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras) {
   }
 }
 
+// --- Ausgaben-Drill: Treemap und Pie an den Text-Drill koppeln ----------- //
+// Im Ausgaben-Tab existiert eine Text-Drill-Liste (`.drill-list` mit
+// `.drill-crumbs`), die der Vendor (dashboard.js) ueber drei Ebenen pflegt:
+// Aufgabengruppe -> Ansatz -> Posten. Treemap und Pie (`c_treemap`,
+// `c_aufwandart`) sind heute statisch — die Treemap auf zwei Ebenen
+// (gruppe -> ansatz aus agg.treemap), die Pie auf der Aufwandsart-
+// Klassifikation (Personal/Sachaufwand/...).
+//
+// Dieser Sync koppelt beide Charts bidirektional an die Text-Drill:
+//   - Klick auf Treemap-Zelle / Pie-Slice -> die passende `.drill-row`
+//     wird programmatisch geklickt (Vendor pflegt den State).
+//   - MutationObserver auf `.drill-crumbs` -> bei jeder Aenderung des
+//     Crumbs-Markups re-rendert dieser Code beide Charts aus dem
+//     aktuellen Drill-Scope (sichtbare drill-list-Rows).
+//
+// Damit ist die Verbindung in beide Richtungen tragend, ohne den
+// Vendor-Code anzufassen. Die Drill-Tiefe spiegelt exakt die Text-Drill:
+// Ebene 0 = Aufgabengruppen, Ebene 1 = Ansaetze, Ebene 2 = einzelne
+// Posten (Konto/Bezeichnung).
+function verdrahteAusgabenDrillSync() {
+  if (!("MutationObserver" in window)) return
+  const crumbsEl = document.getElementById("drill-crumbs")
+  const listEl = document.getElementById("drill-list")
+  if (!crumbsEl || !listEl) return
+
+  function leseDrillTiefe() {
+    // Anzahl `<button data-level="X" disabled>`-Eintraege mit X > 0 + 1
+    // entspricht NICHT exakt — stattdessen: das hoechste data-level eines
+    // disabled-Buttons gibt die Tiefe an. Wenn nur "data-level=0" disabled
+    // ist, sind wir auf Ebene 0 (keine Drill-Auswahl); ist auch
+    // data-level=1 disabled, dann auf Ebene 1; etc.
+    const buttons = crumbsEl.querySelectorAll("button[data-level]")
+    let tiefe = 0
+    for (const b of buttons) {
+      if (b.disabled) {
+        const lvl = parseInt(b.dataset.level || "0", 10)
+        if (lvl > tiefe) tiefe = lvl
+      }
+    }
+    return tiefe
+  }
+
+  function leseDrillRows() {
+    // Sichtbare Drill-Zeilen mit code/text/sum. sum ist im DOM nur
+    // formatiert (Euro-String) verfuegbar — wir aggregieren neu aus
+    // window.DATA.posten, weil die exakten Werte fuer das Chart noetig
+    // sind. Die DOM-Rows definieren das Label-Set (code/text); die
+    // Summen kommen aus den Posten, die zur aktuellen Drill-Auswahl
+    // passen.
+    return [...listEl.querySelectorAll("li.drill-row")].map((row) => {
+      const codeEl = row.querySelector(".code")
+      const labelEl = row.querySelector(".label")
+      const code = row.dataset.code ||
+        (codeEl ? codeEl.textContent.trim() : "") ||
+        (labelEl ? labelEl.textContent.trim() : "")
+      const text = row.dataset.text ||
+        (labelEl
+          ? labelEl.textContent.replace(/^\S+\s*/, "").trim()
+          : "")
+      return { code, text, row, klickbar: row.classList.contains("is-clickable") }
+    })
+  }
+
+  function leseAktivesDok() {
+    // dashboard.js setzt .switch-btn.is-active je Dokument; der Datawert
+    // ist die Dokument-ID, mit der window.DATA.aggregate indexiert ist.
+    const aktiv = document.querySelector(".switch-btn.is-active")
+    return aktiv ? aktiv.dataset.dok : null
+  }
+
+  function sammlePostenAusgaben(dokId) {
+    const alle = (window.DATA && window.DATA.posten) || []
+    return alle.filter(
+      (p) => String(p.dok) === String(dokId) &&
+        p.richtung === "ausgabe" && p.ew > 0,
+    )
+  }
+
+  function baueChartDaten() {
+    const tiefe = leseDrillTiefe()
+    const dokId = leseAktivesDok()
+    if (!dokId) return null
+    const rows = sammlePostenAusgaben(dokId)
+    if (rows.length === 0) return null
+    // Crumbs auslesen: bei Tiefe >= 1 ist drillPfad[0].code = aktive Gruppe.
+    // Wir lesen den Code aus dem disabled-Button am Crumb-Index direkt.
+    const crumbBtns = crumbsEl.querySelectorAll("button[data-level]")
+    let aktiveGruppe = null
+    let aktiverAnsatz = null
+    if (tiefe >= 1 && crumbBtns[1]) {
+      // Crumb auf Ebene 1 traegt den Text der gewaehlten Gruppe.
+      // Code ist nicht direkt im Crumb, aber: alle Posten mit gruppe_text
+      // = label finden den Code; einfacher den Code aus den .drill-row-
+      // data-Attributen ziehen, falls die Auswahl auf Ebene 1 = Ansaetze
+      // einer Gruppe gerendert ist.
+      // Fallback: ueber den Text-Vergleich mit gruppe_text.
+      const text = crumbBtns[1].textContent.trim()
+      for (const p of rows) {
+        if (p.gruppe_text === text) { aktiveGruppe = p.gruppe; break }
+      }
+    }
+    if (tiefe >= 2 && crumbBtns[2]) {
+      const text = crumbBtns[2].textContent.trim()
+      for (const p of rows) {
+        if (p.ansatz_text === text) { aktiverAnsatz = p.ansatz; break }
+      }
+    }
+    // Filter auf den aktuellen Scope einschraenken.
+    let scope = rows
+    if (aktiveGruppe) scope = scope.filter((p) => p.gruppe === aktiveGruppe)
+    if (aktiverAnsatz) scope = scope.filter((p) => p.ansatz === aktiverAnsatz)
+    // Aggregation je Ebene.
+    const eimer = new Map()
+    for (const p of scope) {
+      let key, label
+      if (tiefe === 0) {
+        key = p.gruppe
+        label = p.gruppe_text || ("Gruppe " + p.gruppe)
+      } else if (tiefe === 1) {
+        key = p.ansatz
+        label = p.ansatz_text || ("Ansatz " + p.ansatz)
+      } else {
+        // Auf Ebene 2 = einzelne Posten; Bezeichnung als Schluessel
+        // (gleichnamige Bezeichnung waere ungewoehnlich; konto waere
+        // technischer, aber Klick muss zur Drill-Row matchen — Vendor
+        // erzeugt die letzte Ebene auf Basis von p.konto als code und
+        // p.bezeichnung als text).
+        key = p.konto
+        label = p.bezeichnung || ("Konto " + p.konto)
+      }
+      if (!key) continue
+      const e = eimer.get(key)
+      if (e) e.wert += p.ew
+      else eimer.set(key, { code: key, label, wert: p.ew })
+    }
+    const liste = [...eimer.values()].sort((a, b) => b.wert - a.wert)
+    return { tiefe, items: liste }
+  }
+
+  // Aktive Theme-Palette lesen (Themes werden in einem spaeteren Commit
+  // eingefuehrt). Hier defensiv: Fallback auf entsaettigte Defaults, falls
+  // window.__chartTheme noch nicht existiert.
+  function holePalette() {
+    const t = (typeof window !== "undefined") && window.__chartTheme
+    if (t && Array.isArray(t.palette) && t.palette.length) return t.palette
+    return ["#3f7d4f", "#c9a24b", "#4f93a0", "#b9744f", "#6ba368",
+      "#9c5b7d", "#5d6b8a", "#8a8f7d", "#a7c4a3", "#c9a98c"]
+  }
+
+  function rendereTreemap(daten) {
+    const el = document.getElementById("c_treemap")
+    if (!el || !window.echarts) return
+    const inst = window.echarts.getInstanceByDom(el)
+    if (!inst) return
+    const palette = holePalette()
+    const knoten = daten.items.map((it, i) => ({
+      name: it.label,
+      value: Math.abs(it.wert),
+      itemStyle: { color: palette[i % palette.length] },
+    }))
+    inst.setOption({
+      tooltip: {
+        trigger: "item",
+        formatter: (info) =>
+          `${info.name}<br/><strong>${
+            Math.round(info.value).toLocaleString("de-AT")} €</strong>`,
+      },
+      series: [{
+        type: "treemap",
+        data: knoten,
+        roam: false,
+        nodeClick: false,
+        breadcrumb: { show: false },
+        top: 6, bottom: 6, left: 6, right: 6,
+        label: { show: true, formatter: "{b}" },
+      }],
+    }, true)
+  }
+
+  function renderePie(daten) {
+    const el = document.getElementById("c_aufwandart")
+    if (!el || !window.echarts) return
+    const inst = window.echarts.getInstanceByDom(el)
+    if (!inst) return
+    const palette = holePalette()
+    // Top-N + Sonstige, damit ein Pie mit 60 Konten nicht zu einem
+    // Konfetti-Stern wird. Bei tiefer Drill-Ebene helfen Top 10.
+    const TOPN = 10
+    const top = daten.items.slice(0, TOPN)
+    const rest = daten.items.slice(TOPN)
+    const restSumme = rest.reduce((s, r) => s + r.wert, 0)
+    const slices = top.map((it, i) => ({
+      name: it.label,
+      value: Math.abs(it.wert),
+      itemStyle: { color: palette[i % palette.length] },
+    }))
+    if (restSumme > 0) {
+      slices.push({
+        name: `Sonstige (${rest.length})`,
+        value: Math.abs(restSumme),
+        itemStyle: { color: palette[TOPN % palette.length] },
+      })
+    }
+    inst.setOption({
+      tooltip: {
+        trigger: "item",
+        formatter: (info) =>
+          `${info.name}<br/><strong>${
+            Math.round(info.value).toLocaleString("de-AT")} €</strong> ` +
+          `(${info.percent} %)`,
+      },
+      legend: { type: "scroll", bottom: 0 },
+      series: [{
+        type: "pie",
+        radius: ["42%", "70%"],
+        center: ["50%", "44%"],
+        padAngle: 2,
+        itemStyle: { borderRadius: 3 },
+        data: slices,
+        label: { formatter: "{b}: {d}%" },
+      }],
+    }, true)
+  }
+
+  function rendereBeide() {
+    const daten = baueChartDaten()
+    if (!daten) return
+    rendereTreemap(daten)
+    renderePie(daten)
+  }
+
+  function triggereDrillRowKlick(code) {
+    // Vendor reagiert auf clicks auf `.drill-row.is-clickable`; setzt das
+    // drillPfad-Array und re-rendered drill-list/drill-crumbs. Wir suchen
+    // die passende Zeile per data-code (=`p.gruppe` auf Ebene 0,
+    // `p.ansatz` auf Ebene 1). Auf Ebene 2 sind die Zeilen nicht klickbar
+    // (letzte Drill-Ebene).
+    const row = listEl.querySelector(
+      `li.drill-row.is-clickable[data-code="${cssEscape(code)}"]`,
+    )
+    if (row) row.click()
+  }
+
+  function cssEscape(s) {
+    if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+      return CSS.escape(s)
+    }
+    return String(s).replace(/(["\\\]\[])/g, "\\$1")
+  }
+
+  function haengeChartKlickHandler(elId, baueItemsCallback) {
+    const el = document.getElementById(elId)
+    if (!el || !window.echarts) return
+    const inst = window.echarts.getInstanceByDom(el)
+    if (!inst) return
+    inst.off("click")
+    inst.on("click", (param) => {
+      const items = baueItemsCallback()
+      if (!items) return
+      // Param.name traegt das Label; mit dem Label finden wir den Code
+      // (Items werden parallel im DOM gerendert, gleicher Order).
+      const treffer = items.items.find((it) => it.label === param.name)
+      if (treffer) triggereDrillRowKlick(treffer.code)
+    })
+  }
+
+  // Initial-Render und Observer; aber erst nachdem das Dashboard
+  // aufgebaut ist und die Charts ECharts-Instanzen haben. dashboard.js
+  // setzt setupSankeyDrill am Ende — `__sankeyDrill` als Bereitschafts-
+  // Signal nutzen.
+  function starte() {
+    rendereBeide()
+    haengeChartKlickHandler("c_treemap", baueChartDaten)
+    haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+    const beobachter = new MutationObserver(() => {
+      // Bei jeder Aenderung der Crumbs (drill-Tiefe gewechselt) oder
+      // der Liste (Inhalte gewechselt) beide Charts neu zeichnen.
+      rendereBeide()
+      // Click-Handler nach setOption neu registrieren — ECharts haengt
+      // bei einigen Versionen Handler beim setOption(true) ab.
+      haengeChartKlickHandler("c_treemap", baueChartDaten)
+      haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+    })
+    beobachter.observe(crumbsEl, { childList: true, subtree: true })
+    beobachter.observe(listEl, { childList: true })
+  }
+
+  // Auf das fertige Dashboard warten — dashboard.js expose `__sankeyDrill`
+  // ganz am Ende. Helpers.mjs der E2E-Tests nutzt dasselbe Signal.
+  // Wenn nach 30 s kein Dashboard aufgebaut ist (kein PDF geladen), still
+  // aufhoeren — der Drill-Sync ist nur im geladenen Dashboard relevant.
+  let warteSekunden = 0
+  function wartenAufBereit() {
+    if (typeof window.__sankeyDrill === "function") {
+      starte()
+      return
+    }
+    warteSekunden += 0.05
+    if (warteSekunden > 30) return
+    setTimeout(wartenAufBereit, 50)
+  }
+  wartenAufBereit()
+
+  if (typeof window !== "undefined") {
+    window.__ausgabenDrillSync = {
+      rendereBeide,
+      baueChartDaten,
+      leseDrillTiefe,
+    }
+  }
+}
+
 function verdrahteBuilder() {
   const btn = document.getElementById("builder-render")
   if (!btn) return
@@ -1301,198 +1707,6 @@ function verdrahteBuilder() {
       render,
       getInstance: () => inst,
     }
-  }
-}
-
-// --- Diagramm-Galerie ---------------------------------------------------- //
-// Ein neuer Tab "Diagramme" sammelt alle Dashboard-Diagramme in einer
-// flachen, filterbaren Uebersicht. Statt die Diagramme zu duplizieren oder
-// abermals zu rendern (das wuerde ECharts-Instanzen und Drill-down-Logik
-// zerreissen) zeigt die Galerie pro Diagramm eine schlanke Karte mit dem
-// Panel-Titel, seinem Themen-Tag und einem "Im Vollbild oeffnen"-Knopf.
-// Der Knopf ruft `oeffneChartModal(panel)` auf — exakt derselbe Pfad, den
-// auch die Panel-Aktionsleiste nutzt. Das Modal verschiebt den
-// `.dash-chart`-Knoten zur Anzeige in seinen Body und beim Schliessen
-// wieder zurueck — Tooltips, Hover-Drill-down und Sankey-Klickpfade
-// bleiben erhalten.
-//
-// Themen-Tag je Diagramm wird aus dem umgebenden `.tab-panel`
-// (`data-panel`) abgeleitet. Filter: Volltext ueber den Titel + Tag-Chips
-// (multi-select). Aktualisierung erfolgt einmalig nach `init`; ein
-// erneutes Befuellen ist nicht noetig, weil das Set der Diagramme im
-// Dashboard fix ist (dashboard.js registriert alle Charts ein einziges Mal).
-
-const GALERIE_TAG_LABELS = {
-  ueberblick: "Ueberblick",
-  einnahmen: "Einnahmen",
-  ausgaben: "Ausgaben",
-  investitionen: "Investitionen",
-  transfers: "Transfers",
-  schulden: "Schulden",
-  sparpotenzial: "Sparpotenzial",
-}
-
-function verdrahteGalerie() {
-  const grid = document.getElementById("galerie-grid")
-  const sucheEl = document.getElementById("galerie-suche")
-  const metaEl = document.getElementById("galerie-meta")
-  const tagsEl = document.getElementById("galerie-tags")
-  if (!grid || !sucheEl || !tagsEl) return
-
-  // Filter-Zustand: aktive Tag-Codes als Set und der Volltext.
-  const aktiveTags = new Set()
-  let volltext = ""
-
-  // Aktualisierung der Galerie wird erst beim ersten Wechsel auf den
-  // Galerie-Tab fertiggestellt — vor dem Dashboard-Aufbau gibt es keine
-  // Diagramme im DOM, und ein Klick auf den Tab kommt nur, wenn das
-  // Dashboard sichtbar ist.
-  let aufgebaut = false
-
-  function sammleDiagramme() {
-    const eintraege = []
-    const seenIds = new Set()
-    for (const chart of document.querySelectorAll(".dash-chart")) {
-      // Mehrjahres-Chart im Overlay nicht einsammeln.
-      if (chart.closest(".mj-overlay")) continue
-      // Nur Charts, die zu einem `.gat-panel` mit Kopfzeile gehoeren.
-      const panel = chart.closest(".gat-panel")
-      if (!panel) continue
-      const tabPanel = panel.closest(".tab-panel[data-panel]")
-      const tag = tabPanel ? tabPanel.dataset.panel : "sonstige"
-      const h3 = panel.querySelector(".gat-panel__head h3")
-      const titel = h3
-        ? (h3.textContent || "").trim().replace(/\s+/g, " ")
-        : (chart.id || "Diagramm")
-      const id = chart.id || titel
-      if (seenIds.has(id)) continue
-      seenIds.add(id)
-      eintraege.push({ id, titel, tag, panel })
-    }
-    return eintraege
-  }
-
-  function baueTagChips(eintraege) {
-    // Eindeutige Tags in Reihenfolge der Tab-Liste oben.
-    const reihenfolge = Object.keys(GALERIE_TAG_LABELS)
-    const vorhanden = new Set(eintraege.map((e) => e.tag))
-    tagsEl.innerHTML = ""
-    for (const tag of reihenfolge) {
-      if (!vorhanden.has(tag)) continue
-      const btn = document.createElement("button")
-      btn.type = "button"
-      btn.className = "gat-tag galerie-tag"
-      btn.dataset.tag = tag
-      btn.textContent = GALERIE_TAG_LABELS[tag] || tag
-      btn.setAttribute("aria-pressed", "false")
-      btn.addEventListener("click", () => {
-        if (aktiveTags.has(tag)) {
-          aktiveTags.delete(tag)
-          btn.setAttribute("aria-pressed", "false")
-          btn.classList.remove("is-active")
-        } else {
-          aktiveTags.add(tag)
-          btn.setAttribute("aria-pressed", "true")
-          btn.classList.add("is-active")
-        }
-        rendereGitter()
-      })
-      tagsEl.appendChild(btn)
-    }
-  }
-
-  function passt(eintrag) {
-    if (aktiveTags.size > 0 && !aktiveTags.has(eintrag.tag)) return false
-    if (volltext) {
-      const hay = (eintrag.titel + " " + (GALERIE_TAG_LABELS[eintrag.tag] ||
-        eintrag.tag)).toLowerCase()
-      if (hay.indexOf(volltext) === -1) return false
-    }
-    return true
-  }
-
-  let eintraege = []
-
-  function rendereGitter() {
-    const sichtbar = eintraege.filter(passt)
-    metaEl.innerHTML = "<strong>" + sichtbar.length + "</strong> von " +
-      eintraege.length + " Diagrammen sichtbar"
-    grid.innerHTML = ""
-    for (const eintrag of sichtbar) {
-      const karte = document.createElement("article")
-      karte.className = "galerie-karte"
-      karte.dataset.galerieId = eintrag.id
-
-      const kopf = document.createElement("div")
-      kopf.className = "galerie-karte__kopf"
-      const titel = document.createElement("h3")
-      titel.className = "galerie-karte__titel"
-      titel.textContent = eintrag.titel
-      const tag = document.createElement("span")
-      tag.className = "gat-tag galerie-karte__tag"
-      tag.textContent = GALERIE_TAG_LABELS[eintrag.tag] || eintrag.tag
-      kopf.appendChild(titel)
-      kopf.appendChild(tag)
-
-      const aktionen = document.createElement("div")
-      aktionen.className = "galerie-karte__aktionen"
-      const oeffnen = document.createElement("button")
-      oeffnen.type = "button"
-      oeffnen.className =
-        "gat-btn gat-btn--secondary galerie-karte__oeffnen"
-      oeffnen.textContent = "Im Vollbild oeffnen"
-      oeffnen.setAttribute("aria-label",
-        `Diagramm "${eintrag.titel}" im Vollbild oeffnen`)
-      oeffnen.addEventListener("click", () => oeffneChartModal(eintrag.panel))
-      aktionen.appendChild(oeffnen)
-      const exp = document.createElement("button")
-      exp.type = "button"
-      exp.className = "app-panel-act-btn galerie-karte__export"
-      exp.textContent = "Als PNG speichern"
-      exp.setAttribute("aria-label",
-        `Diagramm "${eintrag.titel}" als PNG-Datei speichern`)
-      exp.addEventListener("click", () => exportierePanelAlsPng(eintrag.panel))
-      aktionen.appendChild(exp)
-
-      karte.appendChild(kopf)
-      karte.appendChild(aktionen)
-      grid.appendChild(karte)
-    }
-  }
-
-  function baueAuf() {
-    eintraege = sammleDiagramme()
-    baueTagChips(eintraege)
-    rendereGitter()
-    aufgebaut = true
-  }
-
-  // Volltext-Filter mit kurzer Entprellung — analog zum Suche-Tab.
-  let t = null
-  sucheEl.addEventListener("input", () => {
-    clearTimeout(t)
-    t = setTimeout(() => {
-      volltext = (sucheEl.value || "").trim().toLowerCase()
-      rendereGitter()
-    }, 120)
-  })
-
-  // Lazy-Aufbau beim ersten Klick auf den Galerie-Tab. dashboard.js hat
-  // den Tab-Klick-Handler global registriert; wir hoeren am Tabbar-Click
-  // mit, ohne den Vendor zu beruehren.
-  function pruefeTabKlick(ev) {
-    const btn = ev.target.closest('.tab-btn[data-tab="galerie"]')
-    if (!btn) return
-    if (!aufgebaut) {
-      // Frame abwarten, damit dashboard.js die Klassen umgestellt hat.
-      requestAnimationFrame(baueAuf)
-    }
-  }
-  document.addEventListener("click", pruefeTabKlick, true)
-
-  // Fuer E2E-Tests einen direkten Aufruf-Pfad bereitstellen.
-  if (typeof window !== "undefined") {
-    window.__galerie = { baueAuf, sammleDiagramme }
   }
 }
 
