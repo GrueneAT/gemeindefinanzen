@@ -272,16 +272,16 @@ input, select { font-family: var(--gat-font-copy); }
    nutzen — das ist der ganze Zweck der Vollbild-Aktion. Hoehe und Breite
    werden hier auf den Viewport gedeckelt, Body und Diagramm-Container
    teilen sich den Restraum als Flex-Spalte. */
-.app-chart-modal {
+/* Geschlossen: das DS-`.gat-modal { display: none }`-Default greift weiter
+   — der Dialog ist unsichtbar. Nur im offenen Zustand wird die App-Layout-
+   Geometrie angewendet (`display: flex` ueberschreibt den DS-Default). */
+.app-chart-modal[open] {
   max-width: min(96rem, 98vw);
   width: 98vw;
   max-height: 96vh;
   height: 96vh;
   display: flex;
   flex-direction: column;
-}
-.app-chart-modal[open] {
-  display: flex;
 }
 .app-chart-modal > .gat-modal__head {
   flex: none;
