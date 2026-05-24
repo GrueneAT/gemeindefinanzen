@@ -205,7 +205,6 @@ function verdrahteVollbild() {
     const btn = document.createElement("button")
     btn.type = "button"
     btn.className = "app-panel-fs-btn"
-    btn.textContent = "Vergroessern"
     setzeVollbildLabel(btn, false)
     btn.addEventListener("click", () => {
       if (document.fullscreenElement === panel) {
@@ -238,13 +237,17 @@ function verdrahteVollbild() {
 }
 
 // Knopfbeschriftung und Hilfstext je nach Vollbildzustand setzen.
+// Native Fullscreen-Knopf: Label "Vollbild" — semantisch der echte
+// Vollbildmodus (OS-Fullscreen, F11-aehnlich). Der Modal-Knopf nebenan
+// traegt "Vergroessern" (siehe oeffneChartModal-Verdrahtung unten) und
+// laesst den User in der App.
 function setzeVollbildLabel(btn, imVollbild) {
-  btn.textContent = imVollbild ? "Verkleinern" : "Vergroessern"
+  btn.textContent = imVollbild ? "Vollbild verlassen" : "Vollbild"
   btn.setAttribute(
     "aria-label",
     imVollbild
-      ? "Diagramm wieder verkleinern"
-      : "Diagramm auf Vollbild vergroessern",
+      ? "Vollbild verlassen"
+      : "Diagramm im Vollbild oeffnen (Browser-Fullscreen)",
   )
 }
 
@@ -283,8 +286,9 @@ function verdrahteModal() {
     const btn = document.createElement("button")
     btn.type = "button"
     btn.className = "app-panel-act-btn app-panel-modal-btn"
-    btn.textContent = "Im Vollbild oeffnen"
-    btn.setAttribute("aria-label", "Diagramm im Modal-Vollbild oeffnen")
+    btn.textContent = "Vergroessern"
+    btn.setAttribute("aria-label",
+      "Diagramm vergroessern (in einem Overlay)")
     btn.addEventListener("click", () => oeffneChartModal(panel))
     actions.appendChild(btn)
   }
