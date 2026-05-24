@@ -33,19 +33,40 @@
   }
 
   // Fall 2: unbehandelte Fehler sichtbar machen — aber nur eigene.
-  // Browser-Extensions (Password-Manager, Translation-Tools usw.) feuern oft
-  // Errors in den window-Scope der Seite ("Tab not found", "runtime.sendMessage"
-  // u. ae.). Die sind nicht aus unserem Code und sollen den Nutzer nicht stoeren.
+  // Browser-Extensions (Password-Manager, Translation-Tools, AI-Helper usw.)
+  // feuern Errors und Promise-Rejections in den window-Scope der Seite
+  // ("Tab not found", "runtime.sendMessage", "message channel closed",
+  // "Extension context invalidated", "Could not establish connection",
+  // "The message port closed before a response was received" u. ae.).
+  // Manche Extensions injizieren Scripts in den Main-World der Seite, dann
+  // hat der Fehler die Page-Origin als filename — Filename-Check allein
+  // reicht nicht. Wir filtern darum auch nach bekannten Message-Patterns.
+
+  // Bekannte Extension-Patterns in Error-Messages.
+  var EXT_PATTERN = /Tab not found|runtime\.sendMessage|runtime\.connect|message channel closed|message port closed|Extension context invalidated|Could not establish connection|The message port|chrome\.runtime|chrome-extension:\/\/|moz-extension:\/\//i
+
+  function istExtensionUrl(s) {
+    return /^[a-z-]+-extension:\/\//i.test(String(s || ""))
+  }
+
+  function istExtensionMessage(msg) {
+    if (!msg) return false
+    return EXT_PATTERN.test(String(msg))
+  }
+
   function istEigenerFehler(e) {
     if (!e) return true
     var filename = e.filename || (e.error && e.error.fileName) || ""
-    // Kein filename verfuegbar (z. B. CORS-isolierte Fehler) -> als eigen
-    // behandeln, damit echte App-Fehler nicht durchs Raster fallen.
-    if (!filename) return true
-    // Extension-Origins (chrome-extension://, moz-extension://, safari-web-
-    // extension://, edge-extension://) ausfiltern.
-    return !/^[a-z-]+-extension:\/\//i.test(filename)
+    if (istExtensionUrl(filename)) return false
+    // Stack durchsuchen — Extension-Scripts im Main-World tauchen oft im
+    // Stack-Trace mit ihrer extension:// URL auf.
+    var stack = (e.error && e.error.stack) || ""
+    if (/[a-z-]+-extension:\/\//i.test(stack)) return false
+    // Message gegen bekannte Extension-Patterns pruefen.
+    if (istExtensionMessage(e.message)) return false
+    return true
   }
+
   function zeigeFehler(text) {
     banner("<strong>Fehler beim Start:</strong> " + String(text))
   }
@@ -61,9 +82,8 @@
   window.addEventListener("unhandledrejection", function (e) {
     var r = e && e.reason
     var msg = (r && r.message) || r || "unbekannt"
-    // Promise-Rejections ohne sinnvollen Inhalt (typischerweise von
-    // Extensions, die ihre internen Messages nicht catchen) ignorieren.
-    if (/Tab not found|runtime\.sendMessage|message channel closed/i.test(String(msg))) {
+    var stack = (r && r.stack) || ""
+    if (istExtensionMessage(msg) || /[a-z-]+-extension:\/\//i.test(stack)) {
       if (typeof console !== "undefined" && console.debug) {
         console.debug("boot-guard: Extension-Rejection ignoriert:", msg)
       }
