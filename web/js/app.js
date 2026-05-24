@@ -524,8 +524,21 @@ async function exportierePanelAlsPng(panel) {
     ? echartsRef.getInstanceByDom(chart)
     : null
   if (!inst) {
-    toast("Diagramm noch nicht bereit — bitte gleich nochmal versuchen.",
-      "warn")
+    // Builder ist erst nach Klick auf "Diagramm erstellen" gerendert —
+    // dort hilft der generische "noch nicht bereit"-Hinweis nicht weiter,
+    // weil das Diagramm gar nicht bereitstehen kann, solange der User
+    // nicht auf den Render-Knopf geklickt hat. Klarer Hinweis statt
+    // dem irrefuehrenden "gleich nochmal versuchen".
+    if (panel && panel.id === "builder-panel") {
+      toast(
+        "Bitte zuerst auf „Diagramm erstellen“ klicken — " +
+          "danach kann das Diagramm als PNG gespeichert werden.",
+        "warn",
+      )
+    } else {
+      toast("Diagramm noch nicht bereit — bitte gleich nochmal versuchen.",
+        "warn")
+    }
     return
   }
   let dataUrl = ""
