@@ -690,10 +690,43 @@ function kuerzeText(ctx, text, maxBreite) {
 
 function leseTitelAusPanel(panel) {
   const h3 = panel.querySelector(".gat-panel__head h3")
-  if (h3) {
-    return (h3.textContent || "").trim().replace(/\s+/g, " ")
+  const basis = h3
+    ? (h3.textContent || "").trim().replace(/\s+/g, " ")
+    : "Diagramm"
+  // Beim Diagramm-Builder ist der statische h3-Text „Diagramm-Builder" —
+  // er sagt nichts ueber das tatsaechlich gebaute Diagramm aus. Den Titel
+  // mit der aktuellen Builder-Konfiguration ergaenzen (Gruppierung,
+  // Wertspalte, Aggregation), damit der PNG-Footer aussagekraeftig ist.
+  if (panel && panel.id === "builder-panel") {
+    const zusatz = leseBuilderKonfigBezeichnung()
+    if (zusatz) return `${basis} · ${zusatz}`
   }
-  return "Diagramm"
+  return basis
+}
+
+// Eine kompakte Bezeichnung des aktuell konfigurierten Builder-Diagramms —
+// fuer den PNG-Footer und Diagnose-Zwecke. Liefert z. B.
+// „Aufgabengruppe — EH wert (Summe)" oder mit Sekundaer-Gruppierung
+// „Aufgabengruppe × Richtung — EH wert (Summe)".
+function leseBuilderKonfigBezeichnung() {
+  const dimEl = document.getElementById("builder-dim")
+  const wertEl = document.getElementById("builder-wert")
+  const aggEl = document.getElementById("builder-agg")
+  const stackEl = document.getElementById("builder-stack")
+  const stackWrap = document.getElementById("builder-stack-wrap")
+  if (!dimEl || !wertEl || !aggEl) return ""
+  const dim = BUILDER_DIM_LABELS[dimEl.value] || dimEl.value
+  const wert = BUILDER_WERT_LABELS[wertEl.value] || wertEl.value
+  const agg = aggEl.value
+  const aggLabel = agg.charAt(0).toUpperCase() + agg.slice(1)
+  // Sekundaere Gruppierung nur einbeziehen, wenn das Feld aktuell sichtbar
+  // ist und einen Wert traegt (sonst hat es keine Wirkung auf das Diagramm).
+  const stack = stackEl && stackWrap && !stackWrap.hidden && stackEl.value
+    ? (BUILDER_DIM_LABELS[stackEl.value] || stackEl.value)
+    : ""
+  const dimTeil = stack ? `${dim} × ${stack}` : dim
+  if (agg === "anzahl") return `${dimTeil} — Anzahl Posten`
+  return `${dimTeil} — ${wert} (${aggLabel})`
 }
 
 function leseAktivesDokLabel() {
@@ -719,6 +752,7 @@ if (typeof window !== "undefined") {
   window.__brandFooter = {
     brandePngMitFooter,
     leseTitelAusPanel,
+    leseBuilderKonfigBezeichnung,
     leseAktivesDokLabel,
     formatHeute,
     FOOTER_PIXEL_RATIO,
