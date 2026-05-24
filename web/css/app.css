@@ -1065,6 +1065,12 @@ input.search:focus-visible {
   margin-top: var(--gat-space-2);
 }
 
+/* Sekundaere Gruppierung — nur sichtbar fuer Diagrammtypen, die sie
+   brauchen (gestapelte Balken, Treemap, Heatmap). Das [hidden]-Attribut
+   am Wrapper-Label schaltet die Sichtbarkeit; CSS hier nur defensiv
+   gegen versehentliche Display-Overrides. */
+.builder-conf label[hidden] { display: none; }
+
 /* ===========================================================================
    7. DRUCK-STYLESHEET
    ===========================================================================

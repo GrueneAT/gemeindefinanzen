@@ -740,7 +740,10 @@ function builderKategorieLabel(p, dim) {
 function builderAggregiere(posten, dim, wertfeld, agg) {
   // Gruppieren nach Kategorie, dann aggregieren. Liefert ein Array
   // [{ name, wert, anzahl }] absteigend nach wert sortiert.
+  // Aggregationen: summe, durchschnitt, anzahl, median, min, max.
+  // Fuer median/min/max wird die Wertliste pro Kategorie gesammelt.
   const eimer = new Map()
+  const brauchListe = agg === "median" || agg === "min" || agg === "max"
   for (const p of posten) {
     const name = builderKategorieLabel(p, dim)
     if (!name) continue
@@ -749,8 +752,13 @@ function builderAggregiere(posten, dim, wertfeld, agg) {
     if (e) {
       e.summe += v
       e.anzahl += 1
+      if (brauchListe) e.werte.push(v)
     } else {
-      eimer.set(name, { summe: v, anzahl: 1 })
+      eimer.set(name, {
+        summe: v,
+        anzahl: 1,
+        werte: brauchListe ? [v] : null,
+      })
     }
   }
   const ergebnis = []
@@ -760,6 +768,9 @@ function builderAggregiere(posten, dim, wertfeld, agg) {
     else if (agg === "durchschnitt") {
       wert = e.anzahl > 0 ? e.summe / e.anzahl : 0
     } else if (agg === "anzahl") wert = e.anzahl
+    else if (agg === "median") wert = berechneMedian(e.werte)
+    else if (agg === "min") wert = e.werte.length ? Math.min(...e.werte) : 0
+    else if (agg === "max") wert = e.werte.length ? Math.max(...e.werte) : 0
     else wert = e.summe
     ergebnis.push({ name, wert, anzahl: e.anzahl })
   }
@@ -767,7 +778,118 @@ function builderAggregiere(posten, dim, wertfeld, agg) {
   return ergebnis
 }
 
-function builderEchartsOption(typ, daten, achsTitel, wertTitel) {
+function berechneMedian(werte) {
+  // Median ueber eine Werteliste — bei gerader Laenge der Mittelwert der
+  // beiden mittleren Werte, sonst der mittlere Wert. Liefert 0 fuer leere
+  // Liste.
+  if (!werte || werte.length === 0) return 0
+  const sortiert = werte.slice().sort((a, b) => a - b)
+  const m = Math.floor(sortiert.length / 2)
+  if (sortiert.length % 2 === 0) {
+    return (sortiert[m - 1] + sortiert[m]) / 2
+  }
+  return sortiert[m]
+}
+
+function builderBerechneAgg(werte, agg) {
+  // Aggregiert eine flache Werteliste analog zu builderAggregiere, aber
+  // ohne Gruppen-Buckets — fuer Pivot-Zellen in Stacked/Treemap/Heatmap.
+  if (!werte || werte.length === 0) return 0
+  if (agg === "summe") {
+    let s = 0
+    for (const v of werte) s += v
+    return s
+  }
+  if (agg === "durchschnitt") {
+    let s = 0
+    for (const v of werte) s += v
+    return s / werte.length
+  }
+  if (agg === "anzahl") return werte.length
+  if (agg === "median") return berechneMedian(werte)
+  if (agg === "min") return Math.min(...werte)
+  if (agg === "max") return Math.max(...werte)
+  let s = 0
+  for (const v of werte) s += v
+  return s
+}
+
+function builderPivot(posten, dim, dim2, wertfeld, agg) {
+  // Erzeugt eine Pivot-Matrix: primaere Gruppierung als Zeilen
+  // (rowLabels), sekundaere Gruppierung als Spalten (colLabels), und je
+  // Zelle den aggregierten Wert. Liefert { rowLabels, colLabels, matrix }
+  // mit matrix[rowIdx][colIdx] = wert. Die Werte je Zelle stammen aus
+  // allen Posten, die in dieser Zeile/Spalte landen.
+  const zellen = new Map()  // "row col" -> werte[]
+  const zeilenSummen = new Map()  // row -> summe (fuer Sortierung)
+  const spaltenSummen = new Map()  // col -> summe
+  for (const p of posten) {
+    const row = builderKategorieLabel(p, dim)
+    const col = builderKategorieLabel(p, dim2)
+    if (!row || !col) continue
+    const v = Number(p[wertfeld]) || 0
+    const schluessel = row + " " + col
+    const liste = zellen.get(schluessel)
+    if (liste) liste.push(v)
+    else zellen.set(schluessel, [v])
+    zeilenSummen.set(row, (zeilenSummen.get(row) || 0) + Math.abs(v))
+    spaltenSummen.set(col, (spaltenSummen.get(col) || 0) + Math.abs(v))
+  }
+  // Top-N Zeilen und Spalten — Pivot-Matrizen explodieren sonst schnell
+  // bei vielen Kategorien (z. B. Bezeichnung x Bezeichnung).
+  const TOPN_ROW = 20
+  const TOPN_COL = 15
+  const rowLabels = Array.from(zeilenSummen.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, TOPN_ROW)
+    .map(([k]) => k)
+  const colLabels = Array.from(spaltenSummen.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, TOPN_COL)
+    .map(([k]) => k)
+  const matrix = rowLabels.map((row) =>
+    colLabels.map((col) => {
+      const liste = zellen.get(row + " " + col)
+      return builderBerechneAgg(liste, agg)
+    }),
+  )
+  return { rowLabels, colLabels, matrix }
+}
+
+// Chart-Palette aus dem DS-CSS lesen — die Tokens --gat-web-chart-1..8 sind
+// die Diagramm-Farben des Org-DS. Fallback auf einen festen Grueneton, wenn
+// CSS-Vars (noch) nicht greifbar sind (z. B. im Headless-Test).
+function builderChartPalette() {
+  const root = document.documentElement
+  const palette = []
+  if (root && typeof getComputedStyle === "function") {
+    const stil = getComputedStyle(root)
+    for (let i = 1; i <= 8; i++) {
+      const wert = stil.getPropertyValue(`--gat-web-chart-${i}`).trim()
+      if (wert) palette.push(wert)
+    }
+  }
+  if (palette.length === 0) {
+    // Fallback-Palette: Grueneton-Verlauf, falls DS-Tokens fehlen.
+    return ["#2c6e40", "#4a8c5e", "#6b9f7e", "#8db59c", "#aacbb5",
+      "#c6dcca", "#7a9c87", "#4d6e58"]
+  }
+  return palette
+}
+
+function builderEchartsOption(typ, daten, achsTitel, wertTitel, extras) {
+  // extras: { pivot, dim2Titel } — wird fuer Diagrammtypen mit
+  // sekundaerer Gruppierungsachse genutzt (bar-stacked, treemap, heatmap).
+  extras = extras || {}
+  if (typ === "bar-stacked") {
+    return builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras)
+  }
+  if (typ === "treemap") {
+    return builderEchartsOptionTreemap(daten, achsTitel, wertTitel, extras)
+  }
+  if (typ === "heatmap") {
+    return builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras)
+  }
   // Top 30 Kategorien — bei mehr Treffern den Rest unter "Sonstige"
   // buendeln. Vermeidet unleserliche Charts mit hunderten Zeilen.
   const TOPN = 30
@@ -844,6 +966,229 @@ function builderEchartsOption(typ, daten, achsTitel, wertTitel) {
   }
 }
 
+// Diagrammtypen, die eine sekundaere Gruppierung brauchen — wird vom UI
+// genutzt, um das passende Dropdown zu zeigen oder zu verstecken. Treemap
+// nutzt dim2 optional (ohne Sekundaer flacher Top-N-Treemap, mit dim2
+// hierarchisch). Heatmap braucht dim2 zwingend (sonst Hinweis-Chart).
+const BUILDER_TYPEN_MIT_DIM2 = new Set(["bar-stacked", "treemap", "heatmap"])
+
+function builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras) {
+  // Gestapelte Balken (vertikal): primaere Gruppierung als x-Achse,
+  // sekundaere Gruppierung als Stack-Serien. Erwartet extras.pivot.
+  // Ohne pivot (kein dim2): Fallback auf einen einfachen vertikalen
+  // Balken-Look — so bleibt die UI auch ohne dim2 funktional.
+  const palette = builderChartPalette()
+  const baseTooltip = {
+    trigger: "axis",
+    axisPointer: { type: "shadow" },
+    valueFormatter: (v) =>
+      typeof v === "number"
+        ? Math.round(v).toLocaleString("de-AT") + " €"
+        : String(v),
+  }
+  if (!extras.pivot) {
+    // Kein dim2 gewaehlt — wie ein einfacher vertikaler Balken.
+    const TOPN = 30
+    let zeigen = daten
+    if (daten.length > TOPN) {
+      const top = daten.slice(0, TOPN)
+      const rest = daten.slice(TOPN)
+      const restSumme = rest.reduce((s, r) => s + r.wert, 0)
+      zeigen = top.concat([{ name: `Sonstige (${rest.length})`,
+        wert: restSumme }])
+    }
+    return {
+      title: { text: `${wertTitel} nach ${achsTitel}`, left: "center" },
+      tooltip: baseTooltip,
+      grid: { left: 56, right: 24, top: 56, bottom: 100, containLabel: true },
+      xAxis: { type: "category", data: zeigen.map((r) => r.name),
+        axisLabel: { rotate: 35, fontSize: 11 } },
+      yAxis: { type: "value",
+        axisLabel: { formatter: (v) =>
+          Math.round(v).toLocaleString("de-AT") } },
+      series: [{ type: "bar", data: zeigen.map((r) => r.wert),
+        itemStyle: { color: palette[0] } }],
+    }
+  }
+  const { rowLabels, colLabels, matrix } = extras.pivot
+  const series = colLabels.map((col, ci) => ({
+    name: col,
+    type: "bar",
+    stack: "gesamt",
+    emphasis: { focus: "series" },
+    data: matrix.map((row) => row[ci]),
+    itemStyle: { color: palette[ci % palette.length] },
+  }))
+  return {
+    title: { text: `${wertTitel} nach ${achsTitel} (gestapelt nach ` +
+      `${extras.dim2Titel || "Sekundaer"})`, left: "center" },
+    tooltip: baseTooltip,
+    legend: { type: "scroll", bottom: 0 },
+    grid: { left: 56, right: 24, top: 56, bottom: 120, containLabel: true },
+    xAxis: { type: "category", data: rowLabels,
+      axisLabel: { rotate: 35, fontSize: 11 } },
+    yAxis: { type: "value",
+      axisLabel: { formatter: (v) =>
+        Math.round(v).toLocaleString("de-AT") } },
+    series,
+  }
+}
+
+function builderEchartsOptionTreemap(daten, achsTitel, wertTitel, extras) {
+  // Treemap: bei vorhandenem dim2 hierarchisch (primaere Gruppierung als
+  // Eltern, sekundaere als Kinder). Ohne dim2: flach — Top-N Posten direkt
+  // als Leaves. Treemap-Werte sind immer Math.abs, weil negative Flaechen
+  // in einem Treemap nicht sinnvoll dargestellt werden koennen.
+  const palette = builderChartPalette()
+  const TOPN_FLAT = 30
+  if (!extras.pivot) {
+    const zeigen = daten.slice(0, TOPN_FLAT)
+    return {
+      title: { text: `${wertTitel} nach ${achsTitel}`, left: "center" },
+      tooltip: {
+        formatter: (info) => {
+          const v = typeof info.value === "number" ? info.value : 0
+          return `${info.name}<br/>` +
+            `<strong>${Math.round(v).toLocaleString("de-AT")} €</strong>`
+        },
+      },
+      series: [{
+        type: "treemap",
+        roam: false,
+        nodeClick: false,
+        breadcrumb: { show: false },
+        data: zeigen.map((r, i) => ({
+          name: r.name,
+          value: Math.abs(r.wert),
+          itemStyle: { color: palette[i % palette.length] },
+        })),
+        label: { show: true, formatter: "{b}" },
+      }],
+    }
+  }
+  const { rowLabels, colLabels, matrix } = extras.pivot
+  const wurzeln = rowLabels.map((row, ri) => {
+    const kinder = colLabels.map((col, ci) => ({
+      name: col,
+      value: Math.abs(matrix[ri][ci]),
+    })).filter((k) => k.value > 0)
+    const summe = kinder.reduce((s, k) => s + k.value, 0)
+    return {
+      name: row,
+      value: summe,
+      itemStyle: { color: palette[ri % palette.length] },
+      children: kinder,
+    }
+  }).filter((w) => w.value > 0)
+  return {
+    title: { text: `${wertTitel} nach ${achsTitel} → ` +
+      `${extras.dim2Titel || "Sekundaer"}`, left: "center" },
+    tooltip: {
+      formatter: (info) => {
+        const v = typeof info.value === "number" ? info.value : 0
+        return `${info.name}<br/>` +
+          `<strong>${Math.round(v).toLocaleString("de-AT")} €</strong>`
+      },
+    },
+    series: [{
+      type: "treemap",
+      roam: false,
+      nodeClick: false,
+      breadcrumb: { show: false },
+      data: wurzeln,
+      levels: [
+        { itemStyle: { gapWidth: 2 } },
+        { itemStyle: { gapWidth: 1, borderWidth: 0 },
+          colorSaturation: [0.3, 0.6] },
+      ],
+      label: { show: true, formatter: "{b}" },
+      upperLabel: { show: true, height: 22, color: "#fff" },
+    }],
+  }
+}
+
+function builderEchartsOptionHeatmap(daten, achsTitel, wertTitel, extras) {
+  // Heatmap: Matrix-Ansicht (primaere Gruppierung als y-Achse, sekundaere
+  // als x-Achse, Zellwerte als Farbintensitaet). Braucht zwingend einen
+  // Pivot mit zwei Dimensionen — ohne dim2 zeigt das Diagramm einen
+  // erklaerenden Hinweis statt einer leeren Flaeche.
+  if (!extras.pivot) {
+    return {
+      title: {
+        text: "Heatmap benoetigt sekundaere Gruppierung",
+        subtext: "Bitte ein Feld unter „Sekundaere Gruppierung“ waehlen.",
+        left: "center",
+        top: "center",
+      },
+    }
+  }
+  const { rowLabels, colLabels, matrix } = extras.pivot
+  const daten2 = []
+  let maxAbs = 0
+  for (let r = 0; r < rowLabels.length; r++) {
+    for (let c = 0; c < colLabels.length; c++) {
+      const v = matrix[r][c]
+      daten2.push([c, r, Math.round(v)])
+      if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v)
+    }
+  }
+  // Farbskala aus DS-Tokens: entsaettigte Oberflaeche -> Dunkelgruen.
+  // Liefert eine ruhige, DS-konforme Skala statt der ECharts-Defaults.
+  const root = document.documentElement
+  const stil = root && typeof getComputedStyle === "function"
+    ? getComputedStyle(root)
+    : null
+  const niedrig = (stil &&
+    stil.getPropertyValue("--gat-web-surface-sunk").trim()) ||
+    (stil && stil.getPropertyValue("--gat-web-surface").trim()) ||
+    "#f4f1ec"
+  const hoch = (stil &&
+    stil.getPropertyValue("--gat-color-dunkelgruen").trim()) ||
+    (stil && stil.getPropertyValue("--gat-web-chart-1").trim()) ||
+    "#2c6e40"
+  return {
+    title: { text: `${wertTitel}: ${achsTitel} × ` +
+      `${extras.dim2Titel || "Sekundaer"}`, left: "center" },
+    tooltip: {
+      position: "top",
+      formatter: (info) => {
+        const c = info.value[0]
+        const r = info.value[1]
+        const v = info.value[2]
+        return `${rowLabels[r]}<br/>${colLabels[c]}<br/>` +
+          `<strong>${Math.round(v).toLocaleString("de-AT")} €</strong>`
+      },
+    },
+    grid: { left: 180, right: 24, top: 60, bottom: 120, containLabel: true },
+    xAxis: { type: "category", data: colLabels,
+      axisLabel: { rotate: 35, fontSize: 11 },
+      splitArea: { show: true } },
+    yAxis: { type: "category", data: rowLabels,
+      axisLabel: { fontSize: 11 },
+      splitArea: { show: true } },
+    visualMap: {
+      min: 0,
+      max: maxAbs || 1,
+      calculable: true,
+      orient: "horizontal",
+      left: "center",
+      bottom: 30,
+      inRange: { color: [niedrig, hoch] },
+      formatter: (v) =>
+        typeof v === "number"
+          ? Math.round(v).toLocaleString("de-AT")
+          : String(v),
+    },
+    series: [{
+      name: wertTitel,
+      type: "heatmap",
+      data: daten2,
+      label: { show: false },
+      emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,0.3)" } },
+    }],
+  }
+}
+
 function verdrahteBuilder() {
   const btn = document.getElementById("builder-render")
   if (!btn) return
@@ -854,7 +1199,19 @@ function verdrahteBuilder() {
   const dimEl = document.getElementById("builder-dim")
   const wertEl = document.getElementById("builder-wert")
   const aggEl = document.getElementById("builder-agg")
+  const stackEl = document.getElementById("builder-stack")
+  const stackWrap = document.getElementById("builder-stack-wrap")
   if (!chartEl || !typEl) return
+
+  // Sekundaere Gruppierung nur fuer Diagrammtypen sichtbar, die sie
+  // brauchen (gestapelte Balken, Treemap, Heatmap). Bei den uebrigen
+  // Typen bleibt das Feld per [hidden]-Attribut ausgeblendet, damit der
+  // Builder schlank bleibt.
+  function toggleStackSichtbar() {
+    if (!stackWrap) return
+    stackWrap.hidden = !BUILDER_TYPEN_MIT_DIM2.has(typEl.value)
+  }
+  toggleStackSichtbar()
 
   // ECharts-Instanz erst beim ersten Render anlegen, damit das Layout
   // korrekte Pixel-Werte hat. Spaetere Renders nutzen dieselbe Instanz.
@@ -882,11 +1239,18 @@ function verdrahteBuilder() {
     const wert = wertEl.value
     const agg = aggEl.value
     const typ = typEl.value
+    const dim2 = stackEl ? stackEl.value : ""
     const daten = builderAggregiere(gefiltert, dim, wert, agg)
     if (daten.length === 0) {
       meta.textContent = "Keine Kategorien in der Filtermenge — " +
         "andere Gruppierung waehlen."
       return
+    }
+    // Pivot nur dann bauen, wenn der Diagrammtyp dim2 nutzt und der User
+    // ein Feld ausgewaehlt hat. Pivot kann teuer sein bei vielen Posten.
+    let pivot = null
+    if (BUILDER_TYPEN_MIT_DIM2.has(typ) && dim2 && dim2 !== dim) {
+      pivot = builderPivot(gefiltert, dim, dim2, wert, agg)
     }
     host.hidden = false
     if (!inst) {
@@ -896,19 +1260,26 @@ function verdrahteBuilder() {
       ? "Anzahl Posten"
       : `${BUILDER_WERT_LABELS[wert] || wert} (${agg})`
     const achsTitel = BUILDER_DIM_LABELS[dim] || dim
-    inst.setOption(builderEchartsOption(typ, daten, achsTitel, wertTitel),
-      true)
+    const dim2Titel = dim2 ? (BUILDER_DIM_LABELS[dim2] || dim2) : ""
+    inst.setOption(builderEchartsOption(typ, daten, achsTitel, wertTitel,
+      { pivot, dim2Titel }), true)
     inst.resize()
+    const dim2Hinweis = pivot
+      ? ` × ${pivot.colLabels.length} ${dim2Titel}-Kategorien`
+      : ""
     meta.innerHTML = "<strong>" + gefiltert.length + "</strong> Posten in " +
-      daten.length + " " + achsTitel + "-Kategorien"
+      daten.length + " " + achsTitel + "-Kategorien" + dim2Hinweis
   }
 
   btn.addEventListener("click", render)
   // Bei Aenderung der Dropdowns automatisch neu rendern, sobald die
   // Instanz schon existiert (nicht beim ersten Laden, bevor der User
   // bewusst auf "Erstellen" geklickt hat).
-  for (const el of [typEl, dimEl, wertEl, aggEl]) {
+  const inputs = [typEl, dimEl, wertEl, aggEl]
+  if (stackEl) inputs.push(stackEl)
+  for (const el of inputs) {
     el.addEventListener("change", () => {
+      if (el === typEl) toggleStackSichtbar()
       if (inst) render()
     })
   }
@@ -924,6 +1295,9 @@ function verdrahteBuilder() {
     window.__builder = {
       builderAggregiere,
       builderFiltereMatch,
+      builderPivot,
+      builderBerechneAgg,
+      berechneMedian,
       render,
       getInstance: () => inst,
     }
