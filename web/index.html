@@ -768,6 +768,25 @@
   </div>
 </div>
 
+<!-- Diagramm-Vollbild-Modal — wird von app.js (verdrahteModal) genutzt, um
+     einen Diagramm-Container in Viewport-Hoehe darzustellen. Funktioniert
+     auch auf iPhone Safari, wo document.fullscreenEnabled === false ist.
+     Der eigentliche Diagramm-Knoten wird beim Oeffnen in __body verschoben
+     und beim Schliessen an seinen Ursprungsort zurueckgesetzt — damit
+     bleiben ECharts-Instanz und Drill-down-Verdrahtung erhalten, ohne
+     dashboard.js anzufassen. -->
+<dialog class="gat-modal gat-modal--wide app-chart-modal" id="chart-modal"
+        aria-labelledby="chart-modal-titel">
+  <div class="gat-modal__head">
+    <h2 class="gat-modal__title" id="chart-modal-titel">Diagramm</h2>
+    <div class="gat-modal__actions app-chart-modal__head-actions"
+         id="chart-modal-actions"></div>
+    <button type="button" class="gat-modal__close" id="chart-modal-close"
+            aria-label="Schliessen">&times;</button>
+  </div>
+  <div class="gat-modal__body app-chart-modal__body" id="chart-modal-body"></div>
+</dialog>
+
 <!-- Variante B (R5): Edit-Dialog fuer die Einwohnerzahl. HTML5 <dialog>;
      wird von app.js per .showModal() geoeffnet und schreibt ueber dieselbe
      UPDATE-Statement wie das Inline-Feld (Variante A). -->
