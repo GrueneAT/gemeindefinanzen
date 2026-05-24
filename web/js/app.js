@@ -473,17 +473,19 @@ function verdrahteUpload() {
     location.reload()
   })
 
+  // DS v2.2 verlangt `.is-dragover` (statt des frueher lokalen `.is-over`)
+  // als Drag-Hervorhebung; der Klassen-Name ist Vertrag mit der DS-CSS.
   for (const ev of ["dragenter", "dragover"]) {
     zone.addEventListener(ev, (e) => {
       e.preventDefault()
-      zone.classList.add("is-over")
+      zone.classList.add("is-dragover")
     })
   }
   for (const ev of ["dragleave", "drop"]) {
     zone.addEventListener(ev, (e) => {
       e.preventDefault()
       if (ev === "dragleave" && zone.contains(e.relatedTarget)) return
-      zone.classList.remove("is-over")
+      zone.classList.remove("is-dragover")
     })
   }
   zone.addEventListener("drop", (e) => {

@@ -541,33 +541,15 @@ input.search:focus-visible {
   border-top: 1px solid var(--app-hair);
 }
 
-/* --- Drag-&-Drop-Zone ---------------------------------------------------- */
+/* --- Drag-&-Drop-Zone ----------------------------------------------------
+   DS v2.2 liefert `.gat-dropzone` mit `__icon`/`__label`/`__hint`/
+   `__trigger` und den States `.is-dragover`/`.is-error`. Markup im
+   #dropzone und das Drag-Handling in `web/js/app.js` (`.is-dragover`-
+   Toggle) folgen dem DS-Schema. Lokal verbleibt nur ein Aussenabstand,
+   den DS nicht setzt, und die App-eigene Sichtbarkeit des verdeckten
+   File-Inputs — sonst keine eigene Dropzone-Stilebene mehr. */
 .dropzone {
-  border: 2px dashed var(--gat-web-hairline);
-  border-radius: var(--gat-web-radius-card);
-  background: var(--gat-web-surface-sunk);
-  padding: 2.4rem 1.4rem;
-  text-align: center;
   margin: 1.2rem 0;
-  transition: border-color 0.15s, background 0.15s;
-}
-.dropzone.is-over {
-  border-color: var(--gat-web-green-deep);
-  background: var(--gat-web-green-tint);
-}
-.dropzone-title {
-  font-size: 1.05rem;
-  margin: 0 0 0.3rem;
-}
-.dropzone-hint {
-  color: var(--gat-web-text-soft);
-  font-size: 0.85rem;
-  margin: 0 0 0.9rem;
-}
-/* .dropzone-btn traegt zusaetzlich .gat-btn--secondary — die Optik kommt
-   aus dem Button-Block oben; hier nur die Feinjustierung der Groesse. */
-.dropzone-btn {
-  font-size: 0.88rem;
 }
 .dropzone input[type="file"] {
   display: none;

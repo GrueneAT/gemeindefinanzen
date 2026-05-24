@@ -78,12 +78,21 @@
     <div class="doc-manager-body">
       <section>
         <h2>PDFs hinzufuegen</h2>
-        <div class="dropzone" id="dropzone">
-          <p class="dropzone-title">PDF-Dateien hierher ziehen</p>
-          <p class="dropzone-hint">VRV-2015-Voranschlag, Nachtragsvoranschlag
-            oder Rechnungsabschluss — mehrere Dateien auf einmal moeglich.</p>
-          <button class="gat-btn gat-btn--secondary dropzone-btn" id="pick-btn" type="button">
-            Dateien auswaehlen</button>
+        <div class="dropzone gat-dropzone" id="dropzone">
+          <span class="gat-dropzone__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12"/><path d="M7 8l5-5 5 5"/>
+              <path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+            </svg>
+          </span>
+          <p class="dropzone-title gat-dropzone__label">PDF-Dateien hierher
+            ziehen</p>
+          <p class="dropzone-hint gat-dropzone__hint">VRV-2015-Voranschlag,
+            Nachtragsvoranschlag oder Rechnungsabschluss — mehrere Dateien
+            auf einmal moeglich.</p>
+          <button class="gat-btn gat-btn--secondary dropzone-btn gat-dropzone__trigger"
+                  id="pick-btn" type="button">Dateien auswaehlen</button>
           <input type="file" id="file-input" accept="application/pdf,.pdf"
             multiple>
         </div>
