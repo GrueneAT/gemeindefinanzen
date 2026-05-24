@@ -758,8 +758,9 @@
             Wert aus einer der Betragsspalten, Aggregation nach Summe,
             Durchschnitt, Median, Minimum, Maximum oder Anzahl.
             Diagrammtypen: Balken (horizontal oder vertikal), Linie,
-            Kreis/Ring und gestapelte Balken. Gestapelte Balken nutzen
-            zusaetzlich eine sekundaere Gruppierung.</p>
+            Kreis/Ring, gestapelte Balken und Treemap. Gestapelte Balken
+            und Treemap nutzen zusaetzlich eine sekundaere Gruppierung
+            (Treemap optional — ohne Sekundaerwahl flacher Top-N-Treemap).</p>
         </div>
         <div class="gat-panel__body">
           <div class="builder-conf">
@@ -770,6 +771,7 @@
                 <option value="line">Linie</option>
                 <option value="pie">Kreis/Ring</option>
                 <option value="bar-stacked">Balken gestapelt</option>
+                <option value="treemap">Treemap</option>
               </select></label>
             <label>Gruppieren nach
               <select id="builder-dim">

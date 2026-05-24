@@ -879,10 +879,13 @@ function builderChartPalette() {
 
 function builderEchartsOption(typ, daten, achsTitel, wertTitel, extras) {
   // extras: { pivot, dim2Titel } — wird fuer Diagrammtypen mit
-  // sekundaerer Gruppierungsachse genutzt (bisher: bar-stacked).
+  // sekundaerer Gruppierungsachse genutzt (bar-stacked, treemap).
   extras = extras || {}
   if (typ === "bar-stacked") {
     return builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras)
+  }
+  if (typ === "treemap") {
+    return builderEchartsOptionTreemap(daten, achsTitel, wertTitel, extras)
   }
   // Top 30 Kategorien — bei mehr Treffern den Rest unter "Sonstige"
   // buendeln. Vermeidet unleserliche Charts mit hunderten Zeilen.
@@ -961,9 +964,10 @@ function builderEchartsOption(typ, daten, achsTitel, wertTitel, extras) {
 }
 
 // Diagrammtypen, die eine sekundaere Gruppierung brauchen — wird vom UI
-// genutzt, um das passende Dropdown zu zeigen oder zu verstecken. Spaetere
-// Folge-Commits erweitern die Liste um Treemap und Heatmap.
-const BUILDER_TYPEN_MIT_DIM2 = new Set(["bar-stacked"])
+// genutzt, um das passende Dropdown zu zeigen oder zu verstecken. Treemap
+// nutzt dim2 optional: ohne sekundaere Gruppierung flacher Top-N-Treemap,
+// mit dim2 hierarchisch (Eltern -> Kinder).
+const BUILDER_TYPEN_MIT_DIM2 = new Set(["bar-stacked", "treemap"])
 
 function builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras) {
   // Gestapelte Balken (vertikal): primaere Gruppierung als x-Achse,
@@ -1024,6 +1028,79 @@ function builderEchartsOptionStacked(daten, achsTitel, wertTitel, extras) {
       axisLabel: { formatter: (v) =>
         Math.round(v).toLocaleString("de-AT") } },
     series,
+  }
+}
+
+function builderEchartsOptionTreemap(daten, achsTitel, wertTitel, extras) {
+  // Treemap: bei vorhandenem dim2 hierarchisch (primaere Gruppierung als
+  // Eltern, sekundaere als Kinder). Ohne dim2: flach — Top-N Posten direkt
+  // als Leaves. Treemap-Werte sind immer Math.abs, weil negative Flaechen
+  // in einem Treemap nicht sinnvoll dargestellt werden koennen.
+  const palette = builderChartPalette()
+  const TOPN_FLAT = 30
+  if (!extras.pivot) {
+    const zeigen = daten.slice(0, TOPN_FLAT)
+    return {
+      title: { text: `${wertTitel} nach ${achsTitel}`, left: "center" },
+      tooltip: {
+        formatter: (info) => {
+          const v = typeof info.value === "number" ? info.value : 0
+          return `${info.name}<br/>` +
+            `<strong>${Math.round(v).toLocaleString("de-AT")} €</strong>`
+        },
+      },
+      series: [{
+        type: "treemap",
+        roam: false,
+        nodeClick: false,
+        breadcrumb: { show: false },
+        data: zeigen.map((r, i) => ({
+          name: r.name,
+          value: Math.abs(r.wert),
+          itemStyle: { color: palette[i % palette.length] },
+        })),
+        label: { show: true, formatter: "{b}" },
+      }],
+    }
+  }
+  const { rowLabels, colLabels, matrix } = extras.pivot
+  const wurzeln = rowLabels.map((row, ri) => {
+    const kinder = colLabels.map((col, ci) => ({
+      name: col,
+      value: Math.abs(matrix[ri][ci]),
+    })).filter((k) => k.value > 0)
+    const summe = kinder.reduce((s, k) => s + k.value, 0)
+    return {
+      name: row,
+      value: summe,
+      itemStyle: { color: palette[ri % palette.length] },
+      children: kinder,
+    }
+  }).filter((w) => w.value > 0)
+  return {
+    title: { text: `${wertTitel} nach ${achsTitel} → ` +
+      `${extras.dim2Titel || "Sekundaer"}`, left: "center" },
+    tooltip: {
+      formatter: (info) => {
+        const v = typeof info.value === "number" ? info.value : 0
+        return `${info.name}<br/>` +
+          `<strong>${Math.round(v).toLocaleString("de-AT")} €</strong>`
+      },
+    },
+    series: [{
+      type: "treemap",
+      roam: false,
+      nodeClick: false,
+      breadcrumb: { show: false },
+      data: wurzeln,
+      levels: [
+        { itemStyle: { gapWidth: 2 } },
+        { itemStyle: { gapWidth: 1, borderWidth: 0 },
+          colorSaturation: [0.3, 0.6] },
+      ],
+      label: { show: true, formatter: "{b}" },
+      upperLabel: { show: true, height: 22, color: "#fff" },
+    }],
   }
 }
 
