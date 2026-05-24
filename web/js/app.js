@@ -1572,11 +1572,16 @@ function verdrahteAusgabenDrillSync() {
 
   // Auf das fertige Dashboard warten — dashboard.js expose `__sankeyDrill`
   // ganz am Ende. Helpers.mjs der E2E-Tests nutzt dasselbe Signal.
+  // Wenn nach 30 s kein Dashboard aufgebaut ist (kein PDF geladen), still
+  // aufhoeren — der Drill-Sync ist nur im geladenen Dashboard relevant.
+  let warteSekunden = 0
   function wartenAufBereit() {
     if (typeof window.__sankeyDrill === "function") {
       starte()
       return
     }
+    warteSekunden += 0.05
+    if (warteSekunden > 30) return
     setTimeout(wartenAufBereit, 50)
   }
   wartenAufBereit()
