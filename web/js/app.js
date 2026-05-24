@@ -57,6 +57,7 @@ async function init() {
   zeichneDokumentliste()
   zeichneDashboard()
   verdrahteVollbild()
+  verdrahteModal()
   verdrahteHcToggle()
   window.__appBereit = true
   zeigeBuildStempel()
@@ -147,30 +148,56 @@ function verdrahteOverlayFokus() {
   })
 }
 
-// --- Vollbild je Diagramm-Panel ------------------------------------------ //
-// Jedes Diagramm-Panel bekommt im Kopf einen ruhigen "Vergroessern"-Knopf.
-// Ein Klick legt das Panel ueber die native Fullscreen-API auf den ganzen
-// Schirm — gerade fuer die interaktiven Diagramme und fuer aeltere
-// Nutzer:innen eine deutlich bessere Lesbarkeit. Esc oder ein erneuter Klick
-// fuehren zurueck. Im Vollbild ist der .dash-chart-Div nicht mehr an seine
-// feste Inline-Hoehe gebunden (CSS .gat-panel:fullscreen); damit ECharts die
-// neue Flaeche fuellt, wird auf fullscreenchange ein window-resize-Event
-// ausgeloest — dashboard.js hoert darauf (resizeVisibleCharts) und passt
-// alle sichtbaren Diagramme an. dashboard.js bleibt unangetastet.
+// --- Diagramm-Panels: Aktionsleiste im Kopf ------------------------------ //
+// Im Kopf jedes Diagramm-Panels sitzt rechts vom Titel eine Aktionsleiste
+// (`.app-panel-actions`), in die `verdrahteVollbild` und `verdrahteModal`
+// jeweils ihre Knoepfe einhaengen. Sie wird genau einmal je Panel angelegt
+// — Tabellen-Panels (ohne `.dash-chart`) bleiben aussen vor.
+function holeDiagrammPanels() {
+  return document.querySelectorAll(".gat-panel:has(.dash-chart)")
+}
+
+function holeOderBaueAktionsleiste(panel) {
+  const kopf = panel.querySelector(".gat-panel__head")
+  const titel = kopf && kopf.querySelector("h3")
+  if (!kopf || !titel) return null
+  // Vorhandene Reihe (aus einem frueheren Verdrahtungsdurchlauf) wiederfinden.
+  let reihe = kopf.querySelector(":scope > .gat-panel__head-row")
+  let actions = reihe && reihe.querySelector(":scope > .app-panel-actions")
+  if (reihe && actions) return actions
+  if (!reihe) {
+    reihe = document.createElement("div")
+    reihe.className = "gat-panel__head-row"
+    kopf.insertBefore(reihe, titel)
+    reihe.appendChild(titel)
+  }
+  if (!actions) {
+    actions = document.createElement("div")
+    actions.className = "app-panel-actions"
+    reihe.appendChild(actions)
+  }
+  return actions
+}
+
+// --- Vollbild je Diagramm-Panel (Native Fullscreen-API) ------------------ //
+// Ein ruhiger "Vergroessern"-Knopf rechts im Panel-Kopf; ein Klick legt das
+// Panel ueber die native Fullscreen-API auf den ganzen Schirm. Esc oder ein
+// erneuter Klick fuehren zurueck. Im Vollbild ist der .dash-chart-Div nicht
+// mehr an seine feste Inline-Hoehe gebunden (CSS .gat-panel:fullscreen);
+// damit ECharts die neue Flaeche fuellt, wird auf fullscreenchange ein
+// window-resize-Event ausgeloest — dashboard.js hoert darauf
+// (resizeVisibleCharts) und passt alle sichtbaren Diagramme an. dashboard.js
+// bleibt unangetastet.
+//
+// Wo die Native-Fullscreen-API nicht verfuegbar ist (vor allem auf iPhone
+// Safari, `document.fullscreenEnabled === false`), wird hier gar kein Knopf
+// eingehaengt — die Modal-Variante (`verdrahteModal`) deckt dort ab.
 function verdrahteVollbild() {
-  // Fehlt die Fullscreen-API, wird gar kein Knopf eingehaengt — die App
-  // bleibt ohne ihn voll funktionsfaehig.
   if (!document.fullscreenEnabled) return
 
-  // Nur Panels mit einem echten Diagramm (.dash-chart) — Tabellen-Panels
-  // profitieren nicht von einer Vollbildansicht.
-  const panels = document.querySelectorAll(
-    ".gat-panel:has(.dash-chart)",
-  )
-  for (const panel of panels) {
-    const kopf = panel.querySelector(".gat-panel__head")
-    const titel = kopf && kopf.querySelector("h3")
-    if (!kopf || !titel) continue
+  for (const panel of holeDiagrammPanels()) {
+    const actions = holeOderBaueAktionsleiste(panel)
+    if (!actions) continue
 
     const btn = document.createElement("button")
     btn.type = "button"
@@ -186,14 +213,7 @@ function verdrahteVollbild() {
         panel.requestFullscreen().catch(() => {})
       }
     })
-
-    // Titel und Knopf in eine gemeinsame Kopfzeile setzen — der Knopf sitzt
-    // rechts neben dem Titel, ueber einer etwaigen Notiz/Sankey-Leiste.
-    const reihe = document.createElement("div")
-    reihe.className = "gat-panel__head-row"
-    kopf.insertBefore(reihe, titel)
-    reihe.appendChild(titel)
-    reihe.appendChild(btn)
+    actions.appendChild(btn)
   }
 
   // Vollbildwechsel: Knopf-Label/aria umstellen und ECharts neu vermessen.
@@ -223,6 +243,120 @@ function setzeVollbildLabel(btn, imVollbild) {
       ? "Diagramm wieder verkleinern"
       : "Diagramm auf Vollbild vergroessern",
   )
+}
+
+// --- Modal-Vollbild je Diagramm-Panel ------------------------------------ //
+// Diagramm-Vollbild ueber ein `<dialog class="gat-modal">` — funktioniert
+// auch auf iPhone Safari (wo `document.fullscreenEnabled === false` ist und
+// die Native-Variante deshalb gar nicht erst eingehaengt wird). Auf Desktop
+// und iPad sitzt der Knopf neben dem Native-Fullscreen-Knopf — beide
+// Varianten parallel verfuegbar, User entscheidet pro Klick.
+//
+// Strategie: der eigentliche `.dash-chart`-Knoten wird beim Oeffnen aus dem
+// Panel-Body in den Modal-Body verschoben (`appendChild`) und beim
+// Schliessen an seinen Ursprungsort zurueckgesetzt. Damit bleiben
+// ECharts-Instanz, Tooltips, Sankey-Drill-down und Treemap-Drill-Handler
+// vollstaendig erhalten — dashboard.js sieht nur eine Reihe
+// resize()-Events. Ein `data-app-modal-host`-Marker auf einem Platzhalter
+// merkt sich den Ursprungsort, damit das Zuruecksetzen unabhaengig vom
+// urspruenglichen Panel-Layout funktioniert.
+let aktivesModalChart = null
+
+function verdrahteModal() {
+  const dialog = document.getElementById("chart-modal")
+  if (!dialog) return
+  // Browser ohne HTML5-`<dialog>`-Unterstuetzung haben kein showModal().
+  // Dann bleibt nur die Native-Fullscreen-Variante (sofern verfuegbar)
+  // — ohne Modal-Knopf eingehaengt.
+  if (typeof dialog.showModal !== "function") return
+
+  const titel = document.getElementById("chart-modal-titel")
+  const close = document.getElementById("chart-modal-close")
+
+  // Knoepfe je Panel einhaengen.
+  for (const panel of holeDiagrammPanels()) {
+    const actions = holeOderBaueAktionsleiste(panel)
+    if (!actions) continue
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "app-panel-act-btn app-panel-modal-btn"
+    btn.textContent = "Im Vollbild oeffnen"
+    btn.setAttribute("aria-label", "Diagramm im Modal-Vollbild oeffnen")
+    btn.addEventListener("click", () => oeffneChartModal(panel))
+    actions.appendChild(btn)
+  }
+
+  // Schliessen-Knopf, Backdrop-Klick und das Standard-Esc-Verhalten des
+  // <dialog>-Elements werden zusammen ueber den `close`-Event abgewickelt.
+  close.addEventListener("click", () => dialog.close())
+  // Backdrop-Klick: klick liegt ausserhalb des Dialog-Rechtecks.
+  dialog.addEventListener("click", (ev) => {
+    if (ev.target !== dialog) return
+    const r = dialog.getBoundingClientRect()
+    if (ev.clientX < r.left || ev.clientX > r.right ||
+        ev.clientY < r.top || ev.clientY > r.bottom) {
+      dialog.close()
+    }
+  })
+  // Auf jeden Schliess-Vorgang reagieren (Esc, Knopf, Backdrop, .close()).
+  dialog.addEventListener("close", () => schliesseChartModal())
+}
+
+function oeffneChartModal(panel) {
+  const dialog = document.getElementById("chart-modal")
+  const body = document.getElementById("chart-modal-body")
+  const titelEl = document.getElementById("chart-modal-titel")
+  const chart = panel.querySelector(".dash-chart")
+  if (!dialog || !body || !chart) return
+
+  // Eventuell ein anderes Diagramm noch offen — sauber zurueckraeumen,
+  // bevor das neue eingehaengt wird.
+  if (aktivesModalChart) schliesseChartModal()
+
+  // Titel aus dem Panel uebernehmen (h3) — der Modal-Header zeigt
+  // dieselbe Beschriftung wie das Panel.
+  const titelQuelle = panel.querySelector(".gat-panel__head h3")
+  if (titelEl && titelQuelle) {
+    titelEl.textContent = titelQuelle.textContent || "Diagramm"
+  }
+
+  // Platzhalter merkt sich den Ursprungsort des Chart-Knotens.
+  const platzhalter = document.createElement("div")
+  platzhalter.setAttribute("data-app-modal-host", "1")
+  platzhalter.hidden = true
+  chart.parentNode.insertBefore(platzhalter, chart)
+  body.innerHTML = ""
+  body.appendChild(chart)
+  // Inline-Hoehe waehrend des Modal-Aufenthalts loesen, damit der Container
+  // die Flex-Hoehe annehmen kann. Wert wird beim Schliessen wiederhergestellt.
+  const inlineHoehe = chart.style.height
+  chart.style.height = ""
+  aktivesModalChart = { chart, platzhalter, inlineHoehe, panel }
+
+  dialog.showModal()
+  // ECharts neu vermessen, sobald der Dialog Geometrie hat.
+  requestAnimationFrame(() => {
+    window.dispatchEvent(new Event("resize"))
+  })
+  setTimeout(() => window.dispatchEvent(new Event("resize")), 120)
+}
+
+function schliesseChartModal() {
+  if (!aktivesModalChart) return
+  const { chart, platzhalter, inlineHoehe } = aktivesModalChart
+  aktivesModalChart = null
+  // Inline-Hoehe wiederherstellen, dann den Chart-Knoten zurueck an seinen
+  // Ursprungsort verschieben.
+  chart.style.height = inlineHoehe || ""
+  if (platzhalter && platzhalter.parentNode) {
+    platzhalter.parentNode.insertBefore(chart, platzhalter)
+    platzhalter.remove()
+  }
+  // ECharts neu vermessen — der Container hat jetzt wieder seine Panel-Hoehe.
+  requestAnimationFrame(() => {
+    window.dispatchEvent(new Event("resize"))
+  })
+  setTimeout(() => window.dispatchEvent(new Event("resize")), 120)
 }
 
 // Build-Commit aus version.json in die Fusszeile schreiben. Fehlt die Datei

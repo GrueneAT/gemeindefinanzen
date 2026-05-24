@@ -225,11 +225,21 @@ input, select { font-family: var(--gat-font-copy); }
   margin: var(--gat-space-2) 0 0;
 }
 
-/* --- Vollbild-Knopf je Diagramm-Panel ------------------------------------
-   App-eigener "Vergroessern"-Knopf — DS hat kein Pendant. Sitzt im
-   .gat-panel__head-row neben dem Titel und schaltet ueber die native
-   Fullscreen-API. */
-.app-panel-fs-btn {
+/* --- Panel-Aktionsknoepfe (Vollbild, Modal, PNG-Export) ------------------
+   App-eigene Sekundaerknoepfe im Panel-Kopf — DS hat kein Pendant fuer
+   diese sehr ruhige, beigefarbene Mini-Knopf-Optik. `.app-panel-fs-btn`
+   ist der Native-Fullscreen-Knopf, `.app-panel-act-btn` die allgemeinere
+   Klasse fuer die zusaetzlichen Knoepfe (Modal-Vollbild + PNG-Export);
+   beide teilen sich Form und Verhalten. Die Reihe `.app-panel-actions`
+   bundelt sie rechts vom Titel. */
+.app-panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gat-space-1);
+  flex: none;
+}
+.app-panel-fs-btn,
+.app-panel-act-btn {
   flex: none;
   font: inherit;
   font-family: var(--gat-font-headline);
@@ -244,14 +254,73 @@ input, select { font-family: var(--gat-font-copy); }
   transition: background 0.15s, border-color 0.15s, color 0.15s,
     box-shadow 0.15s;
 }
-.app-panel-fs-btn:hover {
+.app-panel-fs-btn:hover,
+.app-panel-act-btn:hover {
   background: var(--gat-web-green-tint);
   border-color: var(--gat-web-green-deep);
 }
-.app-panel-fs-btn:focus-visible {
+.app-panel-fs-btn:focus-visible,
+.app-panel-act-btn:focus-visible {
   outline: 2px solid var(--gat-web-green-deep);
   outline-offset: 2px;
   box-shadow: var(--gat-web-focus-ring);
+}
+
+/* --- Diagramm-Vollbild-Modal — App-spezifische Layout-Erweiterungen ------
+   Das DS-`.gat-modal` ist breit angelegt (max-width: min(64rem, 94vw)),
+   aber fuer ein eingehaengtes Diagramm wollen wir den vollen Viewport
+   nutzen — das ist der ganze Zweck der Vollbild-Aktion. Hoehe und Breite
+   werden hier auf den Viewport gedeckelt, Body und Diagramm-Container
+   teilen sich den Restraum als Flex-Spalte. */
+.app-chart-modal {
+  max-width: min(96rem, 98vw);
+  width: 98vw;
+  max-height: 96vh;
+  height: 96vh;
+  display: flex;
+  flex-direction: column;
+}
+.app-chart-modal[open] {
+  display: flex;
+}
+.app-chart-modal > .gat-modal__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gat-space-2);
+}
+.app-chart-modal > .gat-modal__head .gat-modal__title {
+  flex: 1 1 auto;
+  margin: 0;
+}
+.app-chart-modal__head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gat-space-1);
+  margin: 0;
+}
+.app-chart-modal__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* DS-Default deckelt das Body auf 70vh — hier nicht erwuenscht, der
+     Diagramm-Container muss die gesamte Restflaeche bekommen. */
+  max-height: none;
+  overflow: auto;
+}
+/* Diagramm-Container im Modal: fuellt die verbleibende Hoehe, die feste
+   Inline-Hoehe von dashboard.js wird ueberschrieben. ECharts wird beim
+   Oeffnen und Schliessen per resize() neu vermessen (siehe app.js). */
+.app-chart-modal__body .dash-chart {
+  flex: 1 1 auto;
+  height: auto !important;
+  min-height: 0;
+}
+/* Sankey-Drill-down-Brotkrumen behalten im Modal die Position direkt unter
+   dem Titel. */
+.app-chart-modal__body .sankey-bar {
+  margin: 0 0 var(--gat-space-2);
 }
 
 /* --- Diagramm-Panel im Vollbild — App-spezifische Layout-Erweiterungen ---
