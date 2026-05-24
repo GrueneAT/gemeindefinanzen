@@ -743,6 +743,69 @@
       <p class="table-hint" id="such-hint"></p>
         </div>
       </section>
+
+      <!-- Diagramm-Builder: ueber die aktuelle Filtermenge ein eigenes
+           Diagramm zusammenstellen. Achsen-/Wert-/Aggregations-Auswahl;
+           Diagrammtyp Balken/Linie/Kreis. Render-Knopf erzeugt eine
+           neue ECharts-Instanz im Builder-Host; Aktions-Knoepfe (Modal-
+           Vollbild + PNG-Export) werden per app.js dynamisch eingehaengt
+           und nutzen denselben Pfad wie die Dashboard-Charts. -->
+      <section class="gat-panel" id="builder-panel">
+        <div class="gat-panel__head">
+          <h3>Diagramm-Builder</h3>
+          <p class="gat-panel__note">Aus der aktuellen Filtermenge der
+            Suche ein eigenes Diagramm bauen. Gruppierung nach Kategorie,
+            Wert aus einer der Betragsspalten, Aggregation nach Summe,
+            Durchschnitt oder Anzahl. Diagrammtypen: Balken (horizontal
+            oder vertikal), Linie, Kreis/Ring.</p>
+        </div>
+        <div class="gat-panel__body">
+          <div class="builder-conf">
+            <label>Diagrammtyp
+              <select id="builder-typ">
+                <option value="bar-h">Balken (horizontal)</option>
+                <option value="bar-v">Balken (vertikal)</option>
+                <option value="line">Linie</option>
+                <option value="pie">Kreis/Ring</option>
+              </select></label>
+            <label>Gruppieren nach
+              <select id="builder-dim">
+                <option value="gruppe">Aufgabengruppe</option>
+                <option value="ansatz">Ansatz</option>
+                <option value="bezeichnung">Bezeichnung</option>
+                <option value="dok">Dokument</option>
+                <option value="richtung">Richtung</option>
+                <option value="gebarung">Gebarung</option>
+              </select></label>
+            <label>Wertspalte
+              <select id="builder-wert">
+                <option value="ew">EH wert</option>
+                <option value="ev">EH vergleich</option>
+                <option value="ed">EH dritte</option>
+                <option value="fw">FH wert</option>
+                <option value="fv">FH vergleich</option>
+                <option value="fd">FH dritte</option>
+              </select></label>
+            <label>Aggregation
+              <select id="builder-agg">
+                <option value="summe">Summe</option>
+                <option value="durchschnitt">Durchschnitt</option>
+                <option value="anzahl">Anzahl Posten</option>
+              </select></label>
+          </div>
+          <div class="builder-aktionen">
+            <button type="button" class="gat-btn gat-btn--primary"
+                    id="builder-render">Diagramm erstellen</button>
+            <p class="builder-meta" id="builder-meta">
+              Klick auf „Diagramm erstellen" — die aktuelle Filtermenge
+              der Suche wird verwendet.</p>
+          </div>
+          <div class="builder-chart-host" id="builder-chart-host" hidden>
+            <div id="c_builder" class="dash-chart"
+                 style="height:460px"></div>
+          </div>
+        </div>
+      </section>
     </section>
 
     <!-- Diagramm-Galerie — sammelt alle Dashboard-Diagramme in einer

@@ -59,6 +59,7 @@ async function init() {
   verdrahteVollbild()
   verdrahteModal()
   verdrahtePngExport()
+  verdrahteBuilder()
   verdrahteGalerie()
   verdrahteHcToggle()
   window.__appBereit = true
@@ -647,6 +648,286 @@ function saeubereDateiname(roh) {
     .replace(/[^A-Za-z0-9._-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
+}
+
+// --- Diagramm-Builder ---------------------------------------------------- //
+// Im "Suche & Daten"-Tab sitzt unter der Detailposten-Tabelle ein Builder,
+// der aus der aktuellen Filtermenge (denselben Filter-Inputs wie die
+// Suchtabelle) ein eigenes Diagramm aufbaut. Diagrammtyp, Gruppierung,
+// Wertspalte und Aggregation werden ueber vier Dropdowns gewaehlt;
+// "Diagramm erstellen" rendert das Ergebnis in `#c_builder`.
+//
+// Daten kommen aus `window.DATA.posten` (dashboard-data.js stellt sie
+// global bereit, sobald baueDashboard durchgelaufen ist). Die Filter
+// werden direkt aus dem DOM gelesen — wir duplizieren dabei die Logik
+// aus dashboard.js (setupSearch.matches), ohne den Vendor anzufassen.
+// Das ist bewusst eine Kopie statt eines Hooks: dashboard.js ist tabu,
+// und der Builder soll auch dann funktionieren, wenn der Vendor
+// irgendwann anders gebaut wird. Bei einer Aenderung der Filter-Felder
+// muessen beide Stellen synchron bleiben — der Test prueft die
+// Filtermenge per Vergleich gegen die Anzahl-Anzeige der Suchtabelle.
+
+const BUILDER_DIM_LABELS = {
+  gruppe: "Aufgabengruppe",
+  ansatz: "Ansatz",
+  bezeichnung: "Bezeichnung",
+  dok: "Dokument",
+  richtung: "Richtung",
+  gebarung: "Gebarung",
+}
+
+const BUILDER_WERT_LABELS = {
+  ew: "EH wert",
+  ev: "EH vergleich",
+  ed: "EH dritte",
+  fw: "FH wert",
+  fv: "FH vergleich",
+  fd: "FH dritte",
+}
+
+function builderFiltereMatch(p) {
+  // Spiegelt setupSearch.matches() aus dashboard.js — exakt dieselben
+  // Filter-Inputs, dieselbe Semantik. Bei Aenderung der Filter-Felder im
+  // Markup muessen beide Stellen synchron bleiben.
+  const qEl = document.getElementById("f-such")
+  const dokEl = document.getElementById("f-dok")
+  const grpEl = document.getElementById("f-gruppe")
+  const richtEl = document.getElementById("f-richtung")
+  const gebEl = document.getElementById("f-gebarung")
+  const minEl = document.getElementById("f-min")
+  const maxEl = document.getElementById("f-max")
+  if (!qEl) return true
+  const q = (qEl.value || "").trim().toLowerCase()
+  const dok = dokEl ? dokEl.value : ""
+  const grp = grpEl ? grpEl.value : ""
+  const richt = richtEl ? richtEl.value : ""
+  const geb = gebEl ? gebEl.value : ""
+  const min = minEl && minEl.value !== "" ? parseFloat(minEl.value) : null
+  const max = maxEl && maxEl.value !== "" ? parseFloat(maxEl.value) : null
+  if (dok && String(p.dok) !== dok) return false
+  if (grp && p.gruppe !== grp) return false
+  if (richt && p.richtung !== richt) return false
+  if (geb && p.gebarung !== geb) return false
+  if (min !== null && p.ew < min) return false
+  if (max !== null && p.ew > max) return false
+  if (q) {
+    const hay = (p.bezeichnung + " " + p.konto + " " + p.ansatz + " " +
+                 (p.ansatz_text || "")).toLowerCase()
+    if (hay.indexOf(q) === -1) return false
+  }
+  return true
+}
+
+function builderKategorieLabel(p, dim) {
+  // Label fuer die x-Achse je Gruppierung. Fuer Codes (gruppe/ansatz)
+  // zusaetzlich den Klartext einblenden, soweit vorhanden — sonst nur
+  // der Code.
+  if (dim === "gruppe") {
+    return p.gruppe + (p.gruppe_text ? " " + p.gruppe_text : "")
+  }
+  if (dim === "ansatz") {
+    return p.ansatz + (p.ansatz_text ? " " + p.ansatz_text : "")
+  }
+  if (dim === "dok") {
+    // p.dok ist eine ID; das Switcher-Label kennt den Klartext.
+    const docs = (window.DATA && window.DATA.dokumente) || []
+    const d = docs.find((x) => String(x.id) === String(p.dok))
+    return d ? d.label : String(p.dok)
+  }
+  return String(p[dim] || "")
+}
+
+function builderAggregiere(posten, dim, wertfeld, agg) {
+  // Gruppieren nach Kategorie, dann aggregieren. Liefert ein Array
+  // [{ name, wert, anzahl }] absteigend nach wert sortiert.
+  const eimer = new Map()
+  for (const p of posten) {
+    const name = builderKategorieLabel(p, dim)
+    if (!name) continue
+    const v = Number(p[wertfeld]) || 0
+    const e = eimer.get(name)
+    if (e) {
+      e.summe += v
+      e.anzahl += 1
+    } else {
+      eimer.set(name, { summe: v, anzahl: 1 })
+    }
+  }
+  const ergebnis = []
+  for (const [name, e] of eimer.entries()) {
+    let wert
+    if (agg === "summe") wert = e.summe
+    else if (agg === "durchschnitt") {
+      wert = e.anzahl > 0 ? e.summe / e.anzahl : 0
+    } else if (agg === "anzahl") wert = e.anzahl
+    else wert = e.summe
+    ergebnis.push({ name, wert, anzahl: e.anzahl })
+  }
+  ergebnis.sort((a, b) => b.wert - a.wert)
+  return ergebnis
+}
+
+function builderEchartsOption(typ, daten, achsTitel, wertTitel) {
+  // Top 30 Kategorien — bei mehr Treffern den Rest unter "Sonstige"
+  // buendeln. Vermeidet unleserliche Charts mit hunderten Zeilen.
+  const TOPN = 30
+  let zeigen = daten
+  if (daten.length > TOPN) {
+    const top = daten.slice(0, TOPN)
+    const rest = daten.slice(TOPN)
+    const restSumme = rest.reduce((s, r) => s + r.wert, 0)
+    zeigen = top.concat([{ name: `Sonstige (${rest.length})`,
+      wert: restSumme, anzahl: rest.reduce((s, r) => s + r.anzahl, 0) }])
+  }
+  const labels = zeigen.map((r) => r.name)
+  const werte = zeigen.map((r) => r.wert)
+  const baseTooltip = {
+    trigger: typ === "pie" ? "item" : "axis",
+    valueFormatter: (v) =>
+      typeof v === "number"
+        ? Math.round(v).toLocaleString("de-AT") + " €"
+        : String(v),
+  }
+  if (typ === "pie") {
+    return {
+      title: { text: `${wertTitel} nach ${achsTitel}`, left: "center" },
+      tooltip: baseTooltip,
+      legend: { type: "scroll", bottom: 0 },
+      series: [{
+        type: "pie",
+        radius: ["35%", "65%"],
+        center: ["50%", "50%"],
+        data: zeigen.map((r) => ({ name: r.name, value: r.wert })),
+        label: { formatter: "{b}: {d}%" },
+      }],
+    }
+  }
+  if (typ === "line") {
+    return {
+      title: { text: `${wertTitel} nach ${achsTitel}`, left: "center" },
+      tooltip: baseTooltip,
+      grid: { left: 60, right: 24, top: 56, bottom: 80, containLabel: true },
+      xAxis: { type: "category", data: labels,
+        axisLabel: { rotate: 35, fontSize: 11 } },
+      yAxis: { type: "value",
+        axisLabel: { formatter: (v) =>
+          Math.round(v).toLocaleString("de-AT") } },
+      series: [{ type: "line", data: werte, smooth: true,
+        areaStyle: { opacity: 0.18 } }],
+    }
+  }
+  // bar-h | bar-v
+  const horiz = typ === "bar-h"
+  return {
+    title: { text: `${wertTitel} nach ${achsTitel}`, left: "center" },
+    tooltip: baseTooltip,
+    grid: { left: horiz ? 220 : 56, right: 24, top: 56, bottom: horiz ? 40 : 100,
+      containLabel: true },
+    xAxis: horiz
+      ? { type: "value",
+          axisLabel: { formatter: (v) =>
+            Math.round(v).toLocaleString("de-AT") } }
+      : { type: "category", data: labels,
+          axisLabel: { rotate: 35, fontSize: 11 } },
+    yAxis: horiz
+      ? { type: "category",
+          data: labels.slice().reverse(),
+          axisLabel: { fontSize: 11 } }
+      : { type: "value",
+          axisLabel: { formatter: (v) =>
+            Math.round(v).toLocaleString("de-AT") } },
+    series: [{
+      type: "bar",
+      data: horiz ? werte.slice().reverse() : werte,
+      itemStyle: { color: "#2c6e40" },
+    }],
+  }
+}
+
+function verdrahteBuilder() {
+  const btn = document.getElementById("builder-render")
+  if (!btn) return
+  const meta = document.getElementById("builder-meta")
+  const host = document.getElementById("builder-chart-host")
+  const chartEl = document.getElementById("c_builder")
+  const typEl = document.getElementById("builder-typ")
+  const dimEl = document.getElementById("builder-dim")
+  const wertEl = document.getElementById("builder-wert")
+  const aggEl = document.getElementById("builder-agg")
+  if (!chartEl || !typEl) return
+
+  // ECharts-Instanz erst beim ersten Render anlegen, damit das Layout
+  // korrekte Pixel-Werte hat. Spaetere Renders nutzen dieselbe Instanz.
+  let inst = null
+
+  function render() {
+    const echartsRef = window.echarts
+    if (!echartsRef) {
+      toast("ECharts noch nicht geladen — bitte gleich nochmal versuchen.",
+        "warn")
+      return
+    }
+    const alle = (window.DATA && window.DATA.posten) || []
+    if (alle.length === 0) {
+      toast("Keine Daten — bitte zuerst ein Dokument hochladen.", "warn")
+      return
+    }
+    const gefiltert = alle.filter(builderFiltereMatch)
+    if (gefiltert.length === 0) {
+      meta.textContent = "Keine Posten in der aktuellen Filtermenge — " +
+        "Filter im Suche-Tab anpassen."
+      return
+    }
+    const dim = dimEl.value
+    const wert = wertEl.value
+    const agg = aggEl.value
+    const typ = typEl.value
+    const daten = builderAggregiere(gefiltert, dim, wert, agg)
+    if (daten.length === 0) {
+      meta.textContent = "Keine Kategorien in der Filtermenge — " +
+        "andere Gruppierung waehlen."
+      return
+    }
+    host.hidden = false
+    if (!inst) {
+      inst = echartsRef.init(chartEl)
+    }
+    const wertTitel = agg === "anzahl"
+      ? "Anzahl Posten"
+      : `${BUILDER_WERT_LABELS[wert] || wert} (${agg})`
+    const achsTitel = BUILDER_DIM_LABELS[dim] || dim
+    inst.setOption(builderEchartsOption(typ, daten, achsTitel, wertTitel),
+      true)
+    inst.resize()
+    meta.innerHTML = "<strong>" + gefiltert.length + "</strong> Posten in " +
+      daten.length + " " + achsTitel + "-Kategorien"
+  }
+
+  btn.addEventListener("click", render)
+  // Bei Aenderung der Dropdowns automatisch neu rendern, sobald die
+  // Instanz schon existiert (nicht beim ersten Laden, bevor der User
+  // bewusst auf "Erstellen" geklickt hat).
+  for (const el of [typEl, dimEl, wertEl, aggEl]) {
+    el.addEventListener("change", () => {
+      if (inst) render()
+    })
+  }
+
+  // Resize-Forwarding: bei Tab-Wechseln triggert dashboard.js ein resize,
+  // aber unsere Instanz haengt erst beim ersten Render. Ein eigener
+  // Resize-Hoerer faengt Layoutaenderungen.
+  window.addEventListener("resize", () => {
+    if (inst) inst.resize()
+  })
+
+  if (typeof window !== "undefined") {
+    window.__builder = {
+      builderAggregiere,
+      builderFiltereMatch,
+      render,
+      getInstance: () => inst,
+    }
+  }
 }
 
 // --- Diagramm-Galerie ---------------------------------------------------- //
