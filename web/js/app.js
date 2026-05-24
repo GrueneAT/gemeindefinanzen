@@ -524,8 +524,21 @@ async function exportierePanelAlsPng(panel) {
     ? echartsRef.getInstanceByDom(chart)
     : null
   if (!inst) {
-    toast("Diagramm noch nicht bereit — bitte gleich nochmal versuchen.",
-      "warn")
+    // Builder ist erst nach Klick auf "Diagramm erstellen" gerendert —
+    // dort hilft der generische "noch nicht bereit"-Hinweis nicht weiter,
+    // weil das Diagramm gar nicht bereitstehen kann, solange der User
+    // nicht auf den Render-Knopf geklickt hat. Klarer Hinweis statt
+    // dem irrefuehrenden "gleich nochmal versuchen".
+    if (panel && panel.id === "builder-panel") {
+      toast(
+        "Bitte zuerst auf „Diagramm erstellen“ klicken — " +
+          "danach kann das Diagramm als PNG gespeichert werden.",
+        "warn",
+      )
+    } else {
+      toast("Diagramm noch nicht bereit — bitte gleich nochmal versuchen.",
+        "warn")
+    }
     return
   }
   let dataUrl = ""
@@ -677,10 +690,43 @@ function kuerzeText(ctx, text, maxBreite) {
 
 function leseTitelAusPanel(panel) {
   const h3 = panel.querySelector(".gat-panel__head h3")
-  if (h3) {
-    return (h3.textContent || "").trim().replace(/\s+/g, " ")
+  const basis = h3
+    ? (h3.textContent || "").trim().replace(/\s+/g, " ")
+    : "Diagramm"
+  // Beim Diagramm-Builder ist der statische h3-Text „Diagramm-Builder" —
+  // er sagt nichts ueber das tatsaechlich gebaute Diagramm aus. Den Titel
+  // mit der aktuellen Builder-Konfiguration ergaenzen (Gruppierung,
+  // Wertspalte, Aggregation), damit der PNG-Footer aussagekraeftig ist.
+  if (panel && panel.id === "builder-panel") {
+    const zusatz = leseBuilderKonfigBezeichnung()
+    if (zusatz) return `${basis} · ${zusatz}`
   }
-  return "Diagramm"
+  return basis
+}
+
+// Eine kompakte Bezeichnung des aktuell konfigurierten Builder-Diagramms —
+// fuer den PNG-Footer und Diagnose-Zwecke. Liefert z. B.
+// „Aufgabengruppe — EH wert (Summe)" oder mit Sekundaer-Gruppierung
+// „Aufgabengruppe × Richtung — EH wert (Summe)".
+function leseBuilderKonfigBezeichnung() {
+  const dimEl = document.getElementById("builder-dim")
+  const wertEl = document.getElementById("builder-wert")
+  const aggEl = document.getElementById("builder-agg")
+  const stackEl = document.getElementById("builder-stack")
+  const stackWrap = document.getElementById("builder-stack-wrap")
+  if (!dimEl || !wertEl || !aggEl) return ""
+  const dim = BUILDER_DIM_LABELS[dimEl.value] || dimEl.value
+  const wert = BUILDER_WERT_LABELS[wertEl.value] || wertEl.value
+  const agg = aggEl.value
+  const aggLabel = agg.charAt(0).toUpperCase() + agg.slice(1)
+  // Sekundaere Gruppierung nur einbeziehen, wenn das Feld aktuell sichtbar
+  // ist und einen Wert traegt (sonst hat es keine Wirkung auf das Diagramm).
+  const stack = stackEl && stackWrap && !stackWrap.hidden && stackEl.value
+    ? (BUILDER_DIM_LABELS[stackEl.value] || stackEl.value)
+    : ""
+  const dimTeil = stack ? `${dim} × ${stack}` : dim
+  if (agg === "anzahl") return `${dimTeil} — Anzahl Posten`
+  return `${dimTeil} — ${wert} (${aggLabel})`
 }
 
 function leseAktivesDokLabel() {
@@ -706,6 +752,7 @@ if (typeof window !== "undefined") {
   window.__brandFooter = {
     brandePngMitFooter,
     leseTitelAusPanel,
+    leseBuilderKonfigBezeichnung,
     leseAktivesDokLabel,
     formatHeute,
     FOOTER_PIXEL_RATIO,
@@ -1549,6 +1596,67 @@ function verdrahteAusgabenDrillSync() {
     })
   }
 
+  // „Zurueck"-Knopf je drillbarem Panel (Treemap + Pie). Der Text-Crumb-
+  // Pfad in `.drill-crumbs` ist raeumlich weit von den Charts entfernt —
+  // ein Knopf direkt im Panel-Kopf gibt dem User einen sichtbaren Rueckweg.
+  // Klick triggert intern den hoechsten *aktivierten* Crumb-Button, also
+  // genau eine Ebene flacher. Vendor `dashboard.js` reagiert wie beim
+  // direkten Klick auf einen Crumb (siehe Listener in dashboard.js Zeile
+  // 372 ff.), der MutationObserver re-rendert anschliessend Treemap und
+  // Pie aus dem neuen Drill-Scope.
+  function triggereDrillEbeneHoeher() {
+    const aktivierte = crumbsEl.querySelectorAll(
+      "button[data-level]:not([disabled])",
+    )
+    if (aktivierte.length === 0) return
+    // Der hoechste enabled-Level ist die naechste flachere Ebene
+    // (z. B. auf Drill-Tiefe 2 sind data-level=0 und data-level=1 enabled —
+    // wir wollen Level 1, also den letzten der Liste).
+    const ziel = aktivierte[aktivierte.length - 1]
+    ziel.click()
+  }
+
+  function baueDrillZurueckKnopf() {
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "app-panel-act-btn app-drill-back-btn"
+    btn.textContent = "⬆ Zurueck"
+    btn.setAttribute("aria-label", "Eine Drill-Ebene hoeher")
+    btn.hidden = true
+    btn.addEventListener("click", triggereDrillEbeneHoeher)
+    return btn
+  }
+
+  function haengeZurueckKnoepfeEin() {
+    // Idempotent — beim erneuten Aufruf nicht doppelt einhaengen.
+    for (const chartId of ["c_treemap", "c_aufwandart"]) {
+      const chartEl = document.getElementById(chartId)
+      if (!chartEl) continue
+      const panel = chartEl.closest(".gat-panel")
+      if (!panel) continue
+      let actions = panel.querySelector(".app-panel-actions")
+      if (!actions) {
+        // Aktionsleiste sollte bereits durch verdrahtePngExport gebaut
+        // worden sein; hier defensiv anlegen, falls die Reihenfolge sich
+        // mal aendert.
+        actions = holeOderBaueAktionsleiste(panel)
+      }
+      if (!actions) continue
+      if (actions.querySelector(".app-drill-back-btn")) continue
+      // Knopf links in die Reihe einhaengen, damit er bei aktivem Drill
+      // sofort auffaellt — die ruhigen Vollbild-/Modal-/PNG-Knoepfe
+      // bleiben rechts daneben.
+      actions.insertBefore(baueDrillZurueckKnopf(), actions.firstChild)
+    }
+  }
+
+  function aktualisiereZurueckKnoepfe() {
+    const tiefe = leseDrillTiefe()
+    for (const btn of document.querySelectorAll(".app-drill-back-btn")) {
+      btn.hidden = tiefe === 0
+    }
+  }
+
   // Initial-Render und Observer; aber erst nachdem das Dashboard
   // aufgebaut ist und die Charts ECharts-Instanzen haben. dashboard.js
   // setzt setupSankeyDrill am Ende — `__sankeyDrill` als Bereitschafts-
@@ -1557,6 +1665,8 @@ function verdrahteAusgabenDrillSync() {
     rendereBeide()
     haengeChartKlickHandler("c_treemap", baueChartDaten)
     haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+    haengeZurueckKnoepfeEin()
+    aktualisiereZurueckKnoepfe()
     const beobachter = new MutationObserver(() => {
       // Bei jeder Aenderung der Crumbs (drill-Tiefe gewechselt) oder
       // der Liste (Inhalte gewechselt) beide Charts neu zeichnen.
@@ -1565,6 +1675,8 @@ function verdrahteAusgabenDrillSync() {
       // bei einigen Versionen Handler beim setOption(true) ab.
       haengeChartKlickHandler("c_treemap", baueChartDaten)
       haengeChartKlickHandler("c_aufwandart", baueChartDaten)
+      // Zurueck-Knopf-Sichtbarkeit an die aktuelle Drill-Tiefe koppeln.
+      aktualisiereZurueckKnoepfe()
     })
     beobachter.observe(crumbsEl, { childList: true, subtree: true })
     beobachter.observe(listEl, { childList: true })
@@ -1591,6 +1703,8 @@ function verdrahteAusgabenDrillSync() {
       rendereBeide,
       baueChartDaten,
       leseDrillTiefe,
+      triggereDrillEbeneHoeher,
+      aktualisiereZurueckKnoepfe,
     }
   }
 }
