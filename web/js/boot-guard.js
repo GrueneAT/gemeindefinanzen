@@ -32,16 +32,44 @@
     return
   }
 
-  // Fall 2: unbehandelte Fehler sichtbar machen.
+  // Fall 2: unbehandelte Fehler sichtbar machen — aber nur eigene.
+  // Browser-Extensions (Password-Manager, Translation-Tools usw.) feuern oft
+  // Errors in den window-Scope der Seite ("Tab not found", "runtime.sendMessage"
+  // u. ae.). Die sind nicht aus unserem Code und sollen den Nutzer nicht stoeren.
+  function istEigenerFehler(e) {
+    if (!e) return true
+    var filename = e.filename || (e.error && e.error.fileName) || ""
+    // Kein filename verfuegbar (z. B. CORS-isolierte Fehler) -> als eigen
+    // behandeln, damit echte App-Fehler nicht durchs Raster fallen.
+    if (!filename) return true
+    // Extension-Origins (chrome-extension://, moz-extension://, safari-web-
+    // extension://, edge-extension://) ausfiltern.
+    return !/^[a-z-]+-extension:\/\//i.test(filename)
+  }
   function zeigeFehler(text) {
     banner("<strong>Fehler beim Start:</strong> " + String(text))
   }
   window.addEventListener("error", function (e) {
+    if (!istEigenerFehler(e)) {
+      if (typeof console !== "undefined" && console.debug) {
+        console.debug("boot-guard: Extension-Fehler ignoriert:", e && e.message)
+      }
+      return
+    }
     zeigeFehler((e && e.message) || e)
   })
   window.addEventListener("unhandledrejection", function (e) {
     var r = e && e.reason
-    zeigeFehler((r && r.message) || r || "unbekannt")
+    var msg = (r && r.message) || r || "unbekannt"
+    // Promise-Rejections ohne sinnvollen Inhalt (typischerweise von
+    // Extensions, die ihre internen Messages nicht catchen) ignorieren.
+    if (/Tab not found|runtime\.sendMessage|message channel closed/i.test(String(msg))) {
+      if (typeof console !== "undefined" && console.debug) {
+        console.debug("boot-guard: Extension-Rejection ignoriert:", msg)
+      }
+      return
+    }
+    zeigeFehler(msg)
   })
 
   // Fall 3: Start bleibt aus — die App setzt window.__appBereit, wenn sie
