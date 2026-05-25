@@ -100,29 +100,66 @@ export function laengsterLauf(seiten) {
   return [bestStart, bestEnd]
 }
 
-// Ist `nadel` im Volltext einer Seite enthalten? Billiger Test ohne Wort-
-// und Zeilenrekonstruktion — fuer den Abschnitts-Fallback gedacht.
-function pageEnthaelt(doc, pageIndex, nadel) {
+// Fallback-Suche fuer den Detailnachweis-Range, wenn kein TOC-Bookmark da ist.
+//
+// Mehrstufig:
+// 1. Primaer: Seitenkopf-Header "Detailnachweis" (Herzogenburg/NOe-Standard).
+//    Wenn der zusammenhaengende Lauf mind. 10 Seiten umfasst, wird er genutzt.
+// 2. Fallback: "Voranschlagsstellen" (manche Software-Anbieter).
+// 3. Letzter Fallback: "Ansatz NNNNNN" als laufender Header (Vorau, kleine
+//    Burgenland-Gemeinden). Bei vielen Treffern (>=50) wird der Hull-Range
+//    [min, max] genommen — der Detail-Block ist sonst zerstueckelt und der
+//    laengste zusammenhaengende Lauf nur ein Ausschnitt.
+//
+// Erfasst Volltext einer Seite einmal (durch toStructuredText).
+function pageText(doc, pageIndex) {
   let buf = ""
   doc.loadPage(pageIndex).toStructuredText().walk({
-    onChar(c) {
-      buf += c
-    },
+    onChar(c) { buf += c },
   })
-  return buf.includes(nadel)
+  return buf
 }
 
-// Fallback, wenn ein PDF keine Lesezeichen hat: den Detailnachweis-Abschnitt
-// ueber die laufende Seitenkopfzeile finden. Jede Seite des Abschnitts traegt
-// im Kopf den Text "Detailnachweis". Ergebnis: [erste, letzte] (0-basiert)
-// oder null, wenn keine solche Seite existiert.
+const ANSATZ_HEADER_RE = /Ansatz\s+\d{6}/
+
 export function detailnachweisRangeByText(doc) {
-  const treffer = []
   const n = doc.countPages()
-  for (let p = 0; p < n; p++) {
-    if (pageEnthaelt(doc, p, "Detailnachweis")) treffer.push(p)
+  const texts = new Array(n)
+  const getText = (p) => {
+    if (texts[p] === undefined) texts[p] = pageText(doc, p)
+    return texts[p]
   }
-  return laengsterLauf(treffer)
+
+  // 1. Detailnachweis-Header
+  const treffer1 = []
+  for (let p = 0; p < n; p++) {
+    if (getText(p).includes("Detailnachweis")) treffer1.push(p)
+  }
+  const lauf1 = laengsterLauf(treffer1)
+  if (lauf1 && lauf1[1] - lauf1[0] >= 10) return lauf1
+
+  // 2. Voranschlagsstellen
+  const treffer2 = []
+  for (let p = 0; p < n; p++) {
+    if (getText(p).includes("Voranschlagsstellen")) treffer2.push(p)
+  }
+  const lauf2 = laengsterLauf(treffer2)
+  if (lauf2 && lauf2[1] - lauf2[0] >= 10) return lauf2
+
+  // 3. Ansatz \d{6}
+  const treffer3 = []
+  for (let p = 0; p < n; p++) {
+    if (ANSATZ_HEADER_RE.test(getText(p))) treffer3.push(p)
+  }
+  const lauf3 = laengsterLauf(treffer3)
+  if (treffer3.length >= 50) {
+    return [Math.min(...treffer3), Math.max(...treffer3)]
+  }
+  if (lauf3 && lauf3[1] - lauf3[0] >= 10) return lauf3
+  if (treffer3.length >= 20) {
+    return [Math.min(...treffer3), Math.max(...treffer3)]
+  }
+  return lauf1 || lauf2 || lauf3
 }
 
 // Zeichen einer Seite einsammeln und zu Woertern rekonstruieren.
@@ -194,7 +231,7 @@ export function pageLines(doc, pageIndex, yTol = Y_TOL) {
 }
 
 // Reinen Text einer Seite zeilenweise gewinnen (fuer document_meta).
-function pageText(doc, pageIndex) {
+function pageLineTexts(doc, pageIndex) {
   return pageLines(doc, pageIndex).map((ln) => ln.text)
 }
 
@@ -204,7 +241,7 @@ export function documentMeta(doc) {
   const grenze = Math.min(6, doc.countPages())
   const zeilen = []
   for (let p = 0; p < grenze; p++) {
-    zeilen.push(...pageText(doc, p))
+    zeilen.push(...pageLineTexts(doc, p))
   }
 
   for (const roh of zeilen) {
