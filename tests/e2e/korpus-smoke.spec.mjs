@@ -4,6 +4,11 @@
 
 import { test, expect } from '@playwright/test'
 import { oeffneApp } from './helpers.mjs'
+import { existsSync } from 'node:fs'
+
+// Korpus-Tests laufen nur lokal — documents/korpus/ ist nicht commited.
+test.skip(!existsSync('documents/korpus'),
+  'documents/korpus/ nicht vorhanden — Korpus-Test uebersprungen.')
 
 const PROBEN = [
   'documents/korpus/burgenland/steinbrunn-va-2023.pdf',       // 2-Wort-Modus

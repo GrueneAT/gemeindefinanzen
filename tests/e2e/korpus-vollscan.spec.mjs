@@ -7,11 +7,14 @@
 
 import { test } from '@playwright/test'
 import { oeffneApp } from './helpers.mjs'
-import { readdirSync, statSync, writeFileSync } from 'node:fs'
+import { readdirSync, statSync, writeFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 const KORPUS = 'documents/korpus'
 const BERICHT = 'documents/_ui_vollscan.json'
+
+test.skip(!existsSync(KORPUS),
+  'documents/korpus/ nicht vorhanden — Vollscan uebersprungen.')
 
 function sammlePdfs(wurzel) {
   const pdfs = []

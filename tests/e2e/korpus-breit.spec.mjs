@@ -4,6 +4,10 @@
 
 import { test, expect } from '@playwright/test'
 import { oeffneApp } from './helpers.mjs'
+import { existsSync } from 'node:fs'
+
+test.skip(!existsSync('documents/korpus'),
+  'documents/korpus/ nicht vorhanden — Korpus-Test uebersprungen.')
 
 const PROBEN = [
   'documents/korpus/burgenland/pinkafeld-va-2026.pdf',

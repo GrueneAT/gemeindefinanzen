@@ -3,6 +3,10 @@
 
 import { test, expect } from '@playwright/test'
 import { oeffneApp } from './helpers.mjs'
+import { existsSync } from 'node:fs'
+
+test.skip(!existsSync('documents/korpus'),
+  'documents/korpus/ nicht vorhanden — Korpus-Test uebersprungen.')
 
 // Erwartete Mindest-Posten je Layout-Familie (großzügig nach unten gewählt —
 // echte Werte sind 1000-5000+). Liefert die UI 0 Posten, ist der Test fail.
