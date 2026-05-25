@@ -76,18 +76,88 @@ def _laengster_lauf(seiten: list[int]) -> tuple[int, int] | None:
 def detailnachweis_range_by_text(doc: fitz.Document) -> tuple[int, int] | None:
     """Fallback, wenn ein PDF keine Lesezeichen hat.
 
-    Den Detailnachweis-Abschnitt ueber die laufende Seitenkopfzeile finden:
-    jede Seite des Abschnitts traegt im Kopf den Text ``Detailnachweis``.
+    Mehrstufige Suche:
+    1. Primaer: Seitenkopf-Header ``Detailnachweis`` (Herzogenburg/NÖ-Standard).
+       Wenn der zusammenhaengende Lauf mind. 10 Seiten umfasst, wird er genutzt.
+    2. Fallback: Seitenkopf-Header ``Voranschlagsstellen`` (manche Software).
+    3. Letzter Fallback: Detail-Block-Indikator ``Ansatz \\d{6}`` als laufender
+       Header — wird von Software-Anbietern verwendet, die "Detailnachweis"
+       nicht als Header drucken (Vorau, Burgenland-Kleingemeinden).
+
     Ergebnis ``(erste, letzte)`` (0-basiert) oder ``None``.
     """
-    treffer = [p for p in range(doc.page_count) if "Detailnachweis" in doc[p].get_text()]
-    return _laengster_lauf(treffer)
+    treffer = [p for p in range(doc.page_count)
+               if "Detailnachweis" in doc[p].get_text()]
+    lauf = _laengster_lauf(treffer)
+    if lauf and lauf[1] - lauf[0] >= 10:
+        return lauf
+
+    treffer = [p for p in range(doc.page_count)
+               if "Voranschlagsstellen" in doc[p].get_text()]
+    lauf2 = _laengster_lauf(treffer)
+    if lauf2 and lauf2[1] - lauf2[0] >= 10:
+        return lauf2
+
+    # Detail-Block-Indikator: "Ansatz" + 6-stellige Zahl als laufender Header.
+    # Bei einigen Burgenland-PDFs (Grafenschachen, Neudorf b. Parndorf) ist der
+    # Detail-Block ueber das gesamte PDF verstreut mit Luecken durch Uebersichts-
+    # tabellen — der laengste zusammenhaengende Lauf ist nur ~9 Seiten. Wenn
+    # aber **mind. 20 Seiten** den Marker tragen, nehmen wir den **Hull-Range**
+    # [first_treffer, last_treffer] und lassen den Parser-Loop Seiten ohne
+    # Detail-Zeilen ueberspringen (kostet etwas Laufzeit, aber liefert Daten).
+    ansatz_pat = re.compile(r"Ansatz\s+\d{6}")
+    treffer = [p for p in range(doc.page_count)
+               if ansatz_pat.search(doc[p].get_text())]
+    lauf3 = _laengster_lauf(treffer)
+    # Bei vielen Treffern (>50) nehmen wir den **Hull-Range** [min, max]
+    # auch wenn unzusammenhaengend — bei Murau-Style ist der Detail-Block
+    # ueber das ganze PDF mit Luecken durch Saldo-/Aggregat-Seiten verstreut,
+    # und der laengste zusammenhaengende Lauf ist nur ein kleiner Ausschnitt.
+    # Der Parser-Loop ueberspringt Seiten ohne Detail-Posten automatisch.
+    if len(treffer) >= 50:
+        return (min(treffer), max(treffer))
+    if lauf3 and lauf3[1] - lauf3[0] >= 10:
+        return lauf3
+    if len(treffer) >= 20:
+        return (min(treffer), max(treffer))
+
+    # Letzter Ausweg: ein kurzer "Detailnachweis"-Lauf ist besser als nichts.
+    return lauf or lauf2 or lauf3
 
 
 def page_lines(doc: fitz.Document, page_index: int, y_tol: float = 3.0) -> list[Line]:
-    """Woerter einer Seite zu Zeilen gruppieren (gleiche y-Lage = gleiche Zeile)."""
-    raw = doc[page_index].get_text("words")  # (x0,y0,x1,y1,text,block,line,word)
-    words = [Word(w[4], w[0], w[1], w[2], w[3]) for w in raw if w[4].strip()]
+    """Woerter einer Seite zu Zeilen gruppieren (gleiche y-Lage = gleiche Zeile).
+
+    Manche PDFs setzen Seiten mit ``/Rotate`` (90/180/270) — z.B. Vorau-RA,
+    eingebettete Querformat-Tabellen in Wien-VAs. PyMuPDF liefert die Wort-
+    koordinaten in solchen Faellen im **un-rotierten** Mediabox-System, was
+    den Spalten-x1-Anker des Parsers unterlaeuft. Hier rotieren wir die
+    Koordinaten manuell so, dass das logische Lese-Layout immer derselben
+    Konvention folgt (Ursprung oben links, rechtsbuendige Spalten via x1).
+    """
+    pg = doc[page_index]
+    raw = pg.get_text("words")  # (x0,y0,x1,y1,text,block,line,word)
+    rot = pg.rotation % 360
+    if rot == 0:
+        words = [Word(w[4], w[0], w[1], w[2], w[3]) for w in raw if w[4].strip()]
+    else:
+        mb = pg.mediabox  # Originalgroesse vor Rotation
+        mw, mh = mb.width, mb.height
+        words = []
+        for w in raw:
+            txt = w[4]
+            if not txt.strip():
+                continue
+            x0, y0, x1, y1 = w[0], w[1], w[2], w[3]
+            if rot == 90:    # PDF CW 90°: (x,y) -> (mh - y, x)
+                nx0, ny0, nx1, ny1 = mh - y1, x0, mh - y0, x1
+            elif rot == 180:
+                nx0, ny0, nx1, ny1 = mw - x1, mh - y1, mw - x0, mh - y0
+            elif rot == 270:  # PDF CCW 90°: (x,y) -> (y, mw - x)
+                nx0, ny0, nx1, ny1 = y0, mw - x1, y1, mw - x0
+            else:
+                nx0, ny0, nx1, ny1 = x0, y0, x1, y1
+            words.append(Word(txt, nx0, ny0, nx1, ny1))
     words.sort(key=lambda w: (w.y0, w.x0))
 
     lines: list[Line] = []

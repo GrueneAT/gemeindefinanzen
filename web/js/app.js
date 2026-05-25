@@ -13,6 +13,7 @@ import {
   migrationenAnwenden,
 } from "./db.js"
 import { verarbeitePdf } from "./pipeline.js"
+import { pruefe as validatePosten, pruefStatus } from "./validate.js"
 import { baueDashboard } from "./dashboard-app.js"
 import {
   CHART_THEMES, holeAktivenThemeName, holeAktivesTheme,
@@ -2002,43 +2003,19 @@ function aktualisiereDokVerwaltung(anzahl) {
 
 // Pruefstatus eines Dokuments aus der DB rekonstruieren (SU-21/22/33/34).
 function leseStatus(dokId) {
-  const checks = [
-    ["SU 21", "einnahme", "operativ", "eh_wert"],
-    ["SU 22", "ausgabe", "operativ", "eh_wert"],
-    ["SU 33", "einnahme", "investiv", "fh_wert"],
-    ["SU 34", "ausgabe", "investiv", "fh_wert"],
-  ]
-  let ok = 0
-  const gesamt = checks.length + 1
-  for (const [su, richtung, gebarung, spalte] of checks) {
-    const detail = db.abfrage(
-      `SELECT ansatz, ROUND(SUM(COALESCE(${spalte},0)),2) AS s
-       FROM posten WHERE dokument_id=? AND zeilentyp='detail'
-         AND richtung=? AND gebarung=? GROUP BY ansatz`,
-      [dokId, richtung, gebarung],
-    )
-    const summen = {}
-    for (const r of db.abfrage(
-      `SELECT ansatz, ROUND(SUM(COALESCE(${spalte},0)),2) AS s
-       FROM posten WHERE dokument_id=? AND zeilentyp='summe'
-         AND vrk LIKE ? GROUP BY ansatz`,
-      [dokId, su + "%"],
-    )) {
-      summen[r.ansatz] = r.s || 0
-    }
-    let abw = false
-    for (const r of detail) {
-      if (Math.abs((r.s || 0) - (summen[r.ansatz] || 0)) > 0.05) abw = true
-    }
-    if (!abw) ok++
-  }
-  const verwaist = db.wert(
-    "SELECT COUNT(*) FROM posten WHERE dokument_id=? AND zeilentyp='detail'" +
-      " AND (ansatz IS NULL OR ansatz='')",
+  // Volle Pruefung ueber validate.js: 10 SU × 3 Spalten + 7 SA × 3 Spalten +
+  // 1 Strukturpruefung = 52 Pruefungen je Dokument. Wir lesen die Posten
+  // des Dokuments aus der DB und reichen sie an die gemeinsame Pruef-Logik.
+  const posten = db.abfrage(
+    `SELECT zeilentyp, vrk, ansatz, richtung, gebarung,
+            eh_wert, eh_vergleich, eh_dritte,
+            fh_wert, fh_vergleich, fh_dritte,
+            mvag_eh, mvag_fh
+     FROM posten WHERE dokument_id=?`,
     [dokId],
   )
-  if (verwaist === 0) ok++
-  return { ok, gesamt, bestanden: ok === gesamt }
+  const ergebnisse = validatePosten({ posten })
+  return pruefStatus(ergebnisse)
 }
 
 function statusBadge(status) {
