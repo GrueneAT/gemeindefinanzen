@@ -13,5 +13,8 @@ test('PDF-Upload fuellt die Dokumentliste mit gruenem Pruefstatus',
     await page.locator('#doc-manager').evaluate((el) => { el.open = true })
     const status = page.locator('span.doc-status.ok').first()
     await expect(status).toBeVisible()
-    await expect(status).toHaveText('5/5 Pruefungen')
+    // Erweiterte Validierung: 52 Pruefungen je Dokument (10 SU x 3 Spalten +
+    // 7 SA-Identitaeten x 3 Spalten + 1 Strukturpruefung). Herzogenburg-VA
+    // ist Referenz mit 52/52 OK.
+    await expect(status).toHaveText('52/52 Pruefungen')
   })

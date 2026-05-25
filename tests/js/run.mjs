@@ -205,19 +205,22 @@ async function teste() {
     )
   }
 
-  console.log("\nvalidate — Plausibilitaetspruefung (Referenz: 5/5 je Dokument)")
+  console.log("\nvalidate — Plausibilitaetspruefung (Referenz: 52/52 je Dokument)")
   let valideGesamt = 0
+  let valideTotal = 0
   for (const f of pdfs) {
     const r = parseDocumentBytes(mupdf, pdfBytes(f))
     const status = pruefStatus(validate(r))
     valideGesamt += status.ok
+    valideTotal += status.gesamt
     pruefe(
       `${f} — ${status.ok}/${status.gesamt}`,
       status.bestanden,
       JSON.stringify(status),
     )
   }
-  pruefe("Gesamt 20/20 Pruefungen", valideGesamt === 20, `${valideGesamt}/20`)
+  pruefe(`Gesamt ${valideTotal}/${valideTotal} Pruefungen`,
+    valideGesamt === valideTotal, `${valideGesamt}/${valideTotal}`)
 
   console.log("\npipeline + db — Verarbeitung in die SQLite-DB")
   const db = await oeffneDb(sqlite3InitModule)
