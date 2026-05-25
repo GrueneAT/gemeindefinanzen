@@ -17,7 +17,12 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
-# Quelldokumente bleiben im Repo (klein, versionswuerdig) — bei Bedarf hier ausnehmen
+# Quelldokumente: Herzogenburg-Fixtures bleiben im Repo (klein, versionswuerdig).
+# Bundesland-Korpus fuer Parser-Robustheitstests bleibt lokal — nicht commiten.
+/documents/korpus/
+/documents/_korpus_manifest.json
+/documents/_korpus_bericht.md
+/documents/_korpus_bericht.json
 
 # JavaScript / Browser-App
 /node_modules/
