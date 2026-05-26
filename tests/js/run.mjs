@@ -22,8 +22,11 @@ import {
 import { parseDocumentBytes, mergeNumberFragments } from "../../web/js/parser.js"
 import { validate, pruefStatus } from "../../web/js/validate.js"
 import { spalten } from "../../web/js/loader.js"
-import { oeffneDb, importBytes } from "../../web/js/db.js"
-import { verarbeitePdf } from "../../web/js/pipeline.js"
+import { oeffneDb, importBytes, Datenbank } from "../../web/js/db.js"
+import { verarbeitePdf, verarbeiteCsvDateien } from "../../web/js/pipeline.js"
+import {
+  parseCsvBytes, synthAggregate, mergeParseResults,
+} from "../../web/js/csv-parser.js"
 import { collect } from "../../web/js/dashboard-data.js"
 import { alleCharts } from "../../web/js/dashboard-charts.js"
 import {
@@ -783,6 +786,140 @@ async function teste() {
     quellenSumme(qSerie) === Math.round(quelleBetrag),
     quellenSumme(qSerie) + " vs " + Math.round(quelleBetrag),
   )
+
+  console.log("\ncsv-parser — OH-CSV Parsing, MVAG-Klassifikation, synth Aggregate")
+  const csvEhhBytes = new Uint8Array(readFileSync(
+    join(DOCS, "offenerhaushalt_30201_2026_va_ehh.csv")))
+  const csvFhhBytes = new Uint8Array(readFileSync(
+    join(DOCS, "offenerhaushalt_30201_2026_va_fhh.csv")))
+  const ehh = parseCsvBytes(csvEhhBytes)
+  pruefe("CSV EHH: Gemeinde 'St. Poelten' erkannt",
+    ehh.meta.gemeinde.includes("Poelten") || ehh.meta.gemeinde.includes("Pölten"),
+    ehh.meta.gemeinde)
+  pruefe("CSV EHH: Typ VA", ehh.meta.typ === "VA", ehh.meta.typ)
+  pruefe("CSV EHH: Finanzjahr 2026",
+    ehh.meta.finanzjahr === "2026", ehh.meta.finanzjahr)
+  pruefe("CSV EHH: Haushalt EHH",
+    ehh.meta.haushalt === "EHH", ehh.meta.haushalt)
+  pruefe("CSV EHH: GKZ 30201", ehh.meta.gkz === "30201", ehh.meta.gkz)
+  pruefe("CSV EHH: Detail-Posten geparst",
+    ehh.result.posten.length > 1000, String(ehh.result.posten.length))
+  // Alle EHH-Posten haben mvag_eh gesetzt, keinen mvag_fh.
+  const ehhPosten = ehh.result.posten.filter((p) => p.zeilentyp === "detail")
+  pruefe("CSV EHH: alle Detail-Posten haben mvag_eh, keinen mvag_fh",
+    ehhPosten.every((p) => p.mvag_eh && !p.mvag_fh))
+  // Die Klassifikation des MVAG 2222 (das ist im VRV-Schluessel 222x =
+  // Sachaufwand, Praefix 22 -> ausgabe/operativ EHH).
+  const ehhAus = ehhPosten.find((p) => p.mvag_eh && p.mvag_eh.startsWith("22"))
+  pruefe("CSV EHH: 22xx-Posten ist ausgabe/operativ",
+    ehhAus && ehhAus.richtung === "ausgabe" && ehhAus.gebarung === "operativ",
+    ehhAus && `${ehhAus.richtung}/${ehhAus.gebarung}`)
+  const ehhEin = ehhPosten.find((p) => p.mvag_eh && p.mvag_eh.startsWith("21"))
+  pruefe("CSV EHH: 21xx-Posten ist einnahme/operativ",
+    ehhEin && ehhEin.richtung === "einnahme" && ehhEin.gebarung === "operativ",
+    ehhEin && `${ehhEin.richtung}/${ehhEin.gebarung}`)
+
+  const fhh = parseCsvBytes(csvFhhBytes)
+  pruefe("CSV FHH: Haushalt FHH",
+    fhh.meta.haushalt === "FHH", fhh.meta.haushalt)
+  const fhhPosten = fhh.result.posten.filter((p) => p.zeilentyp === "detail")
+  pruefe("CSV FHH: Detail-Posten geparst",
+    fhhPosten.length > 1000, String(fhhPosten.length))
+
+  // Investiv-Klassifikation: 33xx-Posten ist einnahme/investiv,
+  // 34xx-Posten ist ausgabe/investiv.
+  const fhhInv = fhhPosten.find((p) => p.mvag_fh && p.mvag_fh.startsWith("34"))
+  pruefe("CSV FHH: 34xx-Posten ist ausgabe/investiv",
+    fhhInv && fhhInv.richtung === "ausgabe" && fhhInv.gebarung === "investiv",
+    fhhInv && `${fhhInv.richtung}/${fhhInv.gebarung}`)
+
+  // Merge + synthetische Aggregate -> validate.js akzeptiert das Ergebnis.
+  const merged = mergeParseResults(ehh.result, fhh.result)
+  const detailVorSynth = merged.posten.filter(
+    (p) => p.zeilentyp === "detail").length
+  synthAggregate(merged)
+  const summeNachSynth = merged.posten.filter(
+    (p) => p.zeilentyp === "summe").length
+  const saldoNachSynth = merged.posten.filter(
+    (p) => p.zeilentyp === "saldo").length
+  pruefe("CSV merge: Detail-Posten erhalten",
+    merged.posten.filter((p) => p.zeilentyp === "detail").length === detailVorSynth,
+    String(detailVorSynth))
+  pruefe("CSV synth: summe-Zeilen je Ansatz x 10 SU-Codes",
+    summeNachSynth > 0 && summeNachSynth % 10 === 0,
+    String(summeNachSynth))
+  pruefe("CSV synth: saldo-Zeilen je Ansatz x 7 SA-Codes",
+    saldoNachSynth > 0 && saldoNachSynth % 7 === 0,
+    String(saldoNachSynth))
+  const statusCsv = pruefStatus(validate(merged))
+  pruefe(`CSV: validate ergibt ${statusCsv.ok}/${statusCsv.gesamt} OK`,
+    statusCsv.bestanden, JSON.stringify(statusCsv))
+
+  // Pipeline-Pfad: verarbeiteCsvDateien legt das Dokument in der DB an.
+  // **Wichtig:** oeffneDb oeffnet eine feste Datei im wasm-In-Memory-FS.
+  // Die Haupt-`db` haelt diese Datei mit den PDF-Daten offen — fuer
+  // unsere CSV-Tests brauchen wir eine isolierte ":memory:"-DB.
+  console.log("\npipeline — CSV-Pfad in die DB")
+  const sqlite3Raw = await sqlite3InitModule()
+  const neueLeereDb = () => new Datenbank(
+    sqlite3Raw, new sqlite3Raw.oo1.DB(":memory:", "c"), false)
+  const dbCsv = neueLeereDb()
+  dbCsv.schemaAnwenden(readFileSync(join(WURZEL, "web/schema.sql"), "utf8"))
+  const csvRes = await verarbeiteCsvDateien(dbCsv, [
+    { name: "offenerhaushalt_30201_2026_va_ehh.csv", bytes: csvEhhBytes },
+    { name: "offenerhaushalt_30201_2026_va_fhh.csv", bytes: csvFhhBytes },
+  ])
+  pruefe("CSV-Pipeline: ein Dokument geschrieben",
+    csvRes.dokumente.length === 1, String(csvRes.dokumente.length))
+  pruefe("CSV-Pipeline: Dokument ist EHH+FHH komplett",
+    csvRes.dokumente[0] && csvRes.dokumente[0].fassung === "OH-CSV",
+    csvRes.dokumente[0] && csvRes.dokumente[0].fassung)
+  pruefe("CSV-Pipeline: Pruefstatus 52/52",
+    csvRes.dokumente[0] && csvRes.dokumente[0].status.bestanden &&
+      csvRes.dokumente[0].status.gesamt === 52,
+    csvRes.dokumente[0]
+      ? `${csvRes.dokumente[0].status.ok}/${csvRes.dokumente[0].status.gesamt}`
+      : "kein Dok")
+  // Spaeteres Hinzufuegen derselben CSV ist idempotent (kein zweites Dokument).
+  const csvRes2 = await verarbeiteCsvDateien(dbCsv, [
+    { name: "offenerhaushalt_30201_2026_va_fhh.csv", bytes: csvFhhBytes },
+  ])
+  const dokCount = dbCsv.wert("SELECT COUNT(*) FROM dokument")
+  pruefe("CSV-Pipeline: erneutes Hochladen erzeugt kein zweites Dokument",
+    dokCount === 1, String(dokCount))
+  pruefe("CSV-Pipeline: erneutes Hochladen liefert dasselbe Dokument zurueck",
+    csvRes2.dokumente.length === 1 &&
+      csvRes2.dokumente[0].fassung === "OH-CSV",
+    csvRes2.dokumente[0] && csvRes2.dokumente[0].fassung)
+  dbCsv.close()
+
+  // Nachreichungs-Pfad: zuerst nur EHH, dann FHH separat.
+  console.log("\npipeline — CSV Nachreichung (EHH zuerst, FHH spaeter)")
+  const dbNach = neueLeereDb()
+  dbNach.schemaAnwenden(readFileSync(join(WURZEL, "web/schema.sql"), "utf8"))
+  const stufe1 = await verarbeiteCsvDateien(dbNach, [
+    { name: "offenerhaushalt_30201_2026_va_ehh.csv", bytes: csvEhhBytes },
+  ])
+  pruefe("Nachreichung Stufe 1: Halb-Dokument 'nur EHH'",
+    stufe1.dokumente.length === 1 &&
+      stufe1.dokumente[0].fassung === "OH-CSV (nur EHH)",
+    stufe1.dokumente[0] && stufe1.dokumente[0].fassung)
+  const stufe2 = await verarbeiteCsvDateien(dbNach, [
+    { name: "offenerhaushalt_30201_2026_va_fhh.csv", bytes: csvFhhBytes },
+  ])
+  pruefe("Nachreichung Stufe 2: Dokument komplettiert auf 'OH-CSV'",
+    stufe2.dokumente.length === 1 &&
+      stufe2.dokumente[0].fassung === "OH-CSV",
+    stufe2.dokumente[0] && stufe2.dokumente[0].fassung)
+  const nachCount = dbNach.wert("SELECT COUNT(*) FROM dokument")
+  pruefe("Nachreichung: insgesamt nur ein Dokument in der DB",
+    nachCount === 1, String(nachCount))
+  // Quelldatei sollte beide CSV-Dateinamen enthalten.
+  const nachQuelle = dbNach.wert("SELECT quelldatei FROM dokument")
+  pruefe("Nachreichung: quelldatei listet beide CSV-Dateien",
+    nachQuelle.includes("ehh.csv") && nachQuelle.includes("fhh.csv"),
+    nachQuelle)
+  dbNach.close()
 
   console.log("\ndb — Persistenz-Guard ohne IndexedDB (Node-Umgebung)")
   // In Node ist `indexedDB` undefiniert; oeffneDb muss dann eine reine

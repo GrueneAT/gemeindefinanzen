@@ -623,6 +623,38 @@ input.search:focus-visible {
 /* Marken-Link im Header: DS v2.0 liefert .gat-header__brand:focus-visible
    im globalen Fokus-Block — keine lokale Ergaenzung mehr noetig. */
 
+/* BETA-Stoerer im Header — DS-Klasse `.gat-stoerer--magenta` liefert die
+   schief gestellte Magenta-Optik, hier nur klein gehalten und etwas nach
+   oben versetzt, damit es als kleine Markierung neben dem Wordmark sitzt.
+   Auf sehr schmalen Viewports darf der Stoerer ausblenden, damit das
+   Wordmark nicht umbricht. */
+.app-beta-marker {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.45rem;
+  margin-left: 0.5rem;
+  transform: translateY(-0.35rem) rotate(-6deg);
+  /* Stoerer sitzt visuell ueber den Buchstaben — kein vertikaler Platzbedarf
+     im Linien-Layout des Brand-Links. */
+  line-height: 1;
+  align-self: center;
+}
+@media (max-width: 420px) {
+  .app-beta-marker { display: none; }
+}
+
+/* Beta-Hinweis-Absatz unter dem Hero-Intro — sanft mit etwas Abstand vom
+   Haupttext, ohne in einer "Achtung"-Optik zu schreien. Linkfarbe wird
+   vom DS uebernommen, hier nur die Schrift etwas zurueckhaltender. */
+.app-beta-hinweis {
+  margin-top: 0.7rem;
+  font-size: 0.95em;
+  color: var(--gat-web-text-soft);
+}
+.app-beta-hinweis strong {
+  color: var(--gat-color-accent);
+}
+
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
 .doc-manager {
   border: 1px solid var(--app-hair);
