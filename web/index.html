@@ -34,6 +34,10 @@
       <img class="gat-header__logo" src="https://grueneat.github.io/design-system/assets/gruene-logo.svg"
         alt="Die Gruenen" width="150" height="132">
       <span class="gat-header__wordmark">Gemeindefinanzen</span>
+      <!-- BETA-Stoerer: schief gestellter Magenta-Stempel aus dem DS. Macht
+           sofort sichtbar, dass das Werkzeug noch nicht stabil ist. -->
+      <span class="gat-stoerer gat-stoerer--magenta app-beta-marker"
+            aria-label="Beta-Version">BETA</span>
     </a>
     <!-- Navigationszone: heute nur der App-Kontext. Als <nav>-Liste
          strukturiert, damit hier spaeter Links zu weiteren Gruene-Tools
@@ -70,10 +74,17 @@
   <header class="gat-hero">
     <h1 class="gat-headline gat-hero__title">Gemeindebudget auswerten</h1>
     <p class="app-intro gat-fliesstext gat-hero__intro">VRV-2015-Voranschlaege,
-      Nachtragsvoranschlaege und Rechnungsabschluesse als PDF hochladen und
-      direkt auf dieser Seite auswerten. Extraktion, Parsing, Pruefung und
-      Auswertung laufen vollstaendig im Browser — kein Server, kein Upload
-      ins Netz.</p>
+      Nachtragsvoranschlaege und Rechnungsabschluesse als <strong>PDF</strong>
+      oder als <strong>OH-CSV-Paar</strong> (EHH+FHH von
+      <a href="https://offenerhaushalt.at" rel="noopener" target="_blank"
+         >offenerhaushalt.at</a>) hochladen und direkt auf dieser Seite
+      auswerten. Extraktion, Parsing, Pruefung und Auswertung laufen
+      vollstaendig im Browser — kein Server, kein Upload ins Netz.</p>
+    <p class="app-intro gat-fliesstext gat-hero__intro app-beta-hinweis">
+      Dieses Werkzeug ist in der <strong>Beta-Phase</strong>. Bei Problemen,
+      Fehlern oder Wuenschen bitte direkt an
+      <a href="mailto:florian.motlik@gruene.at"
+         >florian.motlik@gruene.at</a> melden.</p>
   </header>
 
   <div id="toast-box" class="gat-toaster" role="region"
@@ -90,7 +101,7 @@
     </summary>
     <div class="doc-manager-body">
       <section>
-        <h2>PDFs hinzufuegen</h2>
+        <h2>Dokumente hinzufuegen</h2>
         <div class="dropzone gat-dropzone" id="dropzone">
           <span class="gat-dropzone__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -99,15 +110,17 @@
               <path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
             </svg>
           </span>
-          <p class="dropzone-title gat-dropzone__label">PDF-Dateien hierher
-            ziehen</p>
+          <p class="dropzone-title gat-dropzone__label">PDFs oder OH-CSVs
+            hierher ziehen</p>
           <p class="dropzone-hint gat-dropzone__hint">VRV-2015-Voranschlag,
-            Nachtragsvoranschlag oder Rechnungsabschluss — mehrere Dateien
-            auf einmal moeglich.</p>
+            Nachtragsvoranschlag oder Rechnungsabschluss als PDF — oder das
+            EHH+FHH-CSV-Paar von offenerhaushalt.at. Mehrere Dateien auf einmal
+            moeglich; EHH+FHH derselben Gemeinde+Jahr werden automatisch zu
+            einem Dokument zusammengefuehrt.</p>
           <button class="gat-btn gat-btn--secondary dropzone-btn gat-dropzone__trigger"
                   id="pick-btn" type="button">Dateien auswaehlen</button>
-          <input type="file" id="file-input" accept="application/pdf,.pdf"
-            multiple>
+          <input type="file" id="file-input"
+            accept="application/pdf,.pdf,text/csv,.csv" multiple>
         </div>
         <ul class="progress-list" id="progress-list"></ul>
       </section>

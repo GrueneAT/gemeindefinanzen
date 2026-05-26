@@ -12,7 +12,7 @@ import {
   oeffneDb, dokumente, dokumentEntfernen, persistenzLeeren,
   migrationenAnwenden,
 } from "./db.js"
-import { verarbeitePdf } from "./pipeline.js"
+import { verarbeitePdf, verarbeiteCsvDateien } from "./pipeline.js"
 import { pruefe as validatePosten, pruefStatus } from "./validate.js"
 import { baueDashboard } from "./dashboard-app.js"
 
@@ -1372,21 +1372,32 @@ async function verarbeiteDateien(dateien) {
   const pdfs = dateien.filter(
     (f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name),
   )
-  const verworfen = dateien.length - pdfs.length
+  const csvs = dateien.filter(
+    (f) => f.type === "text/csv" || /\.csv$/i.test(f.name),
+  )
+  const verworfen = dateien.length - pdfs.length - csvs.length
   if (verworfen > 0) {
-    toast(`${verworfen} Datei(en) uebersprungen — nur PDF wird verarbeitet.`,
-      "warn")
+    toast(
+      `${verworfen} Datei(en) uebersprungen — nur PDF und OH-CSV werden verarbeitet.`,
+      "warn",
+    )
   }
   let erfolg = 0
+  let gescheitert = 0
   for (const datei of pdfs) {
     if (await verarbeiteEine(datei)) erfolg++
+    else gescheitert++
+  }
+  if (csvs.length > 0) {
+    const csvErgebnis = await verarbeiteCsvBuendel(csvs)
+    erfolg += csvErgebnis.erfolg
+    gescheitert += csvErgebnis.gescheitert
   }
   zeichneDokumentliste()
-  const gescheitert = pdfs.length - erfolg
   if (erfolg > 0) await db.sichern()
 
   if (gescheitert > 0) {
-    // Mindestens eine PDF ist gescheitert. NICHT neu laden — der Reload
+    // Mindestens eine Datei ist gescheitert. NICHT neu laden — der Reload
     // wuerde die Fehlermeldungen in der Fortschrittsliste loeschen, bevor
     // sie gelesen werden koennen. Die Dokumentverwaltung offen halten,
     // damit die Liste mit den Meldungen sichtbar bleibt.
@@ -1394,19 +1405,137 @@ async function verarbeiteDateien(dateien) {
     if (manager) manager.open = true
     toast(
       erfolg > 0
-        ? `${gescheitert} Dokument(e) konnten nicht geladen werden — ` +
-          `Grund siehe unten in der Liste. Die ${erfolg} erfolgreich ` +
-          `geladenen erscheinen im Dashboard nach dem Neuladen der Seite.`
-        : `${gescheitert} Dokument(e) konnten nicht geladen werden — ` +
+        ? `${gescheitert} Datei(en) konnten nicht geladen werden — ` +
+          `Grund siehe unten in der Liste. Die erfolgreich geladenen ` +
+          `Dokumente erscheinen im Dashboard nach dem Neuladen der Seite.`
+        : `${gescheitert} Datei(en) konnten nicht geladen werden — ` +
           `Grund siehe unten in der Liste.`,
       "error",
     )
   } else if (erfolg > 0) {
-    // Alle PDFs erfolgreich verarbeitet — die Seite frisch aufbauen, damit
+    // Alle Dateien erfolgreich verarbeitet — die Seite frisch aufbauen, damit
     // das Dashboard mit dem aktuellen Stand arbeitet (dashboard.js laeuft
     // nur einmal je Seitenaufbau).
     location.reload()
   }
+}
+
+// Eine Reihe OH-CSVs gemeinsam verarbeiten. EHH+FHH-Paare derselben
+// Gemeinde+Jahr+Typ werden in der Pipeline zu einem Dokument zusammengelegt;
+// die Fortschrittsanzeige verfolgt jede CSV einzeln und gruppiert die
+// Statusmeldungen pro Gruppen-Fortschritt.
+async function verarbeiteCsvBuendel(dateien) {
+  // 1) Bytes einlesen — bei Lesefehlern als gescheitert markieren.
+  const items = []
+  const ladungen = []
+  for (const datei of dateien) {
+    const item = neuerFortschritt(datei.name)
+    items.push(item)
+    try {
+      const bytes = new Uint8Array(await datei.arrayBuffer())
+      ladungen.push({ datei, item, bytes, fehler: null })
+    } catch (e) {
+      ladungen.push({ datei, item, bytes: null,
+        fehler: e.message || String(e) })
+    }
+  }
+  await naechsterFrame()
+
+  const eingaben = ladungen
+    .filter((l) => !l.fehler)
+    .map((l) => ({ name: l.datei.name, bytes: l.bytes, __item: l.item }))
+
+  // Vor der Pipeline jedem Item den Extraktions-Status setzen, damit der
+  // Fortschrittsbalken nicht bei 0 stehenbleibt, waehrend Parsing laeuft.
+  for (const e of eingaben) setzeStufe(e.__item, "extraktion")
+
+  let resultat
+  try {
+    resultat = await verarbeiteCsvDateien(db, eingaben, (meta, stufe) => {
+      // Pro Stufe ALLE Items markieren, die zu diesem Schluessel gehoeren.
+      const key = `${meta.gkz}|${meta.finanzjahr}|${meta.typ}|${meta.datenquelle}`
+      for (const e of eingaben) {
+        const m = leseCsvMetaAusItem(e)
+        if (m && metaKey(m) === key) setzeStufe(e.__item, stufe)
+      }
+    })
+  } catch (e) {
+    // Pipeline ist global gescheitert (Header-Format-Fehler etc.) — alle
+    // noch ungesetzten Items als Fehler markieren.
+    for (const l of ladungen) {
+      if (!l.fehler) {
+        fehler(l.item, e.message || String(e))
+        l.fehler = e.message || String(e)
+      }
+    }
+    return { erfolg: 0, gescheitert: ladungen.length }
+  }
+
+  // Pro Eingabe-Datei: Status setzen. Wenn ihr Dokument im Resultat
+  // enthalten ist -> abschliessen mit dem Pruefstatus dieses Dokuments;
+  // sonst war diese Datei Teil einer gescheiterten Gruppe — wir markieren
+  // sie zur Sicherheit als Fehler.
+  let erfolg = 0
+  let gescheitert = 0
+  for (const l of ladungen) {
+    if (l.fehler) {
+      fehler(l.item, l.fehler)
+      gescheitert += 1
+      continue
+    }
+    const dok = resultat.dokumente.find((d) =>
+      d.dateinamen.includes(l.datei.name),
+    )
+    if (dok) {
+      abschliessen(l.item, dok.status)
+      erfolg += 1
+    } else {
+      fehler(l.item, "Datei wurde zwar geparst, kam aber nicht ins Dokument.")
+      gescheitert += 1
+    }
+  }
+  if (resultat.warnungen.length > 0) {
+    for (const w of resultat.warnungen) toast(w, "warn")
+  }
+  return { erfolg, gescheitert }
+}
+
+// Helfer: einer Eingabe (Filename + bytes) die OH-CSV-Meta ablesen,
+// ohne die ganze Datei nochmal zu parsen. Wir lesen Kopfzeile und die
+// erste Datenzeile bis ans erste Newline; die ersten sieben Felder sind
+// fix und liefern alle gebrauchten Meta-Werte (Jahr, GKZ, Typ, Haushalt,
+// Datenquelle).
+function leseCsvMetaAusItem(eingabe) {
+  if (eingabe.__metaCache !== undefined) return eingabe.__metaCache
+  try {
+    const dec = new TextDecoder("utf-8")
+    // Erste ~2 KB reichen fuer Header + erste Datenzeile.
+    const slice = eingabe.bytes.subarray(0, Math.min(eingabe.bytes.length, 2048))
+    const txt = dec.decode(slice)
+    const zeilen = txt.split(/\r?\n/)
+    if (zeilen.length < 2) return null
+    // Beim Datenzeilen-Split die quotes ignorieren — die ersten sieben
+    // Felder enthalten keine Semikolons (numerische/kurze Strings).
+    const cells = zeilen[1].split(";")
+    const meta = {
+      finanzjahr: cells[0],
+      gkz: cells[4],
+      typ:
+        (cells[2] || "").startsWith("Rechnungs") ? "RA" :
+        (cells[2] || "").startsWith("Nachtrag") ? "NVA" :
+        "VA",
+      datenquelle: cells[3] || "",
+    }
+    eingabe.__metaCache = meta
+    return meta
+  } catch (e) {
+    eingabe.__metaCache = null
+    return null
+  }
+}
+
+function metaKey(m) {
+  return `${m.gkz}|${m.finanzjahr}|${m.typ}|${m.datenquelle}`
 }
 
 // Eine PDF verarbeiten. Liefert true bei Erfolg, false bei einem Fehler.
