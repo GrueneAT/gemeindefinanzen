@@ -3,7 +3,7 @@
 // baueDashboard(db) baut ueber dashboard-data.js/dashboard-charts.js dieselben
 // DATA-/CFG-Objekte wie die Python-Pipeline, ergaenzt die dokumentabhaengigen
 // Bedienelemente (Dokument-Umschalter, Filter-Auswahl) und laedt dann die
-// unveraenderte Dashboard-Logik aus web/vendor/dashboard/dashboard.js.
+// unveraenderte Dashboard-Logik aus web/js/dashboard.js.
 //
 // Die Datenbank wird hereingereicht — dieses Modul oeffnet selbst keine DB.
 // app.js oeffnet die DB einmal und ruft baueDashboard mit derselben Instanz
@@ -98,6 +98,6 @@ function neueOption(value, text) {
 // als globale Namen — daher als <script> nachladen, nicht importieren.
 function ladeDashboardLogik() {
   const s = document.createElement("script")
-  s.src = "./vendor/dashboard/dashboard.js"
+  s.src = "./js/dashboard.js"
   document.body.appendChild(s)
 }

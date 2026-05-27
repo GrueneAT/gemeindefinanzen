@@ -1,7 +1,9 @@
 # Vendorisierte Bibliotheken
 
-Die Browser-App ist ohne Build-Schritt deploybar; die benoetigten
-Bibliotheken liegen daher direkt im Repo. Jede behaelt ihre Original-Lizenz.
+Die Browser-App laeuft ohne Build-Schritt. Drittbibliotheken werden so
+weit wie moeglich per CDN eingebunden (jsDelivr, GitHub Pages); die
+unten gelisteten WASM-Pakete liegen aktuell noch direkt im Repo.
+Jede behaelt ihre Original-Lizenz.
 
 ## mupdf/
 

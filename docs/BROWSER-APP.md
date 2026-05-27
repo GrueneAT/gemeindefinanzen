@@ -46,7 +46,7 @@ index.html   Dokumentverwaltung + Dashboard (Tabs, Umschalter, Suche,
 | `app.js` | — | Seiten-Controller: Dokumentverwaltung + Dashboard |
 | `dashboard-app.js` | `report/html.py` | `baueDashboard(db)` — Dashboard aufbauen |
 
-`web/vendor/dashboard/dashboard.css` und `dashboard.js` sind die **verbatim**
+`web/css/dashboard.css` und `web/js/dashboard.js` sind die **verbatim**
 aus dem Python-Report (`report/assets.py`) uebernommenen Darstellungs-Assets.
 Die Browser-App liefert ihnen dieselben `DATA`/`CFG`-Objekte wie die
 Python-Pipeline — das Dashboard verhaelt sich damit identisch.
