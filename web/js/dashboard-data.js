@@ -3,7 +3,7 @@
 //
 // collect(db) liest alle geladenen Dokumente in einem Schritt aus und liefert
 // dasselbe JSON-serialisierbare Datenobjekt wie die Python-Pipeline. Die
-// Dashboard-Oberflaeche (web/vendor/dashboard/dashboard.js, unveraendert aus
+// Dashboard-Oberflaeche (web/js/dashboard.js, unveraendert aus
 // dem Python-Report uebernommen) arbeitet ausschliesslich auf dieser Struktur.
 
 // Chronologische Sortierung: innerhalb eines Jahres Ist vor Plan.
