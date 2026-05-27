@@ -17,7 +17,7 @@ import { pruefe as validatePosten, pruefStatus } from "./validate.js"
 import { baueDashboard } from "./dashboard-app.js"
 import {
   CHART_THEMES, holeAktivenThemeName, holeAktivesTheme,
-  setzeTheme, aktualisiereThemeBeiHc, initChartTheme,
+  setzeTheme, initChartTheme,
 } from "./chart-themes.js"
 
 // Chart-Theme global bereitstellen, bevor irgendein Chart-Builder laeuft.
@@ -68,51 +68,15 @@ async function init() {
   verdrahteModal()
   verdrahtePngExport()
   verdrahteBuilder()
-  verdrahteHcToggle()
   verdrahteThemePicker()
   verdrahteAusgabenDrillSync()
   window.__appBereit = true
   zeigeBuildStempel()
 }
 
-// --- A11y: .gat-mode-hc-Toggle ------------------------------------------- //
-// Knopf in der Brandbar schaltet den Hochkontrast-Modus ein/aus. Der DS
-// definiert die Variant (body.gat-mode-hc), die App pflegt nur den
-// Toggle-Knopf und persistiert den Zustand in localStorage. Ein
-// Inline-Skript im <head> setzt die Klasse VOR dem ersten Paint (FOWT-
-// Prevention) auf <html>; dieser Toggle spiegelt die Klasse zusaetzlich
-// auf <body>, damit die DS-Selektoren (body.gat-mode-hc ...) greifen.
-function verdrahteHcToggle() {
-  const btn = document.getElementById("hc-toggle")
-  if (!btn) return
-  const set = (an, ausUserInteraktion) => {
-    document.body.classList.toggle("gat-mode-hc", an)
-    document.documentElement.classList.toggle("gat-mode-hc", an)
-    btn.setAttribute("aria-pressed", an ? "true" : "false")
-    btn.setAttribute(
-      "aria-label",
-      an ? "Hohen Kontrast ausschalten" : "Hohen Kontrast einschalten",
-    )
-    try {
-      localStorage.setItem("gat-mode-hc", an ? "1" : "")
-    } catch (e) { /* gesperrt (Privatmodus) — egal */ }
-    // HC-Auto-Switch: Chart-Theme an den HC-Modus koppeln. Nur bei einer
-    // expliziten User-Interaktion, nicht beim Initial-Sync, damit eine
-    // gespeicherte manuelle Theme-Wahl ueber Refreshes hinweg respektiert
-    // bleibt.
-    if (ausUserInteraktion) aktualisiereThemeBeiHc(an)
-  }
-  let aktiv = false
-  try { aktiv = localStorage.getItem("gat-mode-hc") === "1" } catch (e) {}
-  set(aktiv, false)
-  btn.addEventListener("click", () =>
-    set(!document.body.classList.contains("gat-mode-hc"), true))
-}
-
 // --- Chart-Theme-Picker --------------------------------------------------- //
-// Header-Dropdown rechts neben dem Kontrast-Toggle. Wechsel des Themes
-// schreibt in localStorage und dispatcht 'theme-change'; der Listener
-// re-rendert alle ECharts-Instanzen.
+// Header-Dropdown. Wechsel des Themes schreibt in localStorage und dispatcht
+// 'theme-change'; der Listener re-rendert alle ECharts-Instanzen.
 function verdrahteThemePicker() {
   const sel = document.getElementById("theme-picker")
   if (!sel) return
@@ -490,9 +454,8 @@ function schliesseChartModal() {
 // Dokumentname kommt aus dem Switcher (`.switch-btn.is-active`), den
 // dashboard.js pflegt. Fehlt er, fallen wir auf `dokument` zurueck.
 //
-// Hintergrund **immer weiss** — auch im Hochkontrast-Modus. Das exportierte
-// PNG ist fuer Berichte und Praesentationen gedacht (Druck-Default), und
-// HC-spezifische Farben wuerden in einem PDF-Anhang nur irritieren.
+// Hintergrund **immer weiss**, damit das exportierte PNG fuer Berichte und
+// Praesentationen ohne Nacharbeit nutzbar bleibt.
 function verdrahtePngExport() {
   for (const panel of holeDiagrammPanels()) {
     const actions = holeOderBaueAktionsleiste(panel)

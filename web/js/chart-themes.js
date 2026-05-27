@@ -1,4 +1,4 @@
-// Chart-Color-Themes — vier definierte Paletten fuer alle ECharts-Charts.
+// Chart-Color-Themes — drei definierte Paletten fuer alle ECharts-Charts.
 //
 // Themes sind statisch definierte Objekte mit `palette` (8 Diagrammfarben)
 // und `ink` (semantische Rollen: green/blue/orange/red/soft, fuer
@@ -9,8 +9,6 @@
 // in app.js).
 //
 // Standard: die entsaettigte DS-v2.2-Palette (wie bisher).
-// Hoher Kontrast: gesaettigte Toene, hoch kontrastreich zum weissen
-//   Hintergrund — wird automatisch aktiv, wenn `.gat-mode-hc` an ist.
 // Druckfreundlich: Graustufen + zwei Akzentfarben (Gruen + Clay) fuer
 //   Schwarzweiss-Druck-Berichte.
 // Barrierefrei (Daltonismus-sicher): die Wong-Palette (Wong, B. Nature
@@ -29,20 +27,6 @@ export const CHART_THEMES = {
       orange: "#c9a24b",
       red: "#b9744f",
       soft: "#8a8f7d",
-    },
-  },
-  hochkontrast: {
-    name: "Hoher Kontrast",
-    palette: [
-      "#005a2c", "#a3590c", "#0d5775", "#8b1f1f",
-      "#3f5f00", "#6b1f5f", "#1f2a4f", "#3a3a3a",
-    ],
-    ink: {
-      green: "#005a2c",
-      blue: "#0d5775",
-      orange: "#a3590c",
-      red: "#8b1f1f",
-      soft: "#3a3a3a",
     },
   },
   druck: {
@@ -76,7 +60,6 @@ export const CHART_THEMES = {
 }
 
 const STORAGE_KEY = "app-chart-theme"
-const HC_MEMORY_KEY = "app-chart-theme-vor-hc"
 const DEFAULT_THEME = "standard"
 
 export function holeAktivenThemeName() {
@@ -100,28 +83,6 @@ export function setzeTheme(name) {
     window.__chartTheme = CHART_THEMES[name]
     window.dispatchEvent(new CustomEvent("theme-change",
       { detail: { name, theme: CHART_THEMES[name] } }))
-  }
-}
-
-// HC-Auto-Switch: wenn der HC-Modus angeht, vorheriges Theme merken und
-// auf 'hochkontrast' wechseln (sofern aktuell ein normales Theme aktiv ist).
-// Beim HC-Aus zurueck zum gemerkten Theme. Ein manueller Theme-Wechsel
-// waehrend HC ueberschreibt die Memory-Spur — der User wollte das HC-Theme
-// dann nicht mehr automatisch.
-export function aktualisiereThemeBeiHc(hcAktiv) {
-  const aktuell = holeAktivenThemeName()
-  if (hcAktiv) {
-    if (aktuell !== "hochkontrast") {
-      try { localStorage.setItem(HC_MEMORY_KEY, aktuell) } catch (e) {}
-      setzeTheme("hochkontrast")
-    }
-  } else {
-    let gemerkt = DEFAULT_THEME
-    try {
-      const m = localStorage.getItem(HC_MEMORY_KEY)
-      if (m && CHART_THEMES[m]) gemerkt = m
-    } catch (e) {}
-    if (aktuell === "hochkontrast") setzeTheme(gemerkt)
   }
 }
 
