@@ -66,7 +66,17 @@
     var entry = charts[divId];
     if (!entry) return;
     var opt = chartOption(entry);
-    if (opt) entry.inst.setOption(revive(opt), true);
+    if (!opt) return;
+    // Ein einzelner Chart-Fehler darf nicht die restlichen Charts und Stat-
+    // Karten ausknipsen — sonst sieht der User "viele Felder weiss". Fehler
+    // pro Chart in die Konsole, Schleife laeuft weiter.
+    try {
+      entry.inst.setOption(revive(opt), true);
+    } catch (e) {
+      if (typeof console !== "undefined" && console.error) {
+        console.error("Chart '" + divId + "' konnte nicht gerendert werden:", e);
+      }
+    }
   }
 
   function renderAllCharts() {
@@ -500,7 +510,14 @@
 
   function renderSankey() {
     var entry = charts["c_sankey"];
-    if (entry) entry.inst.setOption(revive(sankeyOption()), true);
+    if (!entry) return;
+    try {
+      entry.inst.setOption(revive(sankeyOption()), true);
+    } catch (e) {
+      if (typeof console !== "undefined" && console.error) {
+        console.error("Chart 'c_sankey' konnte nicht gerendert werden:", e);
+      }
+    }
   }
 
   // Reset-Hinweis ueber dem Diagramm ein-/ausblenden.
