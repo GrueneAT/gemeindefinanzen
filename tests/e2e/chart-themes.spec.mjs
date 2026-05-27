@@ -1,16 +1,15 @@
-// E2E — Chart-Color-Themes. Picker im Header, vier Themes, localStorage,
-// HC-Auto-Switch.
+// E2E — Chart-Color-Themes. Picker im Header, drei Themes, localStorage.
 
 import { test, expect } from '@playwright/test'
 import { ladeFixturePdf, oeffneApp } from './helpers.mjs'
 
-test('Theme-Picker: vier Optionen + Default Standard', async ({ page }) => {
+test('Theme-Picker: drei Optionen + Default Standard', async ({ page }) => {
   await oeffneApp(page)
   const sel = page.locator('#theme-picker')
   await expect(sel).toBeVisible()
   const optionen = await sel.locator('option').allTextContents()
   expect(optionen).toEqual([
-    'Standard', 'Hoher Kontrast', 'Druckfreundlich', 'Barrierefrei',
+    'Standard', 'Druckfreundlich', 'Barrierefrei',
   ])
   await expect(sel).toHaveValue('standard')
 })
@@ -36,21 +35,7 @@ test('Theme-Picker: wechselt das aktive Theme + persistiert in localStorage',
     expect(attr).toBe('barrierefrei')
   })
 
-test('Theme-Auto-Switch: HC-Modus aktiviert das Hochkontrast-Theme',
-  async ({ page }) => {
-    await ladeFixturePdf(page)
-    // Sicherstellen: starten mit Standard.
-    await page.selectOption('#theme-picker', 'standard')
-    await expect(page.locator('#theme-picker')).toHaveValue('standard')
-    // HC-Toggle anklicken — Theme schaltet auf hochkontrast um.
-    await page.locator('#hc-toggle').click()
-    await expect(page.locator('#theme-picker')).toHaveValue('hochkontrast')
-    // HC wieder aus -> Theme zurueck auf Standard.
-    await page.locator('#hc-toggle').click()
-    await expect(page.locator('#theme-picker')).toHaveValue('standard')
-  })
-
-test('Theme-API: alle vier Themes definiert und mit Palette + Ink',
+test('Theme-API: alle drei Themes definiert und mit Palette + Ink',
   async ({ page }) => {
     await oeffneApp(page)
     const themes = await page.evaluate(() => {
@@ -60,7 +45,7 @@ test('Theme-API: alle vier Themes definiert und mit Palette + Ink',
               inkKeys: Object.keys(v.ink) }]))
     })
     expect(Object.keys(themes).sort()).toEqual(
-      ['barrierefrei', 'druck', 'hochkontrast', 'standard'])
+      ['barrierefrei', 'druck', 'standard'])
     for (const k of Object.keys(themes)) {
       expect(themes[k].paletteSize).toBe(8)
       expect(themes[k].inkKeys.sort()).toEqual(
