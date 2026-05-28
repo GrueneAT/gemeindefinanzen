@@ -783,13 +783,27 @@ export function chartInvestFinanzierungSankey(agg) {
     ["Eigenmittel (Restgroesse)", f.eigen || 0, INK.soft],
   ].filter(([, v]) => v > 0)
   // Investitionen: Top-N + "Sonstige"-Buendel. agg.investitionen liefert
-  // bereits eine sortierte Liste (groesster zuerst, Limit 14 in
+  // eine nach Wert sortierte Liste (groesster zuerst, Limit 14 in
   // dashboard-data.js).
-  const invListe = (agg.investitionen || []).filter(([, , v]) => v > 0)
+  //
+  // Vorher nach Bezeichnung aggregieren: dieselbe Bezeichnung kann ueber
+  // mehrere Ansaetze hinweg auftauchen (z. B. "Wasser- und Abwasserbauten
+  // und -anlagen" als 8520/4500 und 8500/4500). Sankey-Nodes muessen
+  // eindeutige Namen haben — sonst kollabieren die Duplikate im internen
+  // Name->Index-Map und ECharts wirft beim Layout `TypeError: Cannot set
+  // properties of undefined (setting 'dataIndex')`. Die Anteile fuer den
+  // User bleiben korrekt: eine Zeile pro Bezeichnung, Summe ueber die
+  // beteiligten Ansaetze.
+  const aggrNachBez = new Map()
+  for (const [b, , v] of agg.investitionen || []) {
+    if (v > 0) aggrNachBez.set(b, (aggrNachBez.get(b) || 0) + v)
+  }
+  const invListe = Array.from(aggrNachBez.entries())
+    .sort((a, c) => c[1] - a[1])
   const top = invListe.slice(0, INVEST_TOP_N)
   const rest = invListe.slice(INVEST_TOP_N)
-  const restSumme = rest.reduce((s, [, , v]) => s + v, 0)
-  const ziele = top.map(([b, , v]) => [b, v])
+  const restSumme = rest.reduce((s, [, v]) => s + v, 0)
+  const ziele = top.map(([b, v]) => [b, v])
   if (restSumme > 0) {
     ziele.push([`Sonstige (${rest.length})`, restSumme])
   }
