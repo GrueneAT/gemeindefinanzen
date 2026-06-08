@@ -37,10 +37,18 @@ Mehrjahres-Vergleich einzelner Posten oder Gruppen als Liniendiagramm.
 ### Lokal starten
 
 ```sh
-make web-deps     # mupdf.js und sqlite-wasm installieren (einmalig)
-make web-docker   # Server im Container → http://localhost:8080/web/
-make web-test     # JS-Tests gegen die PDFs in documents/
+make web-deps            # mupdf.js und sqlite-wasm installieren (einmalig)
+make web-docker          # Server im Container → http://localhost:8080/web/
+make web-test            # JS-Tests gegen die PDFs in documents/
+make web-gemeinde-index  # web/gemeinden-index.json fuer die OH-Suche neu holen
 ```
+
+Der **OH-Gemeinde-Index** (`web/gemeinden-index.json`, Quelle für die
+Gemeindesuche und die Deep-Links auf offenerhaushalt.at) wird nicht bei jedem
+Deploy erzeugt — die committete Datei ist die Deploy-Quelle. Bei Gemeinde-
+Fusionen/-Umbenennungen oder neuen Freischaltungen einmal
+`make web-gemeinde-index` (bzw. `npm run gemeinde-index`) laufen lassen und das
+Ergebnis committen.
 
 Die Seite ist ohne Build-Schritt **GitHub-Pages-tauglich** — der Ordner `web/`
 enthält alles, Bibliotheken vendorisiert unter `web/vendor/`. Details:

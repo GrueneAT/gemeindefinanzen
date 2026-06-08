@@ -35,6 +35,13 @@ import {
   kappen,
   TOP_N,
 } from "../../web/js/sankey-drill.js"
+import {
+  normalisiere,
+  sucheGemeinden,
+  baueDownloadLink,
+  baueDownloadLinks,
+  OH_BASIS,
+} from "../../web/js/oh-deeplink.js"
 
 const WURZEL = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
 const DOCS = join(WURZEL, "documents")
@@ -952,6 +959,79 @@ async function teste() {
       "DATA gleich Python-Referenz",
       JSON.stringify(daten) === JSON.stringify(py),
     )
+  }
+
+  // -------------------------------------------------------------------------
+  // OH-Deeplink: Gemeindesuche + Bau der Download-Links (oh-deeplink.js)
+  // -------------------------------------------------------------------------
+  pruefe(
+    "normalisiere entfernt Diakritika und Grossschreibung",
+    normalisiere("Wörgl") === "woergl" && normalisiere("ST. PÖLTEN") === "st. poelten",
+  )
+
+  // URL-Bau: exakt das verifizierte OH-Muster, Slug URL-kodiert.
+  const linkHb = baueDownloadLink({ slug: "herzogenburg", jahr: 2023, typ: "ra", haushalt: "ehh" })
+  pruefe(
+    "baueDownloadLink: korrektes OH-Muster",
+    linkHb ===
+      `${OH_BASIS}/gemeinde/herzogenburg/download?haushalt=ehh&rechnungsabschluss=ra&year=2023`,
+    linkHb,
+  )
+  const linkWoergl = baueDownloadLink({ slug: "wörgl", jahr: 2024, typ: "va", haushalt: "fhh" })
+  pruefe(
+    "baueDownloadLink: Slug mit Umlaut wird URL-kodiert (w%C3%B6rgl)",
+    linkWoergl.includes("/gemeinde/w%C3%B6rgl/download") &&
+      linkWoergl.includes("haushalt=fhh") &&
+      linkWoergl.includes("rechnungsabschluss=va") &&
+      linkWoergl.includes("year=2024"),
+    linkWoergl,
+  )
+  const paar = baueDownloadLinks({ slug: "herzogenburg", jahr: 2022, typ: "va" })
+  pruefe(
+    "baueDownloadLinks liefert EHH+FHH-Paar",
+    paar.ehh.includes("haushalt=ehh") && paar.fhh.includes("haushalt=fhh") &&
+      paar.ehh.includes("year=2022") && paar.fhh.includes("rechnungsabschluss=va"),
+  )
+  let warf = false
+  try { baueDownloadLink({ slug: "x", jahr: 2023, typ: "xx", haushalt: "ehh" }) }
+  catch { warf = true }
+  pruefe("baueDownloadLink wirft bei ungueltigem Typ", warf)
+  warf = false
+  try { baueDownloadLink({ slug: "x", jahr: "23", typ: "ra", haushalt: "ehh" }) }
+  catch { warf = true }
+  pruefe("baueDownloadLink wirft bei ungueltigem Jahr", warf)
+
+  // Suche gegen den erzeugten Index (sofern vorhanden).
+  const idxPfad = join(WURZEL, "web/gemeinden-index.json")
+  if (existsSync(idxPfad)) {
+    const idx = JSON.parse(readFileSync(idxPfad, "utf8"))
+    pruefe("Gemeinde-Index enthaelt >2000 Gemeinden", idx.length > 2000, `${idx.length}`)
+
+    const hb = sucheGemeinden(idx, "Herzogenburg")
+    pruefe(
+      "Suche 'Herzogenburg' findet slug=herzogenburg, gkz=31912",
+      hb[0] && hb[0].slug === "herzogenburg" && hb[0].gkz === "31912",
+      JSON.stringify(hb[0]),
+    )
+    const ascii = sucheGemeinden(idx, "woergl")
+    pruefe(
+      "Diakritika-tolerante Suche 'woergl' findet Wörgl (slug=wörgl)",
+      ascii.some((g) => g.slug === "wörgl"),
+    )
+    const perGkz = sucheGemeinden(idx, "31912")
+    pruefe(
+      "GKZ-Suche '31912' findet Herzogenburg",
+      perGkz.some((g) => g.gkz === "31912" && g.name === "Herzogenburg"),
+    )
+    const sp = sucheGemeinden(idx, "pölten").find((g) => g.name === "St. Pölten")
+    pruefe(
+      "St. Pölten hat den nicht-ableitbaren Slug 'sankt-pölten'",
+      sp && sp.slug === "sankt-pölten",
+      sp && sp.slug,
+    )
+    pruefe("Leere Suche liefert nichts", sucheGemeinden(idx, "  ").length === 0)
+  } else {
+    console.log("  SKIP web/gemeinden-index.json fehlt — `node scripts/oh-gemeinde-index.mjs`")
   }
 
   console.log(

@@ -19,6 +19,9 @@ import {
   CHART_THEMES, holeAktivenThemeName, holeAktivesTheme,
   setzeTheme, initChartTheme,
 } from "./chart-themes.js"
+import {
+  ladeGemeindeIndex, sucheGemeinden, baueDownloadLinks,
+} from "./oh-deeplink.js"
 
 // Chart-Theme global bereitstellen, bevor irgendein Chart-Builder laeuft.
 initChartTheme()
@@ -61,6 +64,7 @@ async function init() {
       "uneingeschraenkt."
 
   verdrahteUpload()
+  verdrahteOhSuche()
   verdrahteOverlayFokus()
   zeichneDokumentliste()
   zeichneDashboard()
@@ -1994,6 +1998,130 @@ function verdrahteUpload() {
     const dateien = [...(e.dataTransfer?.files || [])]
     verarbeiteDateien(dateien)
   })
+}
+
+// OH-Suche: Gemeinde finden und Deep-Links auf die OH-Download-Seite bauen.
+// Es wird KEIN CSV abgerufen (offenerhaushalt.at ist nicht CORS-faehig und
+// CSRF-geschuetzt) — die App fuehrt nur zielgenau zur richtigen Seite mit
+// vorausgewaehlten Feldern. Hintergrund: web/js/oh-deeplink.js.
+function verdrahteOhSuche() {
+  const input = document.getElementById("oh-search")
+  const results = document.getElementById("oh-results")
+  const yearSel = document.getElementById("oh-year")
+  const typSel = document.getElementById("oh-typ")
+  const out = document.getElementById("oh-out")
+  const chosen = document.getElementById("oh-chosen")
+  const linkEhh = document.getElementById("oh-link-ehh")
+  const linkFhh = document.getElementById("oh-link-fhh")
+  if (!input) return
+
+  // Jahre fuellen: aktuelles Jahr abwaerts bis 2015 (VRV-2015-Aera).
+  const jetzt = new Date().getFullYear()
+  for (let j = jetzt; j >= 2015; j--) {
+    const opt = document.createElement("option")
+    opt.value = String(j)
+    opt.textContent = String(j)
+    yearSel.appendChild(opt)
+  }
+  // Vorjahr als Default — der juengste i. d. R. verfuegbare Rechnungsabschluss.
+  yearSel.value = String(Math.max(2015, jetzt - 1))
+
+  let index = null
+  let indexFehler = false
+  let gewaehlt = null
+
+  async function stelleIndexBereit() {
+    if (index || indexFehler) return
+    try {
+      index = await ladeGemeindeIndex()
+    } catch {
+      indexFehler = true
+      toast(
+        "Gemeindeliste konnte nicht geladen werden — OH-Suche nicht verfuegbar.",
+        "warn",
+      )
+    }
+  }
+
+  function schliesseListe() {
+    results.hidden = true
+    results.innerHTML = ""
+    input.setAttribute("aria-expanded", "false")
+  }
+
+  function aktualisiereLinks() {
+    if (!gewaehlt) {
+      out.hidden = true
+      return
+    }
+    const typ = typSel.value
+    const jahr = yearSel.value
+    const links = baueDownloadLinks({ slug: gewaehlt.slug, jahr, typ })
+    linkEhh.href = links.ehh
+    linkFhh.href = links.fhh
+    const typText = typ === "ra" ? "Rechnungsabschluss" : "Voranschlag"
+    chosen.textContent =
+      `${gewaehlt.name} (GKZ ${gewaehlt.gkz}) — ${typText} ${jahr}`
+    out.hidden = false
+  }
+
+  function waehle(g) {
+    gewaehlt = g
+    input.value = g.name
+    schliesseListe()
+    aktualisiereLinks()
+  }
+
+  function zeigeTreffer(treffer) {
+    results.innerHTML = ""
+    if (treffer.length === 0) {
+      schliesseListe()
+      return
+    }
+    for (const g of treffer) {
+      const li = document.createElement("li")
+      li.className = "oh-finder__result"
+      li.setAttribute("role", "option")
+      li.tabIndex = -1
+      li.textContent = `${g.name} (${g.gkz})`
+      if (!g.published) {
+        const span = document.createElement("span")
+        span.className = "oh-finder__nodata"
+        span.textContent = " — evtl. keine Daten"
+        li.appendChild(span)
+      }
+      // mousedown (vor blur) statt click, damit die Auswahl nicht durch das
+      // Schliessen der Liste beim Fokusverlust verloren geht.
+      li.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        waehle(g)
+      })
+      results.appendChild(li)
+    }
+    results.hidden = false
+    input.setAttribute("aria-expanded", "true")
+  }
+
+  let timer = null
+  input.addEventListener("input", () => {
+    gewaehlt = null
+    out.hidden = true
+    clearTimeout(timer)
+    timer = setTimeout(async () => {
+      const q = input.value.trim()
+      if (q.length < 2) {
+        schliesseListe()
+        return
+      }
+      await stelleIndexBereit()
+      if (!index) return
+      zeigeTreffer(sucheGemeinden(index, q, 12))
+    }, 120)
+  })
+  input.addEventListener("focus", stelleIndexBereit)
+  input.addEventListener("blur", () => setTimeout(schliesseListe, 150))
+  yearSel.addEventListener("change", aktualisiereLinks)
+  typSel.addEventListener("change", aktualisiereLinks)
 }
 
 async function verarbeiteDateien(dateien) {

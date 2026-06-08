@@ -92,6 +92,49 @@
       <span class="doc-manager-count" id="doc-manager-count"></span>
     </summary>
     <div class="doc-manager-body">
+      <section class="oh-finder">
+        <h2>Auf Offener Haushalt finden</h2>
+        <p class="oh-finder__intro gat-fliesstext">Gemeinde suchen, Jahr und Typ
+          waehlen — die Links fuehren direkt zur passenden Download-Seite auf
+          <a href="https://offenerhaushalt.at" rel="noopener" target="_blank"
+             >offenerhaushalt.at</a> (Felder bereits vorausgewaehlt). Dort die
+          beiden CSVs (Ergebnis- und Finanzierungshaushalt) herunterladen und
+          unten in „Dokumente hinzufuegen" ziehen.</p>
+        <div class="oh-finder__controls">
+          <div class="oh-finder__field oh-finder__field--search">
+            <label for="oh-search">Gemeinde</label>
+            <input type="text" id="oh-search" class="gat-input" autocomplete="off"
+                   placeholder="Name oder Gemeindekennziffer, z. B. Herzogenburg"
+                   role="combobox" aria-expanded="false" aria-controls="oh-results"
+                   aria-autocomplete="list">
+            <ul class="oh-finder__results" id="oh-results" role="listbox" hidden></ul>
+          </div>
+          <div class="oh-finder__field">
+            <label for="oh-year">Jahr</label>
+            <select id="oh-year" class="gat-input gat-input--compact"></select>
+          </div>
+          <div class="oh-finder__field">
+            <label for="oh-typ">Typ</label>
+            <select id="oh-typ" class="gat-input gat-input--compact">
+              <option value="ra">Rechnungsabschluss</option>
+              <option value="va">Voranschlag</option>
+            </select>
+          </div>
+        </div>
+        <div class="oh-finder__out" id="oh-out" hidden>
+          <p class="oh-finder__chosen" id="oh-chosen"></p>
+          <div class="oh-finder__links">
+            <a class="gat-btn gat-btn--secondary" id="oh-link-ehh"
+               target="_blank" rel="noopener">Ergebnishaushalt (EHH) oeffnen</a>
+            <a class="gat-btn gat-btn--secondary" id="oh-link-fhh"
+               target="_blank" rel="noopener">Finanzierungshaushalt (FHH) oeffnen</a>
+          </div>
+          <p class="oh-finder__hint gat-dropzone__hint">Beide Dateien
+            herunterladen, dann unten in die Ablage ziehen — EHH + FHH werden
+            automatisch zu einem Dokument zusammengefuehrt.</p>
+        </div>
+      </section>
+
       <section>
         <h2>Dokumente hinzufuegen</h2>
         <div class="dropzone gat-dropzone" id="dropzone">

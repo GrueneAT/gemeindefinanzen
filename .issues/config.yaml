@@ -1,18 +1,32 @@
 # Issue-System — Konfiguration
 # Einzelnes Repository, lokal (kein externer Tracker).
 
-model: claude-opus-4-7
+# ---- Per-Stage Agent-Modelle ---------------------------------------------
+research_model: opus
+plan_model: opus
+execute_model: sonnet
 
+# ---- Branch-Naming -------------------------------------------------------
+naming:
+  branch: "issue/{slug}"
+
+# ---- Commit-Format -------------------------------------------------------
+# Conventional Commits mit vorangestelltem Issue-Hash, ohne Werkzeug-Attribution.
+commits:
+  format: conventional
+  prefix: true
+
+# ---- Workflow-Flags ------------------------------------------------------
 # Artefakte (ISSUE.md, CONTEXT.md ...) auf dem Feature-Branch mitcommitten
 commit_artifacts: true
 
+worktrees: true
+worktree_dir: ".worktrees"
+
+staleness_days: 7
+
+# ---- Repos ---------------------------------------------------------------
 # Einzel-Repo: das Workspace-Wurzelverzeichnis selbst
 repos:
   - name: gemeindefinanzen
     path: .
-
-naming:
-  branch_prefix: issue/
-
-# Commit-Format ohne Werkzeug-Attribution
-commit_format: "{id}: {message}"
