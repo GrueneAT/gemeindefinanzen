@@ -2,6 +2,7 @@
 id: h3ukx
 title: Dokumente direkt von Offener Haushalt importieren
 status: done
+ship_state: pr_open
 priority: medium
 labels:
 - web
