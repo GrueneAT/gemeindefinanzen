@@ -9,6 +9,15 @@ labels:
 - offenerhaushalt
 ---
 
+> **Research-Ergebnis (2026-06-08) — siehe `RESEARCH-oh-feasibility.md`:**
+> Der echte „lädt die CSV automatisch rein"-Direktimport ist unter der
+> Strikt-statisch-Vorgabe **nicht möglich** — offenerhaushalt.at sendet keine
+> CORS-Header und schützt den Download per CSRF/Session (im echten Chromium
+> belegt, POC unter `poc/oh-direct-fetch/`). **Empfohlener Pivot:** Gemeinde-
+> Suche + **Deep-Link** auf die korrekte OH-Download-Seite — die Seite wählt
+> `haushalt`, `rechnungsabschluss` und `year` aus Query-Parametern vor (getestet).
+> Der Scope unten ist entsprechend zu aktualisieren.
+
 ## Kontext
 
 Die Browser-App (`web/`) kann VRV-2015-Dokumente bereits aus **zwei** Quellen

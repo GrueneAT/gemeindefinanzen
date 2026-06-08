@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POC — OH-Direktimport (CORS-Test)</title>
+  <style>
+    body { font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1 { font-size: 1.3rem; }
+    .case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    .ok { color: #137333; } .fail { color: #c5221f; } .warn { color: #b06000; }
+    pre { background: #f6f8fa; padding: .75rem; border-radius: 6px; overflow:auto; white-space: pre-wrap; }
+    code { background:#f0f0f0; padding:.1em .3em; border-radius:3px; }
+  </style>
+</head>
+<body>
+  <h1>POC: Lässt sich offenerhaushalt.at direkt im Browser abrufen?</h1>
+  <p>Origin dieser Seite: <code id="origin"></code> — Ziel:
+     <code>https://www.offenerhaushalt.at</code> (fremde Origin).</p>
+
+  <div class="case" id="c1"><b>Fall 1 — normaler <code>fetch()</code> (cors)</b><div class="r">läuft…</div></div>
+  <div class="case" id="c2"><b>Fall 2 — <code>fetch(..., {mode:'no-cors'})</code> (opaque)</b><div class="r">läuft…</div></div>
+  <div class="case" id="c3"><b>Fall 3 — Download-Endpunkt <code>/downloads/ghdByParams</code> (POST, cors)</b><div class="r">läuft…</div></div>
+
+  <script>
+    const OH = "https://www.offenerhaushalt.at";
+    const results = {};
+    document.getElementById("origin").textContent = location.origin;
+
+    function show(id, cls, html) {
+      document.querySelector("#" + id + " .r").innerHTML =
+        '<span class="' + cls + '">' + html + '</span>';
+    }
+
+    async function run() {
+      // Fall 1: normaler CORS-fetch auf eine OH-Seite
+      try {
+        const res = await fetch(OH + "/gemeinde/fohnsdorf/download?haushalt=ehh", { mode: "cors" });
+        const text = await res.text();
+        results.case1 = { ok: true, status: res.status, bytes: text.length };
+        show("c1", "ok", "Antwort lesbar (HTTP " + res.status + ", " + text.length + " Zeichen) — CORS wäre erlaubt.");
+      } catch (e) {
+        results.case1 = { ok: false, error: String(e) };
+        show("c1", "fail", "BLOCKIERT: " + e + "<br>→ Browser verbietet das Lesen, weil keine <code>Access-Control-Allow-Origin</code>-Header kommen.");
+      }
+
+      // Fall 2: no-cors → opaque response, Body NICHT lesbar
+      try {
+        const res = await fetch(OH + "/gemeinde/fohnsdorf/download?haushalt=ehh", { mode: "no-cors" });
+        let readable = true, bytes = 0, err = null;
+        try { const t = await res.text(); bytes = t.length; readable = bytes > 0; }
+        catch (e2) { readable = false; err = String(e2); }
+        results.case2 = { type: res.type, status: res.status, bytes, readable, err };
+        show("c2", "warn",
+          "Response-Typ <code>" + res.type + "</code>, HTTP-Status sichtbar als <code>" + res.status +
+          "</code>, lesbarer Body: <b>" + (readable ? "ja" : "nein (0 Bytes / opaque)") +
+          "</b>.<br>→ Selbst wenn der Request durchgeht, sind die CSV-Daten nicht auslesbar.");
+      } catch (e) {
+        results.case2 = { ok: false, error: String(e) };
+        show("c2", "fail", "Fehler: " + e);
+      }
+
+      // Fall 3: der echte Download-Endpunkt (POST)
+      try {
+        const body = new URLSearchParams({
+          gkz: "62007", haushalt: "ehh", rechnungsabschluss: "ra",
+          year: "2023", origin: "statistik_at", _token: "dummy"
+        });
+        const res = await fetch(OH + "/downloads/ghdByParams", { method: "POST", mode: "cors", body });
+        const text = await res.text();
+        results.case3 = { ok: true, status: res.status, bytes: text.length };
+        show("c3", "ok", "Antwort lesbar (HTTP " + res.status + ") — CORS wäre erlaubt.");
+      } catch (e) {
+        results.case3 = { ok: false, error: String(e) };
+        show("c3", "fail", "BLOCKIERT: " + e + "<br>→ Auch der eigentliche CSV-Download ist cross-origin nicht abrufbar (zusätzlich CSRF-/Session-geschützt).");
+      }
+
+      window.__POC_RESULTS__ = results;
+      document.title = "POC fertig";
+    }
+    run();
+  </script>
+</body>
+</html>
