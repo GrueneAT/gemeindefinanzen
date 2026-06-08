@@ -9,7 +9,8 @@ End-to-End-Download-Flow + Browser-POC in echtem Chromium (Playwright).
 | :-- | :-- | :-- |
 | **A** CSV automatisch im Browser laden (echter „Direktimport") | ✅ | ❌ **Nein** — kein CORS + CSRF/Session |
 | **B** Kleiner Proxy/Backend lädt CSV, App holt vom Proxy | ❌ (Server nötig) | ✅ ginge technisch — vom User ausgeschlossen |
-| **C** Suche + Deep-Link auf die exakte OH-Download-Seite | ✅ | ✅ **Ja — empfohlen** |
+| **C** Suche + Deep-Link auf die exakte OH-Download-Seite | ✅ | ✅ **Ja — umgesetzt** |
+| **D** Daten direkt von Statistik Austria (data.statistik.gv.at) | ✅ | ❌ **Nein** — kein CORS UND nur Aggregate |
 
 **Fazit:** Der ursprünglich gedachte „lädt die Datei direkt rein"-Import ist
 unter der Strikt-statisch-Vorgabe **nicht möglich**. Die von dir genannte
@@ -126,3 +127,44 @@ korrekte OH-Download-Seite (Felder vorausgewählt)". Das ist der maximale
 Komfortgewinn, der ohne Server/Proxy und ohne CORS erreichbar ist. Ein echter
 Auto-Import bleibt explizit Proxy-abhängig und damit außerhalb der aktuellen
 Vorgabe.
+
+## Ansatz D geprüft: Statistik Austria (data.statistik.gv.at)
+
+Die OH-CSVs stammen letztlich aus Statistik Austria — daher die Frage, ob wir
+direkt dort (CORS-tauglich) abrufen könnten. Ergebnis: **nein, doppelt nicht.**
+
+1. **Granularität.** Statistik Austria veröffentlicht die Gemeindedaten laut
+   eigener Erhebungsseite **aggregiert** („aggregiert nach den Bestandteilen des
+   Voranschlags [VRV 2015 §5] bzw. nach der Gliederung der Vermögensrechnung
+   §18(7)") — **nicht** den Detailnachweis je Ansatz/Konto. Genau diese Detail-
+   tiefe (z. B. Kommunalsteuer Konto 833000, MVAG-Aufschlüsselung) braucht das
+   Dashboard. Der granulare CSV ist die Wertschöpfung von OH.
+2. **Kein offener Detaildatensatz.** Im OGD-Katalog (`data.statistik.gv.at`)
+   findet sich **kein** Gemeindehaushalt-/Gebarungs-Datensatz auf Detailebene.
+3. **Kein CORS.** Eine echte OGD-Daten-CSV (`/data/OGD_*.csv`) liefert zwar
+   `text/csv` 200, aber **ohne** `Access-Control-Allow-Origin` — also auch hier
+   kein Browser-Direktabruf.
+
+Für den **Mehr-Gemeinden-Vergleich** (Folge-Issue `uecaf`) wären die Aggregate
+inhaltlich evtl. nutzbar — aber CORS + fehlender offener Datensatz machen auch
+das im Browser nicht direkt möglich.
+
+## Gemeinde-Index: Quelle gefunden und extrahiert
+
+OH-Slugs sind **nicht** aus dem Namen ableitbar (`St. Pölten`→`sankt-pölten`,
+`Wörgl`→`wörgl`, `Krems an der Donau`→`krems`). Die OH-Startseite bettet aber
+`__ives.gemeinden` ein — die Datengrundlage ihrer eigenen Suche: **2689
+Einträge**, davon **2496 Gemeinden (type GEM)**, je mit `{name, slug, id (GKZ),
+published_at, type}`. Daraus erzeugt `scripts/oh-gemeinde-index.mjs` einmalig
+`web/gemeinden-index.json` (Name ↔ slug ↔ GKZ, ~206 KB). Verifiziert: die
+erzeugten URLs (auch mit URL-kodiertem Umlaut-Slug, z. B. `w%C3%B6rgl`) liefern
+HTTP 200 mit vorausgewählten Feldern.
+
+## Umsetzung (Ansatz C) — erledigt
+
+- `scripts/oh-gemeinde-index.mjs` → `web/gemeinden-index.json` (2496 Gemeinden).
+- `web/js/oh-deeplink.js`: Suche (Name/GKZ, umlaut-tolerant) + URL-Bau.
+- UI-Abschnitt „Auf Offener Haushalt finden" in der Dokumentverwaltung
+  (`web/index.html`, `verdrahteOhSuche()` in `web/js/app.js`, CSS in
+  `web/css/app.css`).
+- Tests: Unit (`tests/js/run.mjs`) + e2e (`tests/e2e/oh-finder.spec.mjs`).
