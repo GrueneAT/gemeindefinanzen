@@ -48,8 +48,9 @@ Worktree; Merge nach `main` durch den User — siehe CONTEXT.md).
 ## Offene Punkte / Folge-Arbeit
 
 - `web/gemeinden-index.json` ist abgeleitete Momentaufnahme — bei Gemeinde-
-  Fusionen/-Umbenennungen `node scripts/oh-gemeinde-index.mjs` erneut laufen
-  lassen (idealerweise als `make`-Target / CI-Schritt).
+  Fusionen/-Umbenennungen `make web-gemeinde-index` (bzw. `npm run
+  gemeinde-index`) erneut laufen lassen und committen. Bewusst **nicht** Teil
+  des Deploy-Builds (Netzzugriff); die committete JSON ist die Deploy-Quelle.
 - Verfügbarkeit je Jahr/Typ nicht vorab prüfbar (cross-origin).
 - Automatischer Auto-Import bleibt Proxy-abhängig; Mehr-Gemeinden-Vergleich →
   Issue `uecaf`.

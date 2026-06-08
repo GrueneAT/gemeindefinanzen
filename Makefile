@@ -55,6 +55,12 @@ web-sync: ## schema.sql und sql/ nach web/ synchronisieren
 web-deps: ## JS-Abhaengigkeiten installieren (mupdf, sqlite-wasm)
 	npm install
 
+# Auf Abruf (Netzzugriff): erzeugt web/gemeinden-index.json fuer die OH-Suche
+# neu aus offenerhaushalt.at. Die committete JSON ist die Deploy-Quelle — bei
+# Gemeinde-Fusionen/-Umbenennungen oder neuen Freischaltungen neu laufen lassen.
+web-gemeinde-index: ## OH-Gemeinde-Index (web/gemeinden-index.json) neu erzeugen
+	node scripts/oh-gemeinde-index.mjs
+
 web-test: ## JS-Tests der Browser-App ausfuehren
 	npm run test:js
 
@@ -81,4 +87,4 @@ clean: ## Generierte Artefakte loeschen
 	rm -rf data/*.db data/*.csv data/*.xlsx build
 
 .PHONY: help setup db validate queries export test lint all clean \
-	web-sync web-deps web-test web-e2e web-serve web-docker test-js
+	web-sync web-deps web-gemeinde-index web-test web-e2e web-serve web-docker test-js
