@@ -1036,3 +1036,53 @@ input.search:focus-visible {
     print-color-adjust: exact;
   }
 }
+
+/* OH-Finder — Gemeindesuche + Deep-Links zu offenerhaushalt.at */
+.oh-finder__intro { margin-bottom: var(--gat-space-3); }
+.oh-finder__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gat-space-3);
+  align-items: flex-end;
+}
+.oh-finder__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gat-space-1);
+}
+.oh-finder__field label { font-size: 0.85rem; font-weight: 600; }
+.oh-finder__field--search {
+  position: relative;
+  flex: 1 1 18rem;
+  min-width: 14rem;
+}
+.oh-finder__field--search .gat-input { width: 100%; }
+.oh-finder__results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 16rem;
+  overflow-y: auto;
+  background: var(--gat-color-weiss);
+  border: 1px solid var(--app-hair);
+  border-radius: var(--gat-radius-sm);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.oh-finder__result {
+  padding: var(--gat-space-2) var(--gat-space-3);
+  cursor: pointer;
+}
+.oh-finder__result:hover { background: var(--app-soft); }
+.oh-finder__nodata { color: var(--app-risiko); font-size: 0.85em; }
+.oh-finder__out { margin-top: var(--gat-space-3); }
+.oh-finder__chosen { font-weight: 600; margin-bottom: var(--gat-space-2); }
+.oh-finder__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gat-space-2);
+}
