@@ -479,21 +479,31 @@ input, select { font-family: var(--gat-font-copy); }
   cursor: default;
 }
 
-/* --- Theme-Picker im Header ----------------------------------------------
-   Dropdown in der Brandbar. Label + Select, kompakte Optik. */
-.gat-header__theme {
+/* --- Diagramm-Farbpalette (Dashboard-Leiste) -----------------------------
+   Steuerung fuer die Chart-Palette. Bewusst in der Applikation (oben in der
+   Dashboard-Leiste, rechts neben dem Dokument-Umschalter), nicht im Header —
+   der Header bleibt reine CI/Navigation. */
+.dash-controls__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+.dash-palette {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   font: inherit;
   color: var(--gat-web-green-deep);
+  margin-left: auto;
 }
-.gat-header__theme-label {
+.dash-palette__label {
   font-family: var(--gat-font-headline);
   font-size: 0.95rem;
   font-weight: 600;
 }
-.gat-header__theme-select {
+.dash-palette__select {
   font: inherit;
   font-family: var(--gat-font-headline);
   font-size: 0.95rem;
@@ -506,28 +516,9 @@ input, select { font-family: var(--gat-font-copy); }
 }
 
 /* --- Support-Mailto in der Brandbar ---------------------------------------
-   Direkter Draht zum Betreuer des Werkzeugs: rechts in der Brandbar,
-   neben Werkzeuge-Link und Kontrast-Toggle. Desktop zeigt Briefumschlag +
-   Adresse, im Smartphone-Layout bleibt nur das Icon, damit die Brandbar
-   nicht umbricht. Optik: weiche Textfarbe in Ruhe, gruen beim Hover und
-   Fokus — dieselbe Logik wie der A11y-Toggle. */
-.gat-header__support {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  color: var(--gat-web-text-soft);
-  text-decoration: none;
-  transition: color 0.15s;
-}
-.gat-header__support:hover,
-.gat-header__support:focus-visible {
-  color: var(--gat-web-green-deep);
-}
-.gat-header__support-icon { flex: none; }
-@media (max-width: 48rem) {
-  .gat-header__support-label { display: none; }
-}
+   Optik (.gat-header__support/-icon/-label) kommt jetzt zentral aus dem
+   Design-System — keine lokale Kopie mehr. Nur die gemeinsame Fokus-Optik
+   unten ergaenzt den DS-Hoverzustand um Kontur + Ring. */
 
 /* --- Einheitlicher Tastatur-Fokus -----------------------------------------
    Jedes interaktive Element traegt denselben sichtbaren Fokus: eine

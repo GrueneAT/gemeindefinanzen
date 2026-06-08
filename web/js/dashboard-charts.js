@@ -22,6 +22,7 @@ import {
   grid,
   planIstLegende,
 } from "https://grueneat.github.io/design-system/gat-charts.js"
+import { holeAktivenThemeName, holeAktivesTheme } from "./chart-themes.js"
 
 // App-Adapter: DS-INK ist tonal (text/soft/mute/hairline/gridline/axis/...),
 // die App nutzt semantische Rollen (green/blue/orange/red/soft/paper). Die
@@ -30,13 +31,36 @@ import {
 // green=Ertraege/positiv, blue=Personal/neutral-kuehl (Teal),
 // orange=Sachaufwand (Gold), red=Aufwand/Risiko (Clay),
 // soft=Sonstige/Restgruppe (Sage), paper=Diagramm-Flaeche.
-const INK = {
+// Standard-Optik: die semantischen Rollen aus dem DS-PALETTE — unveraendert
+// gegenueber frueher, damit das Default-Theme byte-genau gleich aussieht.
+const INK_STANDARD = {
   green: PALETTE[0],
   blue: PALETTE[2],
   orange: PALETTE[3],
   red: PALETTE[4],
   soft: PALETTE[7],
   paper: "#ffffff",
+}
+
+// Aktive semantische Farbrollen. `let`, weil das Chart-Theme (Standard /
+// Druckfreundlich / Barrierefrei) zur Laufzeit umgeschaltet werden kann —
+// `aktualisiereThemeFarben()` setzt INK + MEHRJAHR_PALETTE neu, bevor
+// `alleCharts()` die Optionen baut. Alle Builder lesen `INK` zur Bauzeit,
+// greifen also automatisch die aktive Palette ab.
+let INK = { ...INK_STANDARD }
+
+// Liest das aktive Chart-Theme und spiegelt es in INK + MEHRJAHR_PALETTE.
+// Standard bleibt exakt die DS-PALETTE-Optik (inkl. der zwei weichen
+// Mehrjahres-Tints); Druck/Barrierefrei nutzen ihre eigene 8-Farben-Palette.
+function aktualisiereThemeFarben() {
+  if (holeAktivenThemeName() === "standard") {
+    INK = { ...INK_STANDARD }
+    MEHRJAHR_PALETTE = STANDARD_MEHRJAHR
+    return
+  }
+  const t = holeAktivesTheme()
+  INK = { ...t.ink, paper: "#ffffff" }
+  MEHRJAHR_PALETTE = t.palette
 }
 
 // Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsen-/Linientoene weich
@@ -1316,7 +1340,7 @@ function mehrjahrBasis(jahre) {
 // entsaettigten Diagrammtoene des Web-Design-Systems plus zwei weiche Tints.
 // Reihenfolge so, dass aufeinanderfolgende Serien in Farbton oder Helligkeit
 // deutlich kontrastieren; durchgehend niedrige Saettigung.
-const MEHRJAHR_PALETTE = [
+const STANDARD_MEHRJAHR = [
   "#3f7d4f", // chart-green
   "#c9a24b", // chart-gold
   "#4f93a0", // chart-teal
@@ -1329,8 +1353,16 @@ const MEHRJAHR_PALETTE = [
   "#c9a98c", // weicher Clay-Tint
 ]
 
+// Aktive Mehrjahres-Palette — `let`, wird beim Theme-Wechsel mitgezogen
+// (siehe aktualisiereThemeFarben). Default = Standard-Optik.
+let MEHRJAHR_PALETTE = STANDARD_MEHRJAHR
+
 // Vorberechnete ECharts-Optionen je Dokument plus Zeitreihen.
 export function alleCharts(daten) {
+  // Vor jedem (Neu-)Bau die aktive Theme-Palette in INK/MEHRJAHR spiegeln,
+  // damit ein Theme-Wechsel (der baueDashboard erneut anstoesst) alle
+  // Diagramme — auch die mit semantischen Festfarben — neu einfaerbt.
+  aktualisiereThemeFarben()
   const dokCharts = {}
   for (const [did, agg] of Object.entries(daten.aggregate)) {
     const dokE = daten.dokumente.find((d) => String(d.id) === did)
