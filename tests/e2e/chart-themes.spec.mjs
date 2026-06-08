@@ -1,10 +1,12 @@
-// E2E — Chart-Color-Themes. Picker im Header, drei Themes, localStorage.
+// E2E — Chart-Color-Themes. Picker in der Dashboard-Leiste, drei Themes,
+// localStorage. Der Picker sitzt bewusst in der Applikation (nicht im Header)
+// und ist daher erst sichtbar, sobald ein Dokument geladen ist.
 
 import { test, expect } from '@playwright/test'
 import { ladeFixturePdf, oeffneApp } from './helpers.mjs'
 
 test('Theme-Picker: drei Optionen + Default Standard', async ({ page }) => {
-  await oeffneApp(page)
+  await ladeFixturePdf(page)
   const sel = page.locator('#theme-picker')
   await expect(sel).toBeVisible()
   const optionen = await sel.locator('option').allTextContents()

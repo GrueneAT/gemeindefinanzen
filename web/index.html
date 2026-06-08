@@ -57,16 +57,6 @@
         </svg>
         <span class="gat-header__support-label">florian.motlik@gruene.at</span>
       </a>
-      <label class="gat-header__theme" for="theme-picker">
-        <span class="gat-header__theme-label">Farben</span>
-        <select class="gat-input gat-input--compact gat-header__theme-select"
-                id="theme-picker"
-                aria-label="Farbpalette fuer alle Diagramme">
-          <option value="standard">Standard</option>
-          <option value="druck">Druckfreundlich</option>
-          <option value="barrierefrei">Barrierefrei</option>
-        </select>
-      </label>
     </nav>
   </div>
 </header>
@@ -164,8 +154,22 @@
   <!-- Finanz-Dashboard — sichtbar, sobald mindestens ein Dokument geladen ist. -->
   <div id="dashboard-inhalt" hidden>
     <div class="dash-controls">
-      <div class="switcher gat-switcher"><span class="switcher-label gat-switcher__label">Dokument</span>
-        <span id="switcher-buttons"></span></div>
+      <div class="dash-controls__top">
+        <div class="switcher gat-switcher"><span class="switcher-label gat-switcher__label">Dokument</span>
+          <span id="switcher-buttons"></span></div>
+        <!-- Diagramm-Farbpalette: gehoert zur Applikation (nicht in den
+             Header), weil sie die Diagramme steuert. -->
+        <label class="dash-palette" for="theme-picker">
+          <span class="dash-palette__label">Farben</span>
+          <select class="gat-input gat-input--compact dash-palette__select"
+                  id="theme-picker"
+                  aria-label="Farbpalette fuer alle Diagramme">
+            <option value="standard">Standard</option>
+            <option value="druck">Druckfreundlich</option>
+            <option value="barrierefrei">Barrierefrei</option>
+          </select>
+        </label>
+      </div>
       <div class="tabs gat-tabbar">
         <button class="tab-btn gat-tab" data-tab="ueberblick">Ueberblick</button>
         <button class="tab-btn gat-tab" data-tab="einnahmen">Einnahmen</button>

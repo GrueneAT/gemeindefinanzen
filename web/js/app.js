@@ -75,33 +75,32 @@ async function init() {
 }
 
 // --- Chart-Theme-Picker --------------------------------------------------- //
-// Header-Dropdown. Wechsel des Themes schreibt in localStorage und dispatcht
-// 'theme-change'; der Listener re-rendert alle ECharts-Instanzen.
+// Steuerung in der Dashboard-Leiste (bewusst NICHT im Header — der Header
+// bleibt reine CI/Navigation). Ein Theme-Wechsel schreibt in localStorage,
+// dispatcht 'theme-change' und baut das Dashboard mit der neuen Palette neu
+// auf. Die Chart-Builder lesen die aktive Palette zur Bauzeit
+// (dashboard-charts.js: INK/MEHRJAHR_PALETTE), daher faerbt ein voller
+// Neuaufbau ueber baueDashboard ALLE Diagramme um — auch die mit semantischen
+// Festfarben (Gruen=Ertraege, Clay=Aufwand). Ein blosses setOption({color})
+// wuerde nur die kategorialen Charts treffen und liesse den Rest unveraendert.
 function verdrahteThemePicker() {
   const sel = document.getElementById("theme-picker")
   if (!sel) return
-  // Initialwert aus localStorage.
-  const aktuell = holeAktivenThemeName()
-  sel.value = aktuell
+  // Initialwert aus localStorage + data-Attribut auf <html> (CSS-Hooks).
+  sel.value = holeAktivenThemeName()
+  document.documentElement.setAttribute("data-chart-theme",
+    holeAktivenThemeName())
   sel.addEventListener("change", () => {
     setzeTheme(sel.value)
   })
-  // Re-Render aller Charts bei Theme-Wechsel. dashboard.js exponiert
-  // weder ein renderAll noch die Instanz-Sammlung — ueber den globalen
-  // window-Resize lassen sich Layout-Aktualisierungen anstossen, aber
-  // setOption mit neuer Palette geht nur ueber dashboard.js. Daher hier:
-  // alle ECharts-Instanzen direkt ueber getInstanceByDom abrufen und die
-  // aktuelle Option (inst.getOption()) mit der neuen color-Palette neu
-  // setzen. ECharts respektiert 'color' als Array von Default-Farben.
   window.addEventListener("theme-change", () => {
-    aktualisiereAlleChartFarben()
-    // localStorage-Echo + data-Attribut auf <html> fuer CSS-Hooks.
-    try {
-      const name = holeAktivenThemeName()
-      document.documentElement.setAttribute("data-chart-theme", name)
-    } catch (e) {}
+    document.documentElement.setAttribute("data-chart-theme",
+      holeAktivenThemeName())
     // Picker-UI synchron halten (falls Theme programmatisch geaendert wurde).
     sel.value = holeAktivenThemeName()
+    // Volles Re-Render mit der neuen Palette. baueDashboard ist no-op ohne
+    // geladene Dokumente und damit auch im Leerzustand gefahrlos.
+    if (db) baueDashboard(db)
   })
   // Globalen Picker-Pfad fuer Tests exponieren.
   if (typeof window !== "undefined") {
@@ -110,43 +109,7 @@ function verdrahteThemePicker() {
       holeAktivenThemeName,
       holeAktivesTheme,
       CHART_THEMES,
-      aktualisiereAlleChartFarben,
     }
-  }
-}
-
-// Alle sichtbaren ECharts-Instanzen mit der aktuellen Palette neu farben.
-// ECharts ueber `setOption({ color: PALETTE })` ohne `notMerge=true`
-// uebernimmt nur die Top-Level-color — und die wird bei vielen unserer
-// Charts ueberschrieben durch series.itemStyle.color. Deshalb: zusaetzlich
-// ein leichtes Repaint anstossen, indem wir die aktuelle Option um die
-// color-Eigenschaft anreichern und neu setzen. Charts, die feste
-// Semantik-Farben tragen (Gruen = Ertraege, Clay = Aufwand), bleiben
-// dadurch unveraendert — das ist gewollt: die Semantik ueberlebt den
-// Theme-Wechsel. Drill-Sync-Charts (Treemap, Pie) lesen `window.__chartTheme`
-// und werden ueber `__ausgabenDrillSync.rendereBeide()` aktualisiert.
-function aktualisiereAlleChartFarben() {
-  const palette = (window.__chartTheme && window.__chartTheme.palette) ||
-    holeAktivesTheme().palette
-  for (const el of document.querySelectorAll(".dash-chart")) {
-    const inst = window.echarts && window.echarts.getInstanceByDom
-      ? window.echarts.getInstanceByDom(el)
-      : null
-    if (!inst) continue
-    try {
-      const opt = inst.getOption()
-      // Top-level-color setzen — die kategorialen Charts (Treemap-Default,
-      // Pie ohne explizite Slice-Farben, Mehrjahres-Linien) ziehen von hier.
-      inst.setOption({ color: palette }, false)
-      void opt
-    } catch (e) {
-      // ECharts-Instanz ohne setOption (frisch initialisiert) — egal.
-    }
-  }
-  // Drill-Sync-Charts neu zeichnen, damit ihre per-Slice/per-Tile-
-  // Palette das neue Theme spiegelt.
-  if (window.__ausgabenDrillSync) {
-    try { window.__ausgabenDrillSync.rendereBeide() } catch (e) {}
   }
 }
 
@@ -925,7 +888,7 @@ function builderPivot(posten, dim, dim2, wertfeld, agg) {
   // Zelle den aggregierten Wert. Liefert { rowLabels, colLabels, matrix }
   // mit matrix[rowIdx][colIdx] = wert. Die Werte je Zelle stammen aus
   // allen Posten, die in dieser Zeile/Spalte landen.
-  const zellen = new Map()  // "row col" -> werte[]
+  const zellen = new Map()  // "row col" -> werte[]
   const zeilenSummen = new Map()  // row -> summe (fuer Sortierung)
   const spaltenSummen = new Map()  // col -> summe
   for (const p of posten) {
@@ -933,7 +896,7 @@ function builderPivot(posten, dim, dim2, wertfeld, agg) {
     const col = builderKategorieLabel(p, dim2)
     if (!row || !col) continue
     const v = Number(p[wertfeld]) || 0
-    const schluessel = row + " " + col
+    const schluessel = row + " " + col
     const liste = zellen.get(schluessel)
     if (liste) liste.push(v)
     else zellen.set(schluessel, [v])
@@ -954,7 +917,7 @@ function builderPivot(posten, dim, dim2, wertfeld, agg) {
     .map(([k]) => k)
   const matrix = rowLabels.map((row) =>
     colLabels.map((col) => {
-      const liste = zellen.get(row + " " + col)
+      const liste = zellen.get(row + " " + col)
       return builderBerechneAgg(liste, agg)
     }),
   )
