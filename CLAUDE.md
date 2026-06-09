@@ -17,6 +17,22 @@ implementierung und Datenwerkzeug.
 - Wer eine neue Abhaengigkeit braucht: per CDN verlinken, nicht ins Repo
   kopieren.
 
+### Ausnahme: WASM-Module mit OPFS-Worker
+
+`web/vendor/mupdf/` und `web/vendor/sqlite-wasm/` bleiben bewusst
+vendorisiert. Gruende:
+
+- `sqlite-wasm` laedt `sqlite3-opfs-async-proxy.js` als Worker. Worker
+  duerfen in der Praxis nicht cross-origin sein, ein same-origin Shim
+  waere noetig.
+- Beide Pakete laden ihre `.wasm`-Geschwister relativ zur eigenen URL —
+  der CDN-Pfad muss passgenau sein, sonst bricht das WASM-Laden.
+
+Wir akzeptieren das Vendoring fuer genau diese beiden Pakete, solange
+keine triviale CDN-Loesung existiert. Inventar und Lizenzen siehe
+[`web/vendor/LIZENZEN.md`](web/vendor/LIZENZEN.md). **Keine weiteren
+Bibliotheken** unter diesem Vorwand hinzufuegen.
+
 ## Weitere Konventionen
 
 - Browser-App: Vanilla JavaScript, ESM, **kein Build-Schritt** fuer die
