@@ -28,11 +28,11 @@ Wird per CDN eingebunden (jsDelivr). Lizenz: Apache 2.0.
 ## Design System
 
 Gruene-AT-Design-System — `design-system.css` wird per CDN eingebunden
-(`https://grueneat.github.io/design-system/`).
+(`https://design-system.gruene.at/`).
 Lizenz: **CC BY 4.0**. Urheber: Die Gruenen.
 
 `gat-charts.js` (ECharts-Hilfsfunktionen und Chart-Konstanten,
 gleicher Anbieter, gleiche Lizenz) wird per CDN-Import in
 `web/js/dashboard-charts.js` und `web/js/sankey-drill.js` eingebunden
-(`https://grueneat.github.io/design-system/gat-charts.js`) — kein
+(`https://design-system.gruene.at/gat-charts.js`) — kein
 Vendoring. Quelle: https://github.com/GrueneAT/design-system

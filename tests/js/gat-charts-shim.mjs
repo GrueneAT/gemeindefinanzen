@@ -1,7 +1,7 @@
 // Node-Loader-Shim fuer Tests.
 //
 // dashboard-charts.js und sankey-drill.js importieren ECharts-Helfer aus
-// https://grueneat.github.io/design-system/gat-charts.js — im Browser wird
+// https://design-system.gruene.at/gat-charts.js — im Browser wird
 // das per CDN aufgeloest. Node unterstuetzt keinen HTTPS-Import; dieser
 // Custom-Loader haengt die Test-Stub-Datei lokal an, ohne dass die
 // Produktiv-Quelle (web/js/*) sich aendern muss oder das Modul ins Repo
@@ -13,7 +13,7 @@
 import { register } from "node:module"
 import { pathToFileURL } from "node:url"
 
-const HOSTED = "https://grueneat.github.io/design-system/gat-charts.js"
+const HOSTED = "https://design-system.gruene.at/gat-charts.js"
 const LOCAL = new URL("./gat-charts-stub.mjs", import.meta.url).href
 
 register(

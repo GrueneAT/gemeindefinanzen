@@ -1,5 +1,5 @@
 // Test-Stub fuer gat-charts.js (DS v2.0). Mirror der gehosteten Quelle bei
-// https://grueneat.github.io/design-system/gat-charts.js — wird im Browser
+// https://design-system.gruene.at/gat-charts.js — wird im Browser
 // per CDN geladen, in Node-Tests ueber den Loader-Hook (gat-charts-shim.mjs)
 // gegen diesen Stub aufgeloest. KEIN Produktiv-Vendoring; diese Datei sitzt
 // ausschliesslich im Test-Pfad.

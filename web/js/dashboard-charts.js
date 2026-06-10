@@ -21,7 +21,7 @@ import {
   legende,
   grid,
   planIstLegende,
-} from "https://grueneat.github.io/design-system/gat-charts.js"
+} from "https://design-system.gruene.at/gat-charts.js"
 import { holeAktivenThemeName, holeAktivesTheme } from "./chart-themes.js"
 
 // App-Adapter: DS-INK ist tonal (text/soft/mute/hairline/gridline/axis/...),
