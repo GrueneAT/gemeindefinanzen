@@ -692,7 +692,7 @@ Header:
 - **Prominentes, wiedererkennbares Logo.** Der CSS-`mask`-Punkt
   (`.gat-header__logo-mark`) ist durch das echte, vollfarbige
   Die-Grünen-Logo als `<img>` ersetzt — per CDN verlinkt
-  (`https://grueneat.github.io/design-system/assets/gruene-logo.svg`,
+  (`https://design-system.gruene.at/assets/gruene-logo.svg`,
   „Grüne Logo Bund dunkelgrün RGB", intrinsisch 150×132), nicht
   vendorisiert, mit `alt="Die Gruenen"`. Gerendert ~56px hoch (46px bei
   schmalem Viewport), Header dadurch ~86px (76px bei 390px).
@@ -926,7 +926,7 @@ die doppelte Pflege auf und schliesst die Konvergenz ab.
   auf `.gat-tab-panel`.
 - **Charts.** `web/js/dashboard-charts.js` und `web/js/sankey-drill.js`
   importieren Konstanten und Helfer aus
-  `https://grueneat.github.io/design-system/gat-charts.js`. Lokale
+  `https://design-system.gruene.at/gat-charts.js`. Lokale
   `PALETTE`/`INK`/`LABEL_SIZE`/`AXIS_SIZE`/`BAR_MAX_*`/`VA_DECAL`/
   `tip()`/`legende()`/`grid()`/`planIstLegende()` entfernt. Ein duenner
   App-Adapter mappt DS-`INK` (tonal: `text`/`soft`/`axis`/`gridline`)

@@ -19,7 +19,7 @@ import {
   PALETTE,
   INK as DS_INK,
   LABEL_SIZE,
-} from "https://grueneat.github.io/design-system/gat-charts.js"
+} from "https://design-system.gruene.at/gat-charts.js"
 
 const MITTE = "Gemeindehaushalt"
 
