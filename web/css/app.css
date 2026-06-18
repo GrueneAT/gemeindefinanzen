@@ -49,7 +49,7 @@ body {
   font-size: var(--gat-text-copy);
 }
 
-/* Ueberschriften-Typografie: Barlow Semi Condensed ist von Natur aus schmal —
+/* Ueberschriften-Typografie: Raleway ist von Natur aus schmal —
    Gewicht 900 macht es zusaetzlich laut. Ruhigere Skala laut
    docs/web-design-system.md: h1 -> 800, h2 -> 700, h3 -> 700 (kleiner).
    Farbe --gat-web-text statt schwarz. Vertikaler Rhythmus: h2 beginnt einen
