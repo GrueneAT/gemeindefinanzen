@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="artifact-source-sha256" content="50f9fedd4430eceecf3bd83b28e61579a8b0550aea57f4ddd1c6c52bb02c7512">
+<meta name="artifact-source-file" content="RESEARCH.md">
+<meta name="artifact-generated-at" content="2026-08-26">
+<meta name="design-system-version" content="ds-1">
+<title>Research: Beta-Status prominent zeigen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+</head>
+<body>
+<div class="page">
+
+<header class="row">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">R</span>Research</p>
+  </div>
+  <div class="body">
+    <h1 class="masthead-title">Research: Beta-Status prominent zeigen</h1>
+    <p class="masthead-sub">Issue: s290j-beta-status-prominent-zeigen-ueberschrift-und-grosser-hinweis-beim-oeffnen &middot; Generated 2026-08-26</p>
+  </div>
+</header>
+
+<hr class="rule">
+
+<section class="row" id="strategy">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">01</span>Strategy</p>
+  </div>
+  <div class="body">
+    <h2>Strategy summary</h2>
+    
+<p>Kleine, gut umrissene Front-End-Aenderung in genau zwei Dateien
+(<code>web/index.html</code>, <code>web/css/app.css</code>), ohne neue
+Abhaengigkeit und ohne JS-Aenderung. Beide benoetigten Bausteine existieren
+bereits als DS-Komponenten und werden in dieser Codebase schon verwendet
+&mdash; nichts wird selbst gebaut.</p>
+<ul class="points">
+  <li class="point is-affirmed">
+    <p class="point-claim">H1 traegt Beta als Text.</p>
+    <p class="point-detail">
+      <span class="mark mark-green">Text-Suffix &bdquo;&mdash; Beta&ldquo; direkt im
+      &lt;h1&gt;</span> statt eines zweiten, neu zu dimensionierenden
+      Stoerers &mdash; einfachste, barrierefreieste, testbarste Option.</p>
+  </li>
+  <li class="point is-affirmed">
+    <p class="point-claim">Grosser Hinweis = <code>gat-callout--warn</code>.</p>
+    <p class="point-detail">Als <code>&lt;aside&gt;</code>-Geschwisterelement
+    <strong>ausserhalb</strong> von <code>#doc-manager</code> platziert &mdash;
+    dadurch automatisch immun gegen dessen Auf-/Zuklapp-Logik in
+    <code>app.js</code> und automatisch sichtbar im Druck (die DS liefert
+    <code>break-inside:avoid</code> fuer alle <code>.gat-callout</code>-Varianten
+    im eigenen <code>@media print</code>).</p>
+  </li>
+  <li class="point is-affirmed">
+    <p class="point-claim">Alter Absatz faellt weg, nicht doppelt.</p>
+    <p class="point-detail"><code>.app-beta-hinweis</code>-Absatz und die
+    zugehoerigen CSS-Regeln werden entfernt; Inhalt wandert in den neuen
+    Callout.</p>
+  </li>
+  <li class="point">
+    <p class="point-claim">Logo-Stoerer bleibt unveraendert.</p>
+    <p class="point-detail">Nicht Teil der &bdquo;Was zu tun ist&ldquo;-Liste im
+    Issue; Header ist nicht sticky, also kein funktionaler Zusammenhang mit
+    der neuen Prominenz-Anforderung.</p>
+  </li>
+  <li class="point is-question">
+    <p class="point-claim">Offene Frage: &bdquo;beiden Farbmodi&ldquo;.</p>
+    <p class="point-detail">Diese App hat aktuell genau einen Farbmodus &mdash;
+    der Hochkontrast-Umschalter wurde in Commit <code>bc1da4b</code> bewusst
+    entfernt. Siehe Decisions unten.</p>
+  </li>
+</ul>
+<div class="stats">
+  <div class="stat"><div class="stat-num is-green">2</div><div class="stat-label">Dateien geaendert</div></div>
+  <div class="stat"><div class="stat-num is-green">0</div><div class="stat-label">Neue Abhaengigkeiten</div></div>
+  <div class="stat"><div class="stat-num is-orange">1</div><div class="stat-label">Offene Frage</div></div>
+</div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="flow">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">02</span>Flow</p>
+  </div>
+  <div class="body">
+    <h2>Task flow &amp; dependencies</h2>
+    
+<div class="flow">
+  <div class="flow-node is-foundation">
+    <span class="n">index.html</span>
+    <span class="t">H1 um &bdquo;&mdash; Beta&ldquo; ergaenzen</span>
+    <span class="d">Reiner Text-Suffix im bestehenden &lt;h1&gt;.</span>
+  </div>
+  <div class="flow-node">
+    <span class="n">index.html</span>
+    <span class="t">.app-beta-hinweis entfernen</span>
+    <span class="d">Alter kleiner Absatz raus, Inhalt wandert weiter.</span>
+  </div>
+  <div class="flow-node is-key">
+    <span class="n">index.html</span>
+    <span class="t">gat-callout--warn einfuegen</span>
+    <span class="d">Als Geschwister vor #doc-manager, ausserhalb der details-Box.</span>
+  </div>
+  <div class="flow-node">
+    <span class="n">app.css</span>
+    <span class="t">Tote Regeln aufraeumen</span>
+    <span class="d">.app-beta-hinweis / .app-beta-hinweis strong entfernen.</span>
+  </div>
+</div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="decisions">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">03</span>Decisions</p>
+  </div>
+  <div class="body">
+    <h2>Key decisions &amp; options</h2>
+    
+<div class="decision">
+  <div class="decision-head">
+    <p class="decision-title">Baustein fuer den grossen Hinweis</p>
+    <span class="lozenge is-chosen">Chosen</span>
+  </div>
+  <p class="decision-body"><code>&lt;aside class="gat-callout gat-callout--warn"&gt;</code>
+    mit <code>.gat-callout__lead</code>-Praefix &mdash; DS-Standardkomponente,
+    bereits global per CDN geladen, liefert Print-Verhalten gratis mit.</p>
+  <p class="decision-body rejected">Eigene <code>.beta-banner</code>-CSS-Klasse
+    &mdash; verstoesst gegen die Issue-Vorgabe &bdquo;DS-Callout statt Eigenbau&ldquo;
+    und CLAUDE.md.</p>
+</div>
+<div class="decision">
+  <div class="decision-head">
+    <p class="decision-title">Beta-Kennzeichnung in der H1</p>
+    <span class="lozenge is-chosen">Chosen</span>
+  </div>
+  <p class="decision-body">Text-Suffix &bdquo;&mdash; Beta&ldquo; direkt im
+    &lt;h1&gt;-Textknoten &mdash; robust, barrierefrei, ohne neue Groessen-/
+    Rotations-Logik.</p>
+  <p class="decision-body rejected">Zweiter, groesserer <code>.gat-stoerer</code>
+    neben der H1 &mdash; <code>.gat-stoerer</code> setzt keine eigene
+    Schriftgroesse, wuerde die H1-Groesse erben und braeuchte neues lokales
+    CSS zum Eindaemmen.</p>
+</div>
+<div class="decision">
+  <div class="decision-head">
+    <p class="decision-title">Platzierung relativ zu #doc-manager</p>
+    <span class="lozenge is-chosen">Chosen</span>
+  </div>
+  <p class="decision-body">Als Seiten-Geschwister <strong>vor</strong>
+    <code>&lt;details id="doc-manager"&gt;</code>, nicht als Kind darin &mdash;
+    <code>aktualisiereDokVerwaltung()</code> in <code>app.js</code> klappt die
+    <code>details</code>-Box abhaengig von der Dokumentzahl auf/zu; nur ausserhalb
+    bleibt der Hinweis garantiert sichtbar.</p>
+</div>
+<div class="decision">
+  <div class="decision-head">
+    <p class="decision-title">AC &bdquo;funktioniert in beiden Farbmodi&ldquo;</p>
+    <span class="lozenge is-open">Open</span>
+  </div>
+  <p class="decision-body">Kein Feature in der App bildet aktuell zwei
+    Farbmodi ab &mdash; der Hochkontrast-Toggle wurde in Commit
+    <code>bc1da4b</code> (&bdquo;kontrast-system aus dem header entfernen&ldquo;)
+    bewusst entfernt, und die DS liefert kein
+    <code>prefers-color-scheme</code>. Empfehlung: AC gilt per
+    Konstruktion als erfuellt (ein Modus, DS-Tokens bereits WCAG-AA-geprueft);
+    nicht den entfernten HC-Toggle wiederbeleben, ohne Rueckfrage.</p>
+</div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="detail">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">04</span>Detail</p>
+  </div>
+  <div class="body">
+    <h2>Full detail</h2>
+    <details class="detail">
+      <summary>Show full artifact source
+        <span class="summary-hint">click to expand</span></summary>
+      <div class="detail-body">
+        <pre><code id="artifact-source-target"></code></pre>
+      </div>
+    </details>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="provenance">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">05</span>Provenance</p>
+  </div>
+  <div class="body">
+    <h2>Provenance</h2>
+    <p>Generated from the canonical <code>.md</code>. This HTML is never
+       hand-edited &mdash; if the <code>.md</code> changes, regenerate with
+       <code>/issue:view</code>.</p>
+    <footer class="footer">
+      <span>Source: <code>RESEARCH.md</code> &middot;
+        SHA-256 <code>50f9fedd4430eceecf3bd83b28e61579a8b0550aea57f4ddd1c6c52bb02c7512</code></span>
+      <span>Generated 2026-08-26 &middot; design system ds-1</span>
+    </footer>
+  </div>
+</section>
+
+</div>
+
+<script type="application/json" id="artifact-source">
+{"source": "# Research: Beta-Status prominent zeigen \u2014 Ueberschrift und grosser Hinweis beim Oeffnen\n\n**Researched:** 2026-08-26\n**Issue:** s290j-beta-status-prominent-zeigen-ueberschrift-und-grosser-hinweis-beim-oeffnen\n**Confidence:** HIGH\n\n<user_constraints>\n## User Constraints (from CONTEXT.md)\n\nNo CONTEXT.md found for this issue. No `issue:discuss` session ran before\nresearch. All scoping comes from ISSUE.md directly \u2014 see \"Was zu tun ist\" /\n\"Akzeptanzkriterien\" / \"Constraints\" there. Nothing here overrides ISSUE.md.\n</user_constraints>\n\n## Summary\n\nThis is a small, purely front-end change confined to `web/index.html` and\n`web/css/app.css` (no JS logic needed). Both required visual pieces already\nexist as DS v2.x components and are already used elsewhere in this exact\ncodebase, so nothing needs to be hand-rolled:\n\n1. **H1 carries Beta.** Append the text `\u2014 Beta` directly inside the existing\n   `<h1 class=\"gat-headline gat-hero__title\">Gemeindebudget auswerten</h1>`.\n   Plain text, no new markup or CSS \u2014 this is the simplest option the issue\n   itself proposes, keeps the H1 a single accessible text node (good for\n   screen readers and for any future Playwright assertion on `h1` text), and\n   needs zero new interfaces.\n2. **Big, unmissable hint.** Replace the small `<p class=\"... app-beta-hinweis\">`\n   paragraph with a DS `<aside class=\"gat-callout gat-callout--warn\">` block,\n   placed as a new sibling **between** `</header>` (end of `.gat-hero`) and\n   `<div id=\"toast-box\">` \u2014 i.e. still above `#doc-manager`, but *outside* of\n   it. This placement matters for two independent reasons verified in code:\n   it satisfies \"bleibt sichtbar, wandert nicht weg\" without any JS (the\n   element is static page flow, not inside the `<details>` that\n   `app.js:aktualisiereDokVerwaltung()` opens/closes based on document count),\n   and it survives print (`@media print` in `app.css` only hides\n   `.doc-manager` and a fixed list of control surfaces \u2014 a callout placed\n   outside `.doc-manager` prints by default, and `.gat-callout--warn` already\n   ships `break-inside:avoid` for print in the DS itself).\n3. **Old small paragraph removed, not duplicated.** `.app-beta-hinweis` (the\n   `<p>` at `web/index.html:75`) is deleted; its content (Beta explanation +\n   `florian.motlik@gruene.at` mailto) moves into the new callout body. The\n   now-unused `.app-beta-hinweis` / `.app-beta-hinweis strong` CSS rules in\n   `web/css/app.css:585-591` are removed with it.\n4. **Logo Stoerer stays untouched.** `.app-beta-marker` /\n   `.gat-stoerer--magenta` at the header brand link is out of scope \u2014 the\n   issue's \"Was zu tun ist\" list never asks to remove it, only the\n   `.app-beta-hinweis` paragraph is explicitly named as \"geht darin auf\". The\n   header is not `position: sticky`/`fixed` in this app, so the logo Stoerer\n   is not a persistent while-scrolling indicator either way; keeping it is\n   the lower-risk, lower-effort option and does not conflict with the new H1\n   text or the new callout.\n\n**Primary recommendation:** Use `<aside class=\"gat-callout gat-callout--warn\">`\n(DS v2.1) with a `.gat-callout__lead` prefix for the big hint, and a plain\n`\u2014 Beta` text suffix in the existing H1. No new CSS classes, no JS changes,\nno new dependencies. One open point genuinely needs a decision at plan time:\nthe AC's \"beiden Farbmodi\" does not map to any existing feature in this app \u2014\nsee Pitfalls below.\n\n## Codebase Analysis\n\n### Relevant Code\n\n| File | Purpose | Last Modified | Relevance |\n|------|---------|---------------|-----------|\n| `web/index.html` | Header Stoerer, hero H1 + intro + beta paragraph, doc-manager `<details>` | 2026-06-10 (`#33`) | Primary edit target |\n| `web/css/app.css` | `.app-beta-marker`, `.app-beta-hinweis`, `@media print` block, `.doc-manager` | 2026-06-10 | Primary edit target (remove dead rules) |\n| `web/js/app.js` | `aktualisiereDokVerwaltung(anzahl)` toggles `#doc-manager`'s `open` attribute by doc count; also forces `open = true` on a failed upload | 2026-06-10 | Read-only \u2014 confirms new callout must live outside `#doc-manager` to stay visible regardless of its open/closed state |\n| `tests/e2e/*.spec.mjs` (20 files) | Playwright suite | various | None currently assert on H1 text, `.app-beta-hinweis`, or `.gat-callout` \u2014 confirmed via grep, zero hits |\n| `tests/e2e/helpers.mjs` | `oeffneApp()`, `ladeFixturePdf()` | \u2014 | No selector conflicts with the change |\n\nNot stale: most recently touched 2026-06-10 (~11 weeks before this research),\nno pending/uncommitted changes to these files in this worktree.\n\n### Interfaces\n\n<interfaces>\n// From web/index.html \u2014 header brand link (KEEP AS-IS, out of scope)\n<a class=\"gat-header__brand\" href=\".\">\n  <img class=\"gat-header__logo\" src=\"https://design-system.gruene.at/assets/gruene-logo.svg\" alt=\"Die Gruenen\" width=\"150\" height=\"132\">\n  <span class=\"gat-header__wordmark\">Gemeindefinanzen</span>\n  <span class=\"gat-stoerer gat-stoerer--magenta app-beta-marker\" aria-label=\"Beta-Version\">BETA</span>\n</a>\n\n// From web/index.html \u2014 support mailto pattern already established, reuse verbatim\n<a href=\"mailto:florian.motlik@gruene.at\"\n   class=\"gat-header__support\"\n   title=\"Bei Fragen oder Feedback an den Betreuer dieses Tools schreiben\"\n   aria-label=\"Support-E-Mail an florian.motlik@gruene.at\">...</a>\n\n// From web/index.html \u2014 hero block, CURRENT state (lines ~64-77)\n<header class=\"gat-hero\">\n  <h1 class=\"gat-headline gat-hero__title\">Gemeindebudget auswerten</h1>\n  <p class=\"app-intro gat-fliesstext gat-hero__intro\">VRV-2015-Voranschlaege, ...</p>\n  <p class=\"app-intro gat-fliesstext gat-hero__intro app-beta-hinweis\">\n    Dieses Werkzeug ist in der <strong>Beta-Phase</strong>. Bei Problemen,\n    Fehlern oder Wuenschen bitte direkt an\n    <a href=\"mailto:florian.motlik@gruene.at\">florian.motlik@gruene.at</a> melden.</p>\n</header>\n<div id=\"toast-box\" class=\"gat-toaster\" role=\"region\" aria-live=\"polite\" aria-label=\"Meldungen\"></div>\n<details class=\"doc-manager\" id=\"doc-manager\" open>\n  <summary class=\"doc-manager-summary\">\n    <span class=\"doc-manager-title\">Dokumente verwalten</span>\n    <span class=\"doc-manager-count\" id=\"doc-manager-count\"></span>\n  </summary>\n  <div class=\"doc-manager-body\">...</div>\n</details>\n\n// From web/js/app.js \u2014 doc-manager open/close is driven purely by these two\n// call sites; a callout placed as a sibling (not a child) of #doc-manager is\n// unaffected by either.\nfunction aktualisiereDokVerwaltung(anzahl) {\n  const manager = document.getElementById(\"doc-manager\")\n  const count = document.getElementById(\"doc-manager-count\")\n  if (count) count.textContent = anzahl > 0 ? `\u2014 ${anzahl} geladen` : \"\u2014 noch keine geladen\"\n  if (manager) manager.open = anzahl === 0\n}\n// second call site (verarbeiteDateien-Pfad, ~line 2160): on partial upload\n// failure, forces manager.open = true so error list stays visible.\n\n// From web/css/app.css \u2014 rules to DELETE (dead after paragraph removal)\n.app-beta-hinweis { margin-top: 0.7rem; font-size: 0.95em; color: var(--gat-web-text-soft); }\n.app-beta-hinweis strong { color: var(--gat-color-accent); }\n// .app-beta-marker (lines ~567-579) and its @media (max-width:420px) rule: KEEP, out of scope.\n\n// From web/css/app.css \u2014 print stylesheet (lines 985-1035), current selector list to hide.\n// A new callout placed OUTSIDE .doc-manager is NOT in this list and prints by default.\n@media print {\n  .doc-manager, .dashboard-leer, .dash-controls, #toast-box, .mj-overlay,\n  .sankey-bar, .mj-actions, .footer { display: none !important; }\n  .page { max-width: none; padding-inline: 0; }\n  h1, h2, h3 { break-after: avoid; }\n  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n}\n\n// From https://design-system.gruene.at/design-system.css (DS v2.1+) \u2014 verified by fetching\n// the live stylesheet directly (curl), not from training data.\n.gat-callout {\n  background: var(--gat-web-green-tint);\n  border-left: 4px solid var(--gat-web-green-deep);\n  border-radius: 0 var(--gat-web-radius-card) var(--gat-web-radius-card) 0;\n  padding: var(--gat-space-3) var(--gat-space-4);\n  margin: var(--gat-space-3) 0;\n  max-width: 70rem;\n  color: var(--gat-web-text);\n}\n.gat-callout--info    { background: var(--gat-web-callout-info-bg);    border-left-color: var(--gat-web-callout-info-border);    color: var(--gat-web-callout-info-text); }\n.gat-callout--warn    { background: var(--gat-web-callout-warn-bg);    border-left-color: var(--gat-web-callout-warn-border);    color: var(--gat-web-callout-warn-text); }    /* #fdf3d2 bg / #b78a1c border / #5a4308 text */\n.gat-callout--danger  { background: var(--gat-web-callout-error-bg);   border-left-color: var(--gat-web-callout-error-border);   color: var(--gat-web-callout-error-text); }\n.gat-callout--success { background: var(--gat-web-callout-success-bg); border-left-color: var(--gat-web-callout-success-border); color: var(--gat-web-callout-success-text); }\n.gat-callout--legal   { background: var(--gat-web-callout-legal-bg);   border-left-color: var(--gat-web-callout-legal-border);   color: var(--gat-web-callout-legal-text); }\n.gat-callout__lead { margin-bottom: var(--gat-space-1); font-weight: 700; display: block; }\n.gat-callout__icon { vertical-align: -.2em; flex: none; justify-content: center; align-items: center; width: 1.2em; height: 1.2em; margin-right: .45em; display: inline-flex; }\n/* Inside @media print in the DS itself \u2014 applies automatically, no app-side work needed: */\n.gat-callout, .gat-callout--info, .gat-callout--warn, .gat-callout--error,\n.gat-callout--danger, .gat-callout--success, .gat-callout--legal { break-inside: avoid; }\n\n.gat-stoerer { padding: var(--gat-space-2) var(--gat-space-4); border-radius: var(--gat-radius-sm); font-family: var(--gat-font-headline); font-weight: 900; line-height: var(--gat-leading-headline); text-align: center; display: inline-block; transform: rotate(-6deg); }\n.gat-stoerer--magenta, .gat-stoerer--gelb  /* requires one modifier \u2014 Pflicht per DS docs */\n\n.gat-hero { margin: var(--gat-space-5) 0; }\n.gat-hero__title { margin: 0; }              /* no font-size set here \u2014 inherits .gat-headline's var(--gat-text-h1) */\n.gat-hero__intro { margin: var(--gat-space-2) 0 0; font-size: var(--gat-text-subline); ... }\n.gat-headline { font-family: var(--gat-font-headline); font-weight: 800; font-size: var(--gat-text-h1); ... }\n\n// DS-canonical markup for a callout with a Hinweis:-style prefix (from the DS's own\n// documentation page, design-system/design-system/index.html:1440-1459 \u2014 verified locally):\n<aside class=\"gat-callout gat-callout--info\">\n  <span class=\"gat-callout__lead\">Hinweis:</span>\n  <p>Inhalt des Hinweises.</p>\n</aside>\n</interfaces>\n\n### Reusable Components\n\n- `.gat-callout` + `.gat-callout--warn` \u2014 exactly the block the issue text\n  itself names (\"DS-Callout, `gat-callout --warn` o. ae.\"). Already imported\n  globally via the DS `<link>` in `<head>`; zero extra work to use it.\n- `.gat-callout__lead` \u2014 DS v2.1.1 addition, purpose-built to replace a manual\n  `<strong>Label:</strong>` prefix inside a callout (exactly what\n  `.app-beta-hinweis` currently does with `<strong>Beta-Phase</strong>`).\n- Existing `.gat-callout` usage already in this codebase at\n  `web/index.html:689` (`<div class=\"gat-callout\">` in the Ausgaben-Struktur\n  tab, \"Wichtige Einordnung\") shows the local convention. It uses a plain\n  `<div>` rather than the DS-documented `<aside>` and a raw `<strong>` rather\n  than `.gat-callout__lead` \u2014 i.e. it predates the `__lead` slot. New markup\n  should follow the current DS documentation (`<aside>` + `.gat-callout__lead`)\n  since that is the officially recommended, most current pattern; this is a\n  cosmetic divergence from the one existing in-app example, not a functional\n  conflict.\n- Existing `mailto:florian.motlik@gruene.at` markup (header nav and the old\n  `.app-beta-hinweis` paragraph) \u2014 reuse verbatim for the callout's contact\n  line.\n\n### Potential Conflicts\n\n- None found. No JS reads or queries `.app-beta-hinweis` or `#doc-manager`'s\n  preceding siblings by selector; `app.js` only ever touches `#doc-manager`\n  and `#doc-manager-count` directly (confirmed via grep across `web/js/app.js`).\n- No Playwright test currently locates the H1 by exact text or the beta\n  paragraph by class \u2014 confirmed via grep across all 20 spec files.\n  No visual-regression/screenshot tests exist in the repo (`test:e2e` uses\n  Playwright with no `toHaveScreenshot`/`toMatchSnapshot` calls anywhere).\n  Text/markup changes described here cannot break an existing test.\n\n## Standard Stack\n\n| Library | Version | Purpose | Why Standard | Confidence |\n|---------|---------|---------|---------------|------------|\n| `design-system.css` (Die Gruenen DS) | latest (unpinned, loaded via `<link>` from `https://design-system.gruene.at/design-system.css`) | `.gat-callout`, `.gat-stoerer`, `.gat-headline`/`.gat-hero` | Already the app's only styling dependency for these component families; CLAUDE.md forbids vendoring/hand-rolling equivalents | HIGH (verified by fetching the live stylesheet) |\n\nNo new library, package, or CDN reference is needed for this issue.\n\n### Alternatives Considered\n\n| Instead of | Could Use | Tradeoff |\n|------------|-----------|----------|\n| `<aside class=\"gat-callout gat-callout--warn\">` | `<div class=\"gat-callout\">` (matches existing in-app usage at index.html:689) | `<div>` is what this app already has once; `<aside>` is what the DS's own docs currently recommend and is more semantically correct for an aside note. Prefer `<aside>` for the new addition \u2014 going forward, not retrofitting the older usage (out of scope for this issue). |\n| `\u2014 Beta` text appended to the H1 | `<span class=\"gat-stoerer gat-stoerer--magenta\">` next to the H1 (a second, larger Stoerer) | Plain text is simpler, has no sizing/rotation edge cases to get right next to a large `--gat-text-h1` heading, is trivially testable by string match, and is literally the first example the issue text gives (\"Gemeindebudget auswerten \u2014 Beta\"). A second large rotated Stoerer risks looking redundant with the existing header Stoerer and needs new local CSS to size correctly (base `.gat-stoerer` sets no `font-size`, it would inherit the H1's huge font-size unless capped) \u2014 that is exactly the kind of \"Eigenbau\" the constraints want to avoid. |\n| Reusing `.gat-tag`/`.gat-tag--warn` for the H1 badge | \u2014 | `.gat-tag` is a small (`0.85rem`) status-pill built for table cells (\"gepr\u00fcft\"/\"offen\"), not sized for \"gross, nicht zu uebersehen\" next to an H1 \u2014 rejected. |\n\n## Don't Hand-Roll\n\n| Problem | Don't Build | Use Instead | Why |\n|---------|-------------|-------------|-----|\n| Prominent warning/notice block | Custom `.beta-banner` CSS component | `.gat-callout.gat-callout--warn` (+ `.gat-callout__lead`) | Already ships colors, border, radius, spacing, print `break-inside:avoid`; matches CLAUDE.md's \"kein Eigenbau\" and the issue's own \"Constraints\" section |\n| Eye-catching small badge | Custom rotated/colored `<span>` | `.gat-stoerer--magenta` (already in use at the logo) | Already exists in this exact app; do not invent a second badge component |\n| Print-specific hiding of the hint | Bespoke `@media print` rule for the new callout | Nothing needed \u2014 leave it outside `.doc-manager`; DS already ships `break-inside:avoid` for all `.gat-callout` variants inside its own `@media print` | Zero new print CSS required; AC \"darf im Druck nicht stoeren, aber auch nicht luegen\" is satisfied by *not* adding it to the existing hide-list |\n\n## Architecture Patterns\n\n### Recommended Approach\n\n1. In `web/index.html`, change the H1 to\n   `<h1 class=\"gat-headline gat-hero__title\">Gemeindebudget auswerten \u2014 Beta</h1>`.\n2. Delete the `<p class=\"... app-beta-hinweis\">...</p>` block.\n3. Insert a new `<aside class=\"gat-callout gat-callout--warn\">` as a sibling\n   between `</header>` (closing `.gat-hero`) and `<div id=\"toast-box\">`\n   (i.e. still before `#doc-manager`, but outside both `.gat-hero` and\n   `.doc-manager`). Content: what Beta means here (Ergebnisse pruefen, Parser\n   kann irren) + the `florian.motlik@gruene.at` mailto contact, reusing the\n   existing wording from the removed paragraph as the base text.\n4. In `web/css/app.css`, remove the now-dead `.app-beta-hinweis` /\n   `.app-beta-hinweis strong` rules (lines ~585-591). Leave\n   `.app-beta-marker` and its `@media (max-width: 420px)` rule untouched.\n5. No `web/js/app.js` change needed \u2014 nothing there references the removed\n   paragraph or needs to know about the new callout.\n\n### Anti-Patterns to Avoid\n\n- **Putting the new callout inside `#doc-manager`:** would make it disappear\n  whenever `aktualisiereDokVerwaltung()` collapses the `<details>` (i.e. as\n  soon as one document is loaded) and would also make it vanish entirely in\n  print (`.doc-manager { display: none !important }`). Directly violates\n  AC \"bleibt beim Arbeiten sichtbar\" and \"im Druck ... nicht luegen\".\n- **Adding the callout to the existing print hide-list:** would hide the beta\n  disclosure from printed reports entirely \u2014 AC explicitly forbids that\n  (\"aber auch nicht luegen\").\n- **Inventing a second Stoerer/badge component for the H1:** unnecessary\n  Eigenbau; plain text suffix already satisfies the AC and the issue's own\n  suggested wording.\n- **Using `role=\"alert\"`/`aria-live` on the callout:** it is static content\n  present at page load, not a dynamically-injected notification \u2014 the\n  existing `#toast-box` already owns that role for transient messages; do not\n  conflate the two.\n\n## Common Pitfalls\n\n### \"Beiden Farbmodi\" does not map to an existing feature\n\n**What goes wrong:** AC 4 says \"Hinweis funktioniert in beiden Farbmodi ...\nsinnvoll\", implying two color modes exist app-wide (e.g. light/dark or a\ncontrast toggle) that the new callout must be verified against.\n\n**Why it happens:** This app *used to* have a high-contrast mode\n(`.gat-mode-hc`, `#hc-toggle`, `gat-header__a11y-toggle`) \u2014 confirmed via\n`git log`: it was deliberately removed in commit `bc1da4b`\n(\"chore(web): kontrast-system aus dem header entfernen (#24)\"), which also\ndeleted `tests/e2e/hc-toggle.spec.mjs` and dropped the chart-theme picker from\nfour options to three (Standard/Druckfreundlich/Barrierefrei). There is no\n`prefers-color-scheme` media query anywhere in the DS stylesheet either\n(checked directly \u2014 zero matches). The app currently has exactly one page\ncolor mode.\n\n**How to avoid:** Treat \"beiden Farbmodi\" as **not currently actionable** \u2014\nthere is nothing to verify beyond default rendering, because there is only\none mode. Do not resurrect the removed HC toggle to satisfy this AC; that\nwould be significant, unrequested scope creep and directly contradicts the\n\"chore: kontrast-system entfernen\" decision already made in this repo. The\nclosest legitimate interpretation is the three chart-color themes\n(Standard/Druckfreundlich/Barrierefrei via `#theme-picker`), but those only\naffect ECharts canvases, never page-level callouts \u2014 `.gat-callout--warn`'s\ncolors are DS tokens unrelated to `chart-themes.js`. Recommended plan-time\nresolution: verify the callout renders correctly (readable contrast) using\nonly the DS `--gat-web-callout-warn-*` tokens as-is (they already pass the\nDS's own WCAG-AA color-pair auditing per `docs/web-design-system.md`), note\nin the plan that this AC is satisfied by construction (single color mode, DS\ntokens), and flag to the user that \"beiden Farbmodi\" may be stale text\ncarried over from before commit `bc1da4b`.\n\n**Warning signs:** If a task in the plan proposes adding `prefers-color-scheme`\nhandling or reintroducing an HC toggle, that is scope creep beyond this issue\n\u2014 flag for confirmation before implementing.\n\n### Placement relative to `#doc-manager`'s dynamic `open` state\n\n**What goes wrong:** If the new callout is placed as a child of\n`.doc-manager-body` (which would be a natural-looking \"oberhalb der\nDokumentenliste, aber innerhalb der Box\" reading), it collapses out of view\nthe moment a document loads, because `aktualisiereDokVerwaltung()` sets\n`manager.open = anzahl === 0`.\n\n**Why it happens:** The issue says \"Oberhalb der Dokumentverwaltung\" which is\nambiguous between \"above, outside the box\" and \"above, inside the box, above\nthe document list\". Only the former satisfies AC 4 (\"bleibt sichtbar,\nwandert nicht aus dem Blick\").\n\n**How to avoid:** Place the `<aside>` as a page-level sibling *before* (not\ninside) `<details id=\"doc-manager\">` \u2014 confirmed correct by reading both the\nmarkup and `app.js`'s two call sites that toggle `.open`.\n\n**Warning signs:** A visual check with a fixture PDF loaded (`ladeFixturePdf`\nin `tests/e2e/helpers.mjs`) \u2014 the callout must still be visible right after\n`#doc-manager` auto-collapses.\n\n## Environment Availability\n\n| Dependency | Required By | Available | Version | Fallback |\n|------------|--------------|-----------|---------|----------|\n| `design-system.css` (CDN) | `.gat-callout`, `.gat-stoerer`, `.gat-hero`/`.gat-headline` | Yes \u2014 already linked in `web/index.html:<head>`, fetched and verified live during this research | latest (unpinned) | None needed; app has no offline target per CLAUDE.md |\n| Node/npm (Playwright) | `npm run test:e2e` | Not probed in this pass (no code changes require new tooling); repo's own CI/Makefile already runs these | \u2014 | \u2014 |\n\nNo new environment dependency is introduced by this issue.\n\n## Project Constraints (from CLAUDE.md)\n\nFrom `/Users/florianmotlik/Code/GrueneAT/web-apps/gemeindefinanzen/CLAUDE.md`\nand the workspace-wide `/Users/florianmotlik/Code/GrueneAT/web-apps/CLAUDE.md`\n(both apply; the app-specific file is stricter/more specific where they\noverlap):\n\n- **Worktree-only work.** All changes happen in this worktree\n  (`.worktrees/s290j-...`), never on the shared `main` checkout. Already the\n  case for this research session.\n- **No vendoring, no offline target.** `design-system.css` stays a CDN\n  `<link>`, never copied into the repo. This issue introduces nothing new to\n  vendor.\n- **Vanilla JS / ESM, no build step** for `web/`. This change touches only\n  `.html`/`.css`, so this constraint isn't even exercised, but any executor\n  touching `web/js/app.js` must keep that in mind (not needed for this issue\n  per this research).\n- **German UI text, English identifiers/commits.** The new callout copy and\n  the H1 suffix stay German (\"\u2014 Beta\", Beta-Hinweis-Text); any new CSS class\n  names (if ever needed \u2014 none are, per this research) would stay English.\n- **No tool attribution** in commits, code, or comments \u2014 no \"claude\",\n  \"Generated with\", `Co-Authored-By` tags anywhere.\n- **Tests must stay green:** `npm run test:js`, `PYTHONPATH=src pytest -q`,\n  `ruff check src tests`, `mypy src` \u2014 none of these are expected to be\n  affected by an HTML/CSS-only change, but `npm run test:e2e` should be run\n  to confirm (no existing test currently targets the changed markup, per\n  research above, so a pass is the expected/likely outcome).\n- **Conventional Commit format**, per the issue's own \"Constraints\" section\n  (`DS-Callout statt Eigenbau; kein Vendoring` \u2014 both satisfied by the\n  recommended approach above).\n\n## Sources\n\n### HIGH confidence\n- Direct codebase reads: `web/index.html`, `web/css/app.css`, `web/js/app.js`,\n  `playwright.config.mjs`, all 20 files under `tests/e2e/`, `tests/e2e/helpers.mjs`.\n- `git log` on `web/index.html`, `web/css/app.css`, `web/js/app.js` (recency,\n  and the `bc1da4b` HC-toggle-removal commit + its full diff).\n- Live fetch of `https://design-system.gruene.at/design-system.css` via\n  `curl` (72,909 bytes) \u2014 all `.gat-callout*`, `.gat-stoerer*`, `.gat-tag*`,\n  `.gat-hero*`, `.gat-headline` rules and the `@media print` block quoted\n  above were extracted directly from this fetched stylesheet, not from\n  training-data recall.\n- Local checkout of the design-system's own documentation page\n  (`design-system/design-system/index.html` in the workspace, sibling repo)\n  for canonical `<aside class=\"gat-callout ...\">` markup examples and the\n  `gat-stoerer`/`gat-callout` \"requires\" metadata.\n- `issue-cli`'s own `validate_research_output()` (read directly from\n  `/usr/local/lib/python3.13/dist-packages/issue/validation.py`) \u2014 confirms\n  the exact gate this file must pass (`RESEARCH.md` exists, \u2265500 bytes,\n  contains `<interfaces>`; `RESEARCH.html` absence is WARN-only).\n\n### MEDIUM confidence\n- None \u2014 no claim in this document rests solely on a web search or a single\n  unverified source.\n\n### LOW confidence (needs validation)\n- The intended meaning of \"beiden Farbmodi\" in AC 4 \u2014 see Pitfalls above.\n  This is a genuine ambiguity in the issue text itself, not a research gap;\n  flagging for the planner/user rather than guessing further.\n\n## Metadata\n\n**Confidence breakdown:**\n- Codebase: HIGH \u2014 every claim traced to a direct file read, grep, or\n  `git log` call in this exact worktree.\n- Standard Stack / DS components: HIGH \u2014 verified against the live,\n  currently-served `design-system.css`, not training-data assumptions.\n- Architecture / placement recommendation: HIGH \u2014 derived directly from\n  reading `aktualisiereDokVerwaltung()` and the print `@media` block, not\n  inferred.\n- \"Beiden Farbmodi\" AC: LOW / open question \u2014 the feature it would refer to\n  was intentionally removed from this app; flagged rather than resolved.\n\n**Research date:** 2026-08-26\n**Sub-agents used:** None spawned as separate processes \u2014 the issue is a\nsingle-surface HTML/CSS change (one page, two files, no new dependency), so\nthe orchestrator performed codebase, ecosystem (DS component verification\nvia live fetch), and pitfalls (print/test/doc-manager-state) research\ndirectly in one pass rather than dispatching parallel specialists. All\nfindings above are HIGH confidence and independently source-tagged, so this\ndoes not reduce research quality for this scope.\n**Raw research files:** none written under `research/` \u2014 see note above; all\nfindings are inlined in this document with sources cited per section.\n"}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var dataEl = document.getElementById("artifact-source");
+  var target = document.getElementById("artifact-source-target");
+  if (dataEl && target) {
+    try {
+      target.textContent = JSON.parse(dataEl.textContent).source || "";
+    } catch (e) {
+      target.textContent = dataEl.textContent;
+    }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) { ev.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
