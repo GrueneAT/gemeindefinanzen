@@ -579,18 +579,6 @@ input.search:focus-visible {
   .app-beta-marker { display: none; }
 }
 
-/* Beta-Hinweis-Absatz unter dem Hero-Intro — sanft mit etwas Abstand vom
-   Haupttext, ohne in einer "Achtung"-Optik zu schreien. Linkfarbe wird
-   vom DS uebernommen, hier nur die Schrift etwas zurueckhaltender. */
-.app-beta-hinweis {
-  margin-top: 0.7rem;
-  font-size: 0.95em;
-  color: var(--gat-web-text-soft);
-}
-.app-beta-hinweis strong {
-  color: var(--gat-color-accent);
-}
-
 /* --- Einklappbare Dokumentverwaltung ------------------------------------- */
 .doc-manager {
   border: 1px solid var(--app-hair);

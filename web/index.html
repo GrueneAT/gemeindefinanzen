@@ -64,7 +64,7 @@
 <div class="page">
 
   <header class="gat-hero">
-    <h1 class="gat-headline gat-hero__title">Gemeindebudget auswerten</h1>
+    <h1 class="gat-headline gat-hero__title">Gemeindebudget auswerten — Beta</h1>
     <p class="app-intro gat-fliesstext gat-hero__intro">VRV-2015-Voranschlaege,
       Nachtragsvoranschlaege und Rechnungsabschluesse als <strong>PDF</strong>
       oder als <strong>OH-CSV-Paar</strong> (EHH+FHH von
@@ -72,12 +72,23 @@
          >offenerhaushalt.at</a>) hochladen und direkt auf dieser Seite
       auswerten. Extraktion, Parsing, Pruefung und Auswertung laufen
       vollstaendig im Browser — kein Server, kein Upload ins Netz.</p>
-    <p class="app-intro gat-fliesstext gat-hero__intro app-beta-hinweis">
-      Dieses Werkzeug ist in der <strong>Beta-Phase</strong>. Bei Problemen,
-      Fehlern oder Wuenschen bitte direkt an
-      <a href="mailto:florian.motlik@gruene.at"
-         >florian.motlik@gruene.at</a> melden.</p>
   </header>
+
+  <!-- Beta-Hinweis — bewusst ausserhalb von #doc-manager: app.js klappt die
+       Dokumentverwaltung zu, sobald ein Dokument geladen ist, und im Druck ist
+       .doc-manager ausgeblendet. Hier bleibt der Hinweis beim Arbeiten sichtbar
+       und steht auch im ausgedruckten Bericht. -->
+  <aside id="beta-hinweis" class="gat-callout gat-callout--warn">
+    <span class="gat-callout__lead">Beta-Version: Ergebnisse bitte gegenpruefen</span>
+    <p class="gat-fliesstext">Dieses Werkzeug ist in der <strong>Beta-Phase</strong>. Die
+      Auswertung entsteht aus einer automatischen Erkennung der hochgeladenen Dokumente —
+      der PDF-Parser kann Zahlen falsch zuordnen oder uebersehen. Bitte jedes Ergebnis
+      gegen den Voranschlag beziehungsweise den Rechnungsabschluss pruefen, bevor es
+      weitergegeben oder veroeffentlicht wird.</p>
+    <p class="gat-fliesstext">Fehler, unstimmige Zahlen und Wuensche bitte direkt an
+      <a href="mailto:florian.motlik@gruene.at">florian.motlik@gruene.at</a> melden —
+      jede Rueckmeldung verbessert das Werkzeug.</p>
+  </aside>
 
   <div id="toast-box" class="gat-toaster" role="region"
        aria-live="polite" aria-label="Meldungen"></div>
