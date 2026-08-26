@@ -1,7 +1,7 @@
 ---
 id: s290j
 title: 'Beta-Status prominent zeigen: Ueberschrift und grosser Hinweis beim Oeffnen'
-status: open
+status: done
 priority: medium
 ---
 
