@@ -1,7 +1,7 @@
 ---
 id: khnpz
 title: Impressum und Datenschutzerklaerung im Footer verlinken
-status: open
+status: done
 priority: high
 ---
 
