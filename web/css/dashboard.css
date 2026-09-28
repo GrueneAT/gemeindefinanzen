@@ -229,3 +229,52 @@ td.pick input, th.pick input { cursor: pointer; }
   border: 1px solid var(--hair); border-radius: var(--gat-web-radius-card, 10px);
   background: var(--gat-web-surface, #fff); padding: 6px; }
 .mj-empty { font-size: .85rem; color: var(--gat-web-text-soft, #5e6358); margin: .5rem 0; }
+
+/* --- Vergleichs-Tab (Diff zweier Dokumente) ------------------------------
+   Eigene Ebene, weil die Diff-Ansicht drei Dinge braucht, die es sonst
+   nirgends gibt: Karten, die ihre Anzahl je Haushaltshaelfte aendern, eine
+   Tabelle, in der das Vorzeichen der Veraenderung die Zeile traegt, und ein
+   Pruefergebnis, das bestanden oder nicht bestanden sein kann. */
+
+/* Karten-Raster, das mit 3 wie mit 4 Karten aufgeht — .stats ist fest
+   vierspaltig, hier haengt die Anzahl an der Haushaltshaelfte. */
+.stats--auto { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+
+/* Der Tausch-Knopf sitzt in der Filterbar auf Hoehe der Eingabefelder —
+   das leere Label traegt ihn auf dieselbe Grundlinie. */
+.vgl-tausch-feld { align-self: flex-end; }
+
+.vgl-karte__delta { font-size: .86rem; color: var(--gat-web-text-soft, #5e6358);
+  font-variant-numeric: tabular-nums; margin-top: .18rem; }
+.vgl-karte__delta.is-up   { color: var(--gat-web-chart-1); }
+.vgl-karte__delta.is-down { color: var(--gat-web-clay-text); }
+.vgl-karte__basis { font-size: .78rem; color: var(--gat-web-text-mute, #6b6f63);
+  font-variant-numeric: tabular-nums; margin-top: .35rem; line-height: 1.45; }
+
+.vgl-statuszeile { margin-top: -.4rem; }
+
+/* Pruefergebnis der Selbstkontrolle. Bestanden ist eine ruhige gruene Zeile,
+   eine Abweichung eine Clay-Zeile — kein Alarm, aber sichtbar. */
+.vgl-pruef { font-size: .88rem; line-height: 1.5; margin: 0 0 .6rem;
+  border-left: 3px solid var(--hair); padding-left: .7rem; }
+.vgl-pruef.is-ok   { border-left-color: var(--gat-web-chart-1);
+  color: var(--gat-web-text, #23271f); }
+.vgl-pruef.is-warn { border-left-color: var(--gat-web-clay-text);
+  color: var(--gat-web-text, #23271f); }
+
+/* Diff-Tabelle: die Spalte mit der Veraenderung traegt das Vorzeichen in der
+   Farbe — Clay fuer hoeher, Gruen fuer niedriger, wie im Diagramm. */
+.vgl-delta { font-variant-numeric: tabular-nums; }
+.vgl-zeile.is-hoch   .vgl-delta { color: var(--gat-web-clay-text); }
+.vgl-zeile.is-nieder .vgl-delta { color: var(--gat-web-chart-1); }
+
+/* Status als ruhige Textmarke, nicht als bunter Chip — die Farbe der
+   Veraenderungsspalte traegt schon die Aussage. */
+.vgl-status-neu, .vgl-status-entfallen, .vgl-status-geaendert,
+.vgl-status-unveraendert { font-size: .78rem; letter-spacing: .01em; }
+.vgl-status-neu       { color: var(--gat-web-chart-1); }
+.vgl-status-entfallen { color: var(--gat-web-clay-text); }
+.vgl-status-geaendert { color: var(--gat-web-text-soft, #5e6358); }
+.vgl-status-unveraendert { color: var(--gat-web-text-mute, #6b6f63); }
+
+.vgl-leer { font-size: .9rem; color: var(--gat-web-text-soft, #5e6358); }

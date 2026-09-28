@@ -6,9 +6,12 @@
 // Dashboard-Oberflaeche (web/js/dashboard.js, unveraendert aus
 // dem Python-Report uebernommen) arbeitet ausschliesslich auf dieser Struktur.
 
-// Chronologische Sortierung: innerhalb eines Jahres Ist vor Plan.
-const ORDER =
-  "CASE typ WHEN 'RA' THEN 0 WHEN 'NVA' THEN 1 WHEN 'VA' THEN 2 ELSE 3 END"
+import { TYP_ORDER_SQL } from "./reference.js"
+
+// Chronologische Sortierung in Entwicklungsreihenfolge: innerhalb eines
+// Jahres zuerst der Voranschlag, dann der Nachtragsvoranschlag, zuletzt der
+// Rechnungsabschluss (siehe TYP_ORDER_SQL in reference.js).
+const ORDER = TYP_ORDER_SQL
 
 const KOMM = "833000"
 
@@ -79,7 +82,11 @@ function dokumente(db) {
     id: did,
     typ,
     jahr,
-    label: sw,
+    // Kurzlabel fuer Umschalter, Achsen und Auswahllisten. Die Spalten-
+    // bedeutung (spalte_wert) ist als Klartext dabei, wird aber nicht als
+    // Label benutzt: "VA 2026 inkl. NVA" steht sonst direkt neben
+    // "VA 2026" und ist auf einen Blick nicht zu unterscheiden.
+    label: jahr == null ? typ || "Dokument" : `${typ} ${jahr}`,
     spalte_wert: sw,
     spalte_vergleich: sv,
     spalte_dritte: sd,
@@ -427,11 +434,13 @@ function aggregateDok(db, did) {
     ])
   }
 
-  // R4 — Budgetierungspolster (nur fuer Voranschlaege). Wo liegt VA
-  // spuerbar ueber dem letzten Ist (eh_dritte)? Analog
-  // web/sql/08-budgetierungspolster.sql, parametriert.
+  // R4 — Budgetierungspolster (nur fuer Planungsdokumente). Wo liegt der
+  // Plan spuerbar ueber dem letzten Ist (eh_dritte)? Analog
+  // web/sql/08-budgetierungspolster.sql, parametriert. Ein
+  // Nachtragsvoranschlag ist ein Voranschlag — die Frage stellt sich dort
+  // genauso, deshalb zaehlt NVA mit.
   let polster
-  if (dokTyp === "VA") {
+  if (dokTyp === "VA" || dokTyp === "NVA") {
     polster = rows(
       db,
       `SELECT bezeichnung, gruppe_text,
@@ -581,18 +590,18 @@ function trend(db) {
   // unterscheiden koennen (siehe dashboard-charts.js).
   const eckwerte = rows(
     db,
-    `SELECT spalte_wert, ROUND(ertraege), ROUND(aufwand),
+    `SELECT typ || ' ' || finanzjahr, ROUND(ertraege), ROUND(aufwand),
             ROUND(nettoergebnis), typ
      FROM v_eckwerte ORDER BY finanzjahr, ${ORDER}`,
   )
   const komm = rows(
     db,
     `SELECT dokument, ROUND(eh_wert), typ FROM v_zeitreihe
-     WHERE konto='833000' ORDER BY finanzjahr, typ`,
+     WHERE konto='833000' ORDER BY finanzjahr, ${ORDER}`,
   )
   const aufwand = rows(
     db,
-    `SELECT spalte_wert,
+    `SELECT typ || ' ' || finanzjahr,
             ROUND(SUM(CASE WHEN substr(mvag_eh,1,3)='221'
                       THEN eh_wert ELSE 0 END)),
             ROUND(SUM(CASE WHEN substr(mvag_eh,1,3)='222'
@@ -612,7 +621,7 @@ function trend(db) {
   // Bewegung aus den eingelesenen Dokumenten.
   const finPro = rows(
     db,
-    `SELECT spalte_wert,
+    `SELECT typ || ' ' || finanzjahr,
             SUM(CASE WHEN richtung='einnahme' THEN fh_wert ELSE 0 END),
             SUM(CASE WHEN richtung='ausgabe'  THEN fh_wert ELSE 0 END),
             typ
@@ -639,6 +648,25 @@ function trend(db) {
   }
 }
 
+// Vorbelegung fuer den Vergleichs-Tab: welche zwei Dokumente vergleicht die
+// App, wenn der User den Tab zum ersten Mal oeffnet? `dok` liegt in
+// Entwicklungsreihenfolge vor.
+//
+// Ein Voranschlag und der Nachtragsvoranschlag desselben Jahres sind das
+// aussagekraeftigste Paar — der NVA aendert genau diesen VA, die Differenz
+// ist die Budgetaenderung. Gibt es so ein Paar, gewinnt das juengste davon.
+// Sonst die zwei juengsten Dokumente ueberhaupt.
+export function standardVergleich(dok) {
+  if (!dok || dok.length < 2) return null
+  for (let i = dok.length - 1; i > 0; i--) {
+    const b = dok[i]
+    if (b.typ !== "NVA") continue
+    const a = dok.find((d) => d.typ === "VA" && d.jahr === b.jahr)
+    if (a) return { a: a.id, b: b.id }
+  }
+  return { a: dok[dok.length - 2].id, b: dok[dok.length - 1].id }
+}
+
 // Alle Dashboard-Daten in einem JSON-serialisierbaren Objekt einsammeln.
 export function collect(db) {
   const dok = dokumente(db)
@@ -650,11 +678,15 @@ export function collect(db) {
   }
   const trendData = trend(db)
 
-  // Default-Dokument: juengster Voranschlag, sonst juengstes Dokument.
-  const va = dok.filter((d) => d.typ === "VA")
+  // Default-Dokument: das juengste **gueltige** Planungsdokument. `dok` ist
+  // in Entwicklungsreihenfolge sortiert, ein Nachtragsvoranschlag steht
+  // damit hinter dem Voranschlag desselben Jahres und gewinnt — sonst
+  // zeigte das Dashboard beim Oeffnen den bereits ueberholten Voranschlag.
+  // Liegen nur Rechnungsabschluesse vor, ist es der juengste davon.
+  const plan = dok.filter((d) => d.typ === "VA" || d.typ === "NVA")
   let defaultDok = 0
   if (dok.length > 0) {
-    defaultDok = (va.length ? va[va.length - 1] : dok[dok.length - 1]).id
+    defaultDok = (plan.length ? plan[plan.length - 1] : dok[dok.length - 1]).id
   }
 
   return {
@@ -663,6 +695,8 @@ export function collect(db) {
       dok_anzahl: dok.length,
       posten_anzahl: post.length,
       default_dok: defaultDok,
+      // Vorbelegung des Vergleichs-Tabs (Basis -> Vergleich).
+      default_vergleich: standardVergleich(dok),
     },
     dokumente: dok,
     posten: post,

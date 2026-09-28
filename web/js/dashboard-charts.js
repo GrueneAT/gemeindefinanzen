@@ -1421,3 +1421,232 @@ export function alleCharts(daten) {
     mehrjahr,
   }
 }
+
+// --- Vergleich zweier Dokumente (Diff-Ansicht) ---------------------------- //
+// Die Vorlagen bekommen ihr Diff-Objekt zur Laufzeit von vergleich.js — die
+// A/B-Auswahl steht erst dann fest und kann nicht wie die uebrigen Charts in
+// alleCharts() vorberechnet werden.
+//
+// Farbkonvention wie beim bestehenden Veraenderungs-Diagramm (chartTreiber):
+// Clay steht fuer eine Erhoehung, Gruen fuer eine Senkung. Nur im Saldo-
+// Wasserfall ist es umgekehrt — dort traegt das Vorzeichen des Beitrags die
+// Bedeutung "verbessert / verschlechtert den Saldo", und die Farbe folgt ihr.
+
+// Beitrag einer Stufe zum Saldo — gruen hebt, clay senkt.
+function diffStufenFarbe(beitrag) {
+  return beitrag >= 0 ? INK.green : INK.red
+}
+
+// Bruecke vom Saldo der Basis zum Saldo des Vergleichs. Jede Stufe ist ein
+// Ansatz; die Treppe macht sichtbar, welche Aufgabe den Saldo bewegt und in
+// welche Richtung.
+export function chartDiffWasserfall(diff, labelA = "Basis", labelB = "Vergleich") {
+  const w = diff.wasserfall
+  const saldoFarbe = (v) => (v >= 0 ? INK.green : INK.red)
+  const namen = [labelA, ...w.schritte.map((s) => s.name), labelB]
+  const sockel = []
+  const sichtbar = []
+  const linien = []
+
+  // Startsaldo als voller Balken ab der Nulllinie.
+  sockel.push(0)
+  sichtbar.push({
+    value: round(w.von),
+    itemStyle: { color: saldoFarbe(w.von) },
+  })
+
+  // Stufen: der Sockel traegt den Balken auf das laufende Niveau, der
+  // sichtbare Balken zeigt den Betrag der Veraenderung.
+  let lauf = w.von
+  w.schritte.forEach((s, i) => {
+    const von = lauf
+    const nach = lauf + s.beitrag
+    sockel.push(round(Math.min(von, nach)))
+    sichtbar.push({
+      // Der Balken ist so hoch wie der Betrag; das Vorzeichen steckt in der
+      // Lage auf der Treppe und in der Farbe. Fuer das Datenlabel reicht das
+      // nicht — ein Clay-Balken mit "297k" liest sich wie ein Zuwachs.
+      // Deshalb faehrt der vorzeichenbehaftete Beitrag am Datenpunkt mit.
+      value: round(Math.abs(s.beitrag)),
+      beitrag: round(s.beitrag),
+      itemStyle: { color: diffStufenFarbe(s.beitrag) },
+    })
+    linien.push([
+      { coord: [i, round(nach)] },
+      { coord: [i + 1, round(nach)] },
+    ])
+    lauf = nach
+  })
+
+  sockel.push(0)
+  sichtbar.push({
+    value: round(w.nach),
+    itemStyle: { color: saldoFarbe(w.nach) },
+  })
+
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    grid: grid({ top: 28, bottom: 86 }),
+    xAxis: catAxis(namen, LABEL_SIZE, 34),
+    yAxis: valAxis(),
+    series: [
+      {
+        type: "bar",
+        stack: "d",
+        itemStyle: { color: "transparent" },
+        data: sockel,
+        silent: true,
+        barWidth: "52%",
+        barMaxWidth: BAR_MAX_WEIT,
+      },
+      {
+        type: "bar",
+        stack: "d",
+        data: sichtbar,
+        barWidth: "52%",
+        barMaxWidth: BAR_MAX_WEIT,
+        itemStyle: { borderRadius: 2 },
+        markLine: {
+          symbol: "none",
+          silent: true,
+          lineStyle: { color: ACHSE_LINIE, width: 1, type: "dashed" },
+          label: { show: false },
+          data: linien,
+        },
+        label: {
+          show: true,
+          position: "top",
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
+          // Datenlabel bekommt das params-Objekt, nicht den nackten Wert
+          // (anders als ein axisLabel-Formatter). Stufen zeigen den
+          // vorzeichenbehafteten Beitrag, Start und Ende den Saldo selbst.
+          formatter:
+            "(p)=>{const v=p.data&&p.data.beitrag!=null?p.data.beitrag:" +
+            "p.value;return (v>0?'+':'')+(v/1000).toLocaleString('de-AT')+'k'}",
+        },
+      },
+    ],
+  }
+}
+
+// Veraenderung je Aufgabengruppe, Einnahmen und Ausgaben getrennt. Zehn
+// Kategorien, zwei Balken je Kategorie — der kompakte Ueberblick, bevor man
+// in die Tabelle geht.
+export function chartDiffGruppen(diff) {
+  const zeilen = diff.gruppen.filter(
+    (g) => g.einnahme !== 0 || g.ausgabe !== 0,
+  )
+  const cats = zeilen
+    .map((g) => `${g.gruppe} ${g.gruppe_text}`.trim())
+    .reverse()
+  const ein = zeilen.map((g) => round(g.einnahme)).reverse()
+  const aus = zeilen.map((g) => round(g.ausgabe)).reverse()
+  const einLabel = diff.haushalt === "FHH" ? "Einzahlungen" : "Ertraege"
+  const ausLabel = diff.haushalt === "FHH" ? "Auszahlungen" : "Aufwendungen"
+  return {
+    textStyle: baseText(),
+    tooltip: tip({ trigger: "axis", axisPointer: { type: "shadow" } }),
+    legend: legende_app(),
+    grid: grid({ bottom: 40 }),
+    xAxis: valAxis(),
+    yAxis: { ...catAxis(cats), inverse: true },
+    series: [
+      {
+        name: `${einLabel} — Veraenderung`,
+        type: "bar",
+        data: ein,
+        barMaxWidth: BAR_MAX_DICHT,
+        itemStyle: { color: INK.green, borderRadius: 2 },
+      },
+      {
+        name: `${ausLabel} — Veraenderung`,
+        type: "bar",
+        data: aus,
+        barMaxWidth: BAR_MAX_DICHT,
+        itemStyle: { color: INK.red, borderRadius: 2 },
+      },
+    ],
+  }
+}
+
+// Eine Farbe Richtung Papierweiss aufhellen — die Treemap staffelt die
+// Intensitaet nach Betragshoehe, damit die grossen Aenderungen auch bei
+// gleicher Flaeche hervortreten.
+function mischeMitPapier(hex, anteil) {
+  const h = String(hex).replace("#", "")
+  if (h.length !== 6) return hex
+  const t = Math.max(0, Math.min(1, anteil))
+  const kanal = (i) => {
+    const v = parseInt(h.slice(i * 2, i * 2 + 2), 16)
+    const g = Math.round(v + (255 - v) * (1 - t))
+    return g.toString(16).padStart(2, "0")
+  }
+  return `#${kanal(0)}${kanal(1)}${kanal(2)}`
+}
+
+// Treemap der Veraenderungen, Aufgabengruppe -> Ansatz. Die Flaeche ist der
+// Betrag der Veraenderung, die Farbe ihr Vorzeichen. Damit sieht man ohne zu
+// lesen, wo sich etwas bewegt hat und in welche Richtung.
+export function chartDiffTreemap(diff) {
+  const max = diff.treemap.reduce((m, e) => Math.max(m, Math.abs(e.delta)), 0) || 1
+  const gruppen = new Map()
+  for (const e of diff.treemap) {
+    const gname = `${e.gruppe} ${e.gruppe_text}`.trim() || "ohne Gruppe"
+    if (!gruppen.has(gname)) gruppen.set(gname, [])
+    // Intensitaet zwischen 0,35 und 1 — auch kleine Aenderungen bleiben
+    // erkennbar gefaerbt.
+    const anteil = 0.35 + 0.65 * (Math.abs(e.delta) / max)
+    gruppen.get(gname).push({
+      name: e.ansatz_text || e.ansatz,
+      value: Math.abs(round(e.delta)),
+      ansatz: e.ansatz,
+      delta: round(e.delta),
+      itemStyle: {
+        color: mischeMitPapier(e.delta >= 0 ? INK.red : INK.green, anteil),
+      },
+    })
+  }
+  return {
+    textStyle: baseText(),
+    tooltip: tip({
+      trigger: "item",
+      formatter:
+        "(p)=>{const d=p.data&&p.data.delta;return d==null?p.name:" +
+        "p.name+'<br/>'+(d>0?'+':'')+d.toLocaleString('de-AT')+' \\u20ac'}",
+    }),
+    series: [
+      {
+        type: "treemap",
+        data: [...gruppen.entries()].map(([g, k]) => ({
+          name: g,
+          children: k,
+          itemStyle: { color: INK.soft },
+        })),
+        top: 6,
+        bottom: 6,
+        left: 6,
+        right: 6,
+        roam: false,
+        nodeClick: false,
+        breadcrumb: { show: false },
+        levels: [
+          {
+            itemStyle: { borderColor: INK.paper, borderWidth: 3, gapWidth: 3 },
+          },
+          {
+            itemStyle: { borderColor: INK.paper, borderWidth: 1, gapWidth: 1 },
+          },
+        ],
+        label: { fontFamily: CHART_FONT, fontSize: LABEL_SIZE },
+        upperLabel: {
+          show: true,
+          height: 24,
+          fontFamily: CHART_FONT,
+          fontSize: LABEL_SIZE,
+        },
+      },
+    ],
+  }
+}
