@@ -2,6 +2,7 @@
 id: lsx7v
 title: Vergleichs- und Diff-Ansicht zweier Dokumente, Sortierung in Entwicklungsreihenfolge
 status: done
+ship_state: pr_open
 priority: high
 ---
 
