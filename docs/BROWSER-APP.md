@@ -84,9 +84,17 @@ genau verkehrt. Die Vorbelegung des Dashboards ist das juengste **gueltige**
 Planungsdokument: liegt zu einem Voranschlag ein Nachtrag vor, gewinnt der
 Nachtrag.
 
-### Der Vergleich zweier Dokumente
+**Spalte 3 ist nicht bei jedem Typ eine Differenz.** Der NVA druckt dort
+"1. NVA" und der RA "Abweichung RA-VA" ab — beides ist Spalte 1 minus Spalte 2
+und damit **verifizierbar**: der interne Vergleich unten kann sie Zeile fuer
+Zeile nachrechnen. Ein **Voranschlag** druckt keine Differenz ab: seine
+Spalte 3 ist der Rechnungsabschluss des Vorvorjahres, ein eigenstaendiger
+Wert. Der interne Modus funktioniert beim VA trotzdem (Basis ist der
+Vorjahres-VA), ist dort aber nicht gegen eine abgedruckte Spalte belegbar.
 
-Der Vergleichs-Tab stellt zwei Dokumente gegeneinander — Haushaltsstelle fuer
+### Der Vergleich — aus einem oder zwei Dokumenten
+
+Der Vergleichs-Tab stellt zwei Seiten gegeneinander — Haushaltsstelle fuer
 Haushaltsstelle. Der Schluessel ist das VRV-Tripel **(Ansatz, Konto,
 Richtung)**; im Detailnachweis eines PDF kommt jede Kombination genau einmal
 vor, der Vergleich ist damit exakt und braucht kein Namens-Matching.
@@ -99,25 +107,61 @@ in beiden Faellen dieselbe Zahl.
 Ergebnis- und Finanzierungshaushalt werden getrennt gerechnet und nie addiert;
 der Tab hat dafuer einen eigenen Umschalter.
 
-**Selbstkontrolle.** Jedes Dokument druckt seine Vergleichszahl mit ab (Spalte
-2 der Tabelle oben). Ist das Basisdokument des Vergleichs genau dieses
-Dokument — ein Nachtrag gegen den Voranschlag desselben Jahres, ein
-Voranschlag gegen den des Vorjahres —, rechnet `kontrolle()` die geladene
-Basis gegen die abgedruckte Spalte nach. Der Diff ist dann belegt und nicht
-nur plausibel.
+**Die Basis hat zwei moegliche Herkuenfte.** Entweder ein zweites geladenes
+Dokument, oder die im Vergleichsdokument selbst abgedruckte Vergleichsspalte
+(Spalte 2 der Tabelle oben) — letztere ist die **Vorbelegung**, sobald das
+Vergleichsdokument sie fuehrt, auch wenn das passende zweite Dokument
+ebenfalls geladen ist. Sie ist per Definition die Fassung, gegen die das
+Dokument rechnet; ein separat geladenes Dokument kann eine andere Fassung
+sein — der Herzogenburger `VA-2026-Auflage.pdf` fehlt gegenueber der
+Vergleichsspalte des Nachtrags die Community Nurse (200.600 EUR). Die
+interne Basis ist an der Beschriftung "Spaltenname (laut Typ)" erkennbar,
+etwa "VA 2026 (laut NVA)" oder — beim Rechnungsabschluss, siehe unten —
+"Soll 2025 (laut RA)".
 
-Weicht es ab, ist das in der Praxis eine **Fassungsfrage**: die zur Auflage
-aufgelegte Version eines Voranschlags ist nicht die beschlossene, und der
-Nachtrag rechnet gegen die beschlossene. Die Herzogenburg-Fixtures zeigen
-genau das — `VA-2026-Auflage.pdf` kennt die Community Nurse noch nicht
+Den Modus bietet die App nicht jedem Dokument an: ein OH-CSV-Dokument traegt
+zwar den Spaltennamen ("VA 2025"), aber **keine Werte** in Spalte 2 — die
+Pruefung ist deshalb datenbasiert (`hatVergleichsspalte()`), nicht am Typ
+festgemacht. Mit nur einem OH-CSV-Dokument bleibt der Tab verborgen; sobald
+ein zweites Dokument geladen ist, steht der Zwei-Dokumente-Vergleich trotzdem
+offen.
+
+**Selbstkontrolle.** Jedes Dokument druckt seine Vergleichszahl mit ab (Spalte
+2 der Tabelle oben). Ist das **geladene** Basisdokument des Vergleichs genau
+dieses Dokument — ein Nachtrag gegen den Voranschlag desselben Jahres, ein
+Voranschlag gegen den des Vorjahres, ein Rechnungsabschluss gegen seinen
+Nachtragsvoranschlag oder Voranschlag (siehe unten) —, rechnet `kontrolle()`
+die geladene Basis gegen die abgedruckte Spalte nach. Der Diff ist dann
+belegt und nicht nur plausibel.
+
+Bei interner Basis laeuft diese Selbstkontrolle **nicht** mit: die Basis ist
+dort per Konstruktion genau die abgedruckte Spalte, eine Gegenprobe gegen
+sich selbst wuerde immer bestehen und nichts belegen (CONTEXT.md D1). Das
+Kontroll-Panel bleibt trotzdem sichtbar und nennt stattdessen, wodurch die
+Kontrolle sich ausloesen liesse — welches Dokument als Basis zu waehlen waere
+und ob es bereits geladen ist.
+
+Weicht die Kontrolle ab, ist das in der Praxis eine **Fassungsfrage**: die
+zur Auflage aufgelegte Version eines Voranschlags ist nicht die beschlossene,
+und der Nachtrag rechnet gegen die beschlossene. Die Herzogenburg-Fixtures
+zeigen genau das — `VA-2026-Auflage.pdf` kennt die Community Nurse noch nicht
 (Aufwand 100.600, Ertrag 100.000), die Vergleichsspalte des
 `NVA-2026-Auflage.pdf` schon. Die beschlossene Fassung liegt als OH-CSV-Paar
 (`offenerhaushalt_31912_2026_va_*.csv`) daneben und stimmt mit der
 Vergleichsspalte des Nachtrags auf allen Haushaltsstellen ueberein.
 
-Der Rechnungsabschluss bleibt von der Kontrolle bewusst ausgenommen: seine
-Spalte 2 ist das Soll, und das kann den Nachtrag schon enthalten — welches
-Dokument gemeint ist, laesst sich aus dem Seitenkopf nicht entscheiden.
+**Der Rechnungsabschluss** war frueher von der Kontrolle ausgenommen. Geprueft
+an den Herzogenburg-Fixtures `RA-2025-Auflage.pdf` und
+`NVA-2025-Auflage.pdf` (je Haushaltsstelle ueber Ansatz, Konto, Richtung):
+gegen die NVA-Spalte 1 ("VA 2025 inkl. NVA") **0 Abweichungen**, gegen die
+NVA-Spalte 2 (Original, ohne Nachtrag) dagegen viele. Das Soll eines RA ist
+also der Voranschlag **inklusive** Nachtrag — die Spalte ist eindeutig,
+irrefuehrend ist nur ihre abgedruckte Bezeichnung ("VA Jahr"), die den
+Nachtrag verschweigt. `kontrolle()` unterstuetzt den RA deshalb jetzt, und
+seine Basis heisst dort neutral "Soll Jahr (laut RA)" statt wie im PDF
+gedruckt. Spiegelbildlich gilt beim **Voranschlag**: seine Spalte 2 ist der
+Vorjahres-VA im **Original**, ohne dessen Nachtrag — RA und VA messen also
+gegen verschiedene Staende, deshalb die unterschiedliche Beschriftung.
 
 ## Datenhaltung
 
