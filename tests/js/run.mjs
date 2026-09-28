@@ -1113,21 +1113,38 @@ async function teste() {
     Array.isArray(datenPK.aggregate[String(defDok.id)].polster),
     typeof datenPK.aggregate[String(defDok.id)].polster,
   )
-  // Die Vorbelegung des Vergleichs ist das VA/NVA-Paar desselben Jahres.
+  // Die Vorbelegung des Vergleichs ist die interne Spalte des juengsten
+  // Dokuments mit gefuellter Vergleichsspalte (CONTEXT.md D1) — nicht mehr
+  // das VA/NVA-Paar, obwohl der VA 2026 geladen ist.
   const stdV = datenPK.meta.default_vergleich
-  const stdA = datenPK.dokumente.find((d) => String(d.id) === String(stdV.a))
   const stdB = datenPK.dokumente.find((d) => String(d.id) === String(stdV.b))
   pruefe(
-    "default_vergleich ist VA 2026 -> NVA 2026",
-    stdA.label === "VA 2026" && stdB.label === "NVA 2026",
-    `${stdA && stdA.label} -> ${stdB && stdB.label}`,
+    "default_vergleich ist die interne Spalte des NVA 2026",
+    stdV.a === BASIS_INTERN && stdB.label === "NVA 2026",
+    `${stdV.a} -> ${stdB && stdB.label}`,
   )
   pruefe(
-    "standardVergleich mit einem Dokument liefert null",
+    "standardVergleich ohne posten liefert mit einem Dokument null (Rueckfall)",
     standardVergleich([{ id: 1, typ: "VA", jahr: 2026 }]) === null,
   )
   pruefe(
-    "standardVergleich ohne NVA nimmt die zwei juengsten",
+    "standardVergleich mit posten liefert bei gefuellter Spalte 2 die interne Basis",
+    JSON.stringify(
+      standardVergleich(
+        [{ id: 1, typ: "VA", jahr: 2026 }],
+        [{ dok: 1, ev: 100, fv: 0 }],
+      ),
+    ) === JSON.stringify({ a: BASIS_INTERN, b: 1 }),
+  )
+  pruefe(
+    "standardVergleich mit posten liefert bei leerer Spalte 2 (OH-CSV) null",
+    standardVergleich(
+      [{ id: 1, typ: "VA", jahr: 2026 }],
+      [{ dok: 1, ev: 0, fv: 0 }],
+    ) === null,
+  )
+  pruefe(
+    "standardVergleich ohne posten nimmt ohne NVA die zwei juengsten (Rueckfall)",
     JSON.stringify(
       standardVergleich([
         { id: 7, typ: "RA", jahr: 2024 },
