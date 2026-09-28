@@ -34,6 +34,13 @@ EHH und FHH:
 
 Aggregiert ebenso deckungsgleich: Ausgaben 23.630.200, Einnahmen 24.985.600.
 
+**Zaehlweise:** oben ist ein Schluessel (Ansatz, Konto, Richtung) einmal
+gezaehlt, mit Ergebnis- und Finanzierungshaushalt als Wertepaar. Zaehlt man
+die Haushaltshaelften getrennt, lauten dieselben Zahlen 191 Posten /
+9.211.600 EUR im Ergebnis- und 231 / 18.238.700 EUR im Finanzierungshaushalt
+(so in RESEARCH.md). Richtung und Schlussfolgerung sind identisch — wer die
+Zahl zitiert, nennt die Zaehlweise dazu.
+
 **Ergebnis:** Das Soll eines RA ist der Voranschlag **inklusive Nachtrag**.
 Die Spalte ist eindeutig; irrefuehrend ist nur ihre Beschriftung im PDF, die
 den Nachtrag verschweigt.
@@ -42,6 +49,11 @@ den Nachtrag verschweigt.
 Basis heisst aber **nicht** wie im Dokument abgedruckt, sondern neutral und
 zutreffend — "Soll 2025 (laut RA)". Das stimmt in beiden Faellen, mit und
 ohne Nachtrag.
+
+**Spiegelfall (aus der Recherche):** Beim **Voranschlag** ist es umgekehrt —
+seine Spalte 2 ist der Vorjahres-VA im **Original**, ohne dessen Nachtrag
+(0 Abweichungen gegen NVA-Spalte 2, 191/231 gegen Spalte 1). RA und VA
+messen also gegen verschiedene Staende; das gehoert in die Beschriftung.
 
 **Zweite Folge — Korrektur am bestehenden Code:** `kontrolle()` in
 `web/js/vergleich-daten.js` schliesst den RA heute aus, mit der Begruendung,
