@@ -7,6 +7,7 @@
 // dem Python-Report uebernommen) arbeitet ausschliesslich auf dieser Struktur.
 
 import { TYP_ORDER_SQL } from "./reference.js"
+import { BASIS_INTERN, hatVergleichsspalte } from "./vergleich-daten.js"
 
 // Chronologische Sortierung in Entwicklungsreihenfolge: innerhalb eines
 // Jahres zuerst der Voranschlag, dann der Nachtragsvoranschlag, zuletzt der
@@ -648,16 +649,35 @@ function trend(db) {
   }
 }
 
-// Vorbelegung fuer den Vergleichs-Tab: welche zwei Dokumente vergleicht die
-// App, wenn der User den Tab zum ersten Mal oeffnet? `dok` liegt in
-// Entwicklungsreihenfolge vor.
+// Vorbelegung fuer den Vergleichs-Tab: welche Basis und welches Dokument
+// vergleicht die App, wenn der User den Tab zum ersten Mal oeffnet? `dok`
+// liegt in Entwicklungsreihenfolge vor.
 //
-// Ein Voranschlag und der Nachtragsvoranschlag desselben Jahres sind das
-// aussagekraeftigste Paar — der NVA aendert genau diesen VA, die Differenz
-// ist die Budgetaenderung. Gibt es so ein Paar, gewinnt das juengste davon.
-// Sonst die zwei juengsten Dokumente ueberhaupt.
-export function standardVergleich(dok) {
-  if (!dok || dok.length < 2) return null
+// CONTEXT.md D1: traegt ein Dokument eine gefuellte Vergleichsspalte, ist
+// diese die Basis-Vorbelegung — auch dann, wenn das passende zweite
+// Dokument geladen ist. Sie ist per Definition die Fassung, gegen die das
+// Dokument rechnet; ein separat geladenes Dokument kann eine andere Fassung
+// sein (Herzogenburg: `VA-2026-Auflage.pdf` fehlt die Community Nurse,
+// 200.600 EUR). Gewinnt das juengste Dokument mit gefuellter Spalte 2 (von
+// hinten gesucht, `dok` liegt in Entwicklungsreihenfolge vor).
+//
+// `posten` ist optional, weil "hat das Dokument Zahlen in Spalte 2?" nicht
+// am Typ entscheidbar ist (ein OH-CSV-Dokument traegt den Spaltennamen,
+// aber keine Werte) — ohne `posten` faellt die Funktion exakt auf das
+// bisherige Verhalten zurueck: ein Voranschlag und der Nachtragsvoranschlag
+// desselben Jahres sind das aussagekraeftigste Paar — der NVA aendert genau
+// diesen VA, die Differenz ist die Budgetaenderung. Gibt es so ein Paar,
+// gewinnt das juengste davon. Sonst die zwei juengsten Dokumente ueberhaupt.
+export function standardVergleich(dok, posten) {
+  if (!dok || dok.length === 0) return null
+  if (posten) {
+    for (let i = dok.length - 1; i >= 0; i--) {
+      if (hatVergleichsspalte(posten, dok[i].id)) {
+        return { a: BASIS_INTERN, b: dok[i].id }
+      }
+    }
+  }
+  if (dok.length < 2) return null
   for (let i = dok.length - 1; i > 0; i--) {
     const b = dok[i]
     if (b.typ !== "NVA") continue
@@ -696,7 +716,7 @@ export function collect(db) {
       posten_anzahl: post.length,
       default_dok: defaultDok,
       // Vorbelegung des Vergleichs-Tabs (Basis -> Vergleich).
-      default_vergleich: standardVergleich(dok),
+      default_vergleich: standardVergleich(dok, post),
     },
     dokumente: dok,
     posten: post,

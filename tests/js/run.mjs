@@ -33,6 +33,10 @@ import {
   filtereZeilen,
   aggregiereDokument,
   alsCsv,
+  schluessel,
+  BASIS_INTERN,
+  interneBasisLabel,
+  hatVergleichsspalte,
 } from "../../web/js/vergleich-daten.js"
 import { typRang, vergleicheDokumente } from "../../web/js/reference.js"
 import {
@@ -912,6 +916,14 @@ async function teste() {
     csvRes2.dokumente.length === 1 &&
       csvRes2.dokumente[0].fassung === "OH-CSV",
     csvRes2.dokumente[0] && csvRes2.dokumente[0].fassung)
+  // Ein OH-CSV-Dokument traegt den Spaltennamen ("VA 2025", loader.js:31),
+  // aber keine Werte in Spalte 2 — hatVergleichsspalte muss das datenbasiert
+  // erkennen, nicht am Typ.
+  const datenCsv = collect(dbCsv)
+  pruefe(
+    "hatVergleichsspalte ist false fuer das gemergte OH-CSV-Dokument",
+    hatVergleichsspalte(datenCsv.posten, datenCsv.dokumente[0].id) === false,
+  )
   dbCsv.close()
 
   // Nachreichungs-Pfad: zuerst nur EHH, dann FHH separat.
@@ -1101,21 +1113,38 @@ async function teste() {
     Array.isArray(datenPK.aggregate[String(defDok.id)].polster),
     typeof datenPK.aggregate[String(defDok.id)].polster,
   )
-  // Die Vorbelegung des Vergleichs ist das VA/NVA-Paar desselben Jahres.
+  // Die Vorbelegung des Vergleichs ist die interne Spalte des juengsten
+  // Dokuments mit gefuellter Vergleichsspalte (CONTEXT.md D1) — nicht mehr
+  // das VA/NVA-Paar, obwohl der VA 2026 geladen ist.
   const stdV = datenPK.meta.default_vergleich
-  const stdA = datenPK.dokumente.find((d) => String(d.id) === String(stdV.a))
   const stdB = datenPK.dokumente.find((d) => String(d.id) === String(stdV.b))
   pruefe(
-    "default_vergleich ist VA 2026 -> NVA 2026",
-    stdA.label === "VA 2026" && stdB.label === "NVA 2026",
-    `${stdA && stdA.label} -> ${stdB && stdB.label}`,
+    "default_vergleich ist die interne Spalte des NVA 2026",
+    stdV.a === BASIS_INTERN && stdB.label === "NVA 2026",
+    `${stdV.a} -> ${stdB && stdB.label}`,
   )
   pruefe(
-    "standardVergleich mit einem Dokument liefert null",
+    "standardVergleich ohne posten liefert mit einem Dokument null (Rueckfall)",
     standardVergleich([{ id: 1, typ: "VA", jahr: 2026 }]) === null,
   )
   pruefe(
-    "standardVergleich ohne NVA nimmt die zwei juengsten",
+    "standardVergleich mit posten liefert bei gefuellter Spalte 2 die interne Basis",
+    JSON.stringify(
+      standardVergleich(
+        [{ id: 1, typ: "VA", jahr: 2026 }],
+        [{ dok: 1, ev: 100, fv: 0 }],
+      ),
+    ) === JSON.stringify({ a: BASIS_INTERN, b: 1 }),
+  )
+  pruefe(
+    "standardVergleich mit posten liefert bei leerer Spalte 2 (OH-CSV) null",
+    standardVergleich(
+      [{ id: 1, typ: "VA", jahr: 2026 }],
+      [{ dok: 1, ev: 0, fv: 0 }],
+    ) === null,
+  )
+  pruefe(
+    "standardVergleich ohne posten nimmt ohne NVA die zwei juengsten (Rueckfall)",
     JSON.stringify(
       standardVergleich([
         { id: 7, typ: "RA", jahr: 2024 },
@@ -1274,6 +1303,282 @@ async function teste() {
       b: dNva.id,
       haushalt: "EHH",
     }).kontrolle === null,
+  )
+
+  // RA-Soll (CONTEXT.md D2): der NVA 2025 druckt in seiner Spalte 1 den Plan
+  // inklusive Nachtrag ab — genau das Soll, das der RA 2025 in seiner
+  // Spalte 2 abdruckt. Die widerlegte Ausschlussbegruendung ist weg, der
+  // RA-Fall ist jetzt pruefbar.
+  const dNva2025 = datenPK.dokumente.find((d) => d.label === "NVA 2025")
+  const dRa2025 = datenPK.dokumente.find((d) => d.label === "RA 2025")
+  const raKEhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dNva2025.id,
+    b: dRa2025.id,
+    haushalt: "EHH",
+  }).kontrolle
+  pruefe(
+    "Kontrolle NVA 2025 -> RA 2025 EHH: 1156 geprueft, 0 Abweichungen, bestanden",
+    raKEhh !== null &&
+      raKEhh.geprueft === 1156 &&
+      raKEhh.abweichungen.length === 0 &&
+      raKEhh.bestanden === true,
+    JSON.stringify(raKEhh),
+  )
+  pruefe(
+    "Kontrolle NVA 2025 -> RA 2025 EHH: spalte ist 'Soll 2025 (laut RA)'",
+    raKEhh.spalte === "Soll 2025 (laut RA)",
+    raKEhh.spalte,
+  )
+  const raKFhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dNva2025.id,
+    b: dRa2025.id,
+    haushalt: "FHH",
+  }).kontrolle
+  pruefe(
+    "Kontrolle NVA 2025 -> RA 2025 FHH: 1160 geprueft, 0 Abweichungen, bestanden",
+    raKFhh !== null &&
+      raKFhh.geprueft === 1160 &&
+      raKFhh.abweichungen.length === 0 &&
+      raKFhh.bestanden === true,
+    JSON.stringify(raKFhh),
+  )
+  pruefe(
+    "Kontrolle laeuft weiter fuer das Paar VA -> NVA desselben Jahres (spalte 'VA 2026')",
+    dEhh.kontrolle !== null && dEhh.kontrolle.spalte === "VA 2026",
+    dEhh.kontrolle && dEhh.kontrolle.spalte,
+  )
+
+  // ======================================================================
+  // Diff-Engine — interner Vergleich: die abgedruckte Vergleichsspalte als
+  // Basis (BASIS_INTERN)
+  // ======================================================================
+  console.log(
+    "\nvergleich-daten — interner Vergleich (abgedruckte Spalte als Basis)",
+  )
+
+  // Summe der abgedruckten Differenz (Spalte 3, "1. NVA" bzw. "Abweichung
+  // RA-VA") je VRV-Schluessel — die unabhaengige Referenz, gegen die der
+  // interne Diff Zeile fuer Zeile geprueft wird.
+  function spalte3Summen(posten, dokId, feld) {
+    const map = new Map()
+    for (const p of posten) {
+      if (String(p.dok) !== String(dokId)) continue
+      const k = schluessel(p)
+      map.set(k, (map.get(k) || 0) + (p[feld] || 0))
+    }
+    return map
+  }
+
+  const iEhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: BASIS_INTERN,
+    b: dNva.id,
+    haushalt: "EHH",
+  })
+  pruefe(
+    "Interner Diff NVA 2026 EHH: 1048 Zeilen",
+    iEhh.zeilen.length === 1048,
+    String(iEhh.zeilen.length),
+  )
+  pruefe(
+    "Interner Diff NVA 2026 EHH: Status 32/6/122/888",
+    JSON.stringify(iEhh.status) ===
+      JSON.stringify({
+        neu: 32,
+        entfallen: 6,
+        geaendert: 122,
+        unveraendert: 888,
+        gesamt: 1048,
+        veraendert: 160,
+      }),
+    JSON.stringify(iEhh.status),
+  )
+  const iEin = iEhh.eckwerte.find((k) => k.titel === "Ertraege")
+  const iAus = iEhh.eckwerte.find((k) => k.titel === "Aufwendungen")
+  const iNet = iEhh.eckwerte.find((k) => k.titel === "Nettoergebnis")
+  pruefe(
+    "Interner Diff: Ertraege-Delta +790300 (Anlage 1a)",
+    iEin.delta === 790300,
+    String(iEin.delta),
+  )
+  pruefe(
+    "Interner Diff: Aufwendungen-Delta +502200 (Anlage 1a)",
+    iAus.delta === 502200,
+    String(iAus.delta),
+  )
+  pruefe(
+    "Interner Diff: Nettoergebnis-Delta +288100 (Anlage 1a)",
+    iNet.delta === 288100,
+    String(iNet.delta),
+  )
+  pruefe(
+    "Interner Diff: Wasserfall 473600 -> 761700",
+    iEhh.wasserfall.von === 473600 && iEhh.wasserfall.nach === 761700,
+    `${iEhh.wasserfall.von} -> ${iEhh.wasserfall.nach}`,
+  )
+
+  // Zeile fuer Zeile gegen die abgedruckte Spalte 3.
+  const spalte3NvaEhh = spalte3Summen(datenPK.posten, dNva.id, "ed")
+  let abwEhh = 0
+  let bewegteEhh = 0
+  for (const z of iEhh.zeilen) {
+    const erwartet = Math.round(spalte3NvaEhh.get(z.key) || 0)
+    if (z.delta !== erwartet) abwEhh++
+    if (erwartet !== 0) bewegteEhh++
+  }
+  pruefe(
+    "Interner Diff EHH: 0 Abweichungen gegen die abgedruckte Spalte 3",
+    abwEhh === 0,
+    String(abwEhh),
+  )
+  pruefe(
+    "Interner Diff EHH: 160 Schluessel mit Bewegung gegen Spalte 3",
+    bewegteEhh === 160,
+    String(bewegteEhh),
+  )
+
+  const iFhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: BASIS_INTERN,
+    b: dNva.id,
+    haushalt: "FHH",
+  })
+  const spalte3NvaFhh = spalte3Summen(datenPK.posten, dNva.id, "fd")
+  let abwFhh = 0
+  let bewegteFhh = 0
+  for (const z of iFhh.zeilen) {
+    const erwartet = Math.round(spalte3NvaFhh.get(z.key) || 0)
+    if (z.delta !== erwartet) abwFhh++
+    if (erwartet !== 0) bewegteFhh++
+  }
+  pruefe(
+    "Interner Diff FHH: 0 Abweichungen gegen die abgedruckte Spalte 3",
+    abwFhh === 0,
+    String(abwFhh),
+  )
+  pruefe(
+    "Interner Diff FHH: 178 Schluessel mit Bewegung gegen Spalte 3",
+    bewegteFhh === 178,
+    String(bewegteFhh),
+  )
+
+  // Derselbe Vergleich fuer RA 2025 als Vergleichsdokument (Spalte 3 dort
+  // "Abweichung RA-VA"). Keine belastbare Zahl bewegter Schluessel in der
+  // Recherche — nur "0 Abweichungen" und "mehr als 0 geprueft" gepinnt.
+  // (dRa2025 ist bereits oben im Kontroll-Block definiert.)
+  const iRaEhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: BASIS_INTERN,
+    b: dRa2025.id,
+    haushalt: "EHH",
+  })
+  const spalte3RaEhh = spalte3Summen(datenPK.posten, dRa2025.id, "ed")
+  let abwRa = 0
+  for (const z of iRaEhh.zeilen) {
+    const erwartet = Math.round(spalte3RaEhh.get(z.key) || 0)
+    if (z.delta !== erwartet) abwRa++
+  }
+  pruefe(
+    "Interner Diff RA 2025 EHH: 0 Abweichungen gegen die abgedruckte Spalte 3",
+    abwRa === 0,
+    String(abwRa),
+  )
+  pruefe(
+    "Interner Diff RA 2025 EHH: mehr als 0 Schluessel geprueft",
+    iRaEhh.zeilen.length > 0,
+    String(iRaEhh.zeilen.length),
+  )
+
+  // Kein Mutations-Leck: ohne Klon wuerde jedes delta 0, von === nach.
+  pruefe(
+    "Interner Diff: kein Mutations-Leck (von !== nach, unveraendert < gesamt)",
+    iEhh.wasserfall.von !== iEhh.wasserfall.nach &&
+      iEhh.status.unveraendert < iEhh.status.gesamt,
+    `von=${iEhh.wasserfall.von} nach=${iEhh.wasserfall.nach} ` +
+      `unveraendert=${iEhh.status.unveraendert}/${iEhh.status.gesamt}`,
+  )
+  const dEhhNochmal = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dVa.id,
+    b: dNva.id,
+    haushalt: "EHH",
+  })
+  pruefe(
+    "Zwei-Dokumente-Diff bleibt unveraendert nach dem internen Diff",
+    dEhhNochmal.wasserfall.von === dEhh.wasserfall.von &&
+      dEhhNochmal.wasserfall.nach === dEhh.wasserfall.nach &&
+      JSON.stringify(dEhhNochmal.status) === JSON.stringify(dEhh.status),
+  )
+
+  // Keine Tautologie-Kontrolle: kontrolle() darf im internen Modus nicht
+  // rechnen, nur die Voraussetzung der Pruefung nennen.
+  pruefe(
+    "Interner Diff: kontrolle.modus ist 'intern', kein bestanden-Feld",
+    iEhh.kontrolle.modus === "intern" && iEhh.kontrolle.bestanden === undefined,
+    JSON.stringify(iEhh.kontrolle),
+  )
+  pruefe(
+    "Interner Diff: kontrolle.spalte ist 'VA 2026 (laut NVA)'",
+    iEhh.kontrolle.spalte === "VA 2026 (laut NVA)",
+    iEhh.kontrolle.spalte,
+  )
+  pruefe(
+    "Interner Diff: kontrolle.ausloeser nennt VA 2026, geladen",
+    iEhh.kontrolle.ausloeser.label === "VA 2026" &&
+      iEhh.kontrolle.ausloeser.geladen === true,
+    JSON.stringify(iEhh.kontrolle.ausloeser),
+  )
+
+  // interneBasisLabel
+  pruefe(
+    "interneBasisLabel NVA 2026: 'VA 2026 (laut NVA)'",
+    interneBasisLabel(dNva) === "VA 2026 (laut NVA)",
+    interneBasisLabel(dNva),
+  )
+  pruefe(
+    "interneBasisLabel RA 2025: 'Soll 2025 (laut RA)'",
+    interneBasisLabel(dRa2025) === "Soll 2025 (laut RA)",
+    interneBasisLabel(dRa2025),
+  )
+  pruefe(
+    "interneBasisLabel VA 2026: 'VA 2025 (laut VA)'",
+    interneBasisLabel(dVa) === "VA 2025 (laut VA)",
+    interneBasisLabel(dVa),
+  )
+
+  // hatVergleichsspalte: alle fuenf PDF-Dokumente fuehren Zahlen in Spalte 2,
+  // in beiden Haushaltshaelften.
+  for (const d of datenPK.dokumente) {
+    pruefe(
+      `hatVergleichsspalte(EHH) === true fuer ${d.label}`,
+      hatVergleichsspalte(datenPK.posten, d.id, "EHH") === true,
+    )
+    pruefe(
+      `hatVergleichsspalte(FHH) === true fuer ${d.label}`,
+      hatVergleichsspalte(datenPK.posten, d.id, "FHH") === true,
+    )
+  }
+
+  // CSV-Kopfzeile mit der internen Basis als Label.
+  const csvInternZeilen = alsCsv(
+    iEhh.zeilen.slice(0, 3),
+    "VA 2026 (laut NVA)",
+    "NVA 2026",
+  ).split("\n")
+  const csvInternFelder = csvInternZeilen[0].split(";")
+  pruefe(
+    "CSV-Export interner Basis: 14 Felder, Feld 10 ist 'VA 2026 (laut NVA)'",
+    csvInternFelder.length === 14 &&
+      csvInternFelder[9] === "VA 2026 (laut NVA)",
+    csvInternZeilen[0],
+  )
+
+  // Wasserfall-Achse mit der internen Basis als erste Kategorie.
+  const cWIntern = chartDiffWasserfall(iEhh, "VA 2026 (laut NVA)", "NVA 2026")
+  pruefe(
+    "chartDiffWasserfall interner Modus: erste/letzte Kategorie",
+    cWIntern.xAxis.data[0] === "VA 2026 (laut NVA)" &&
+      cWIntern.xAxis.data[cWIntern.xAxis.data.length - 1] === "NVA 2026",
+    JSON.stringify([
+      cWIntern.xAxis.data[0],
+      cWIntern.xAxis.data[cWIntern.xAxis.data.length - 1],
+    ]),
   )
 
   // Filter

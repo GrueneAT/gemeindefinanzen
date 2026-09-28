@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Provenance: SHA-256 of the source .md this page was generated from. -->
+<meta name="artifact-source-sha256" content="1b90c98c982cfd2e7d10ae7598800c0b1c7c999f4cfe9a3e664ad6bd60e31d65">
+<meta name="artifact-source-file" content="RESEARCH.md">
+<meta name="artifact-generated-at" content="2026-09-28">
+<!-- Which version of the design system this page was authored against. -->
+<meta name="design-system-version" content="ds-1">
+<title>Research: Vergleich aus einem Dokument &mdash; die abgedruckte Vergleichsspalte als Basis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://flomotlik.github.io/claude-code/design-system.css">
+</head>
+<body>
+<div class="page">
+
+<header class="row">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">00</span>Research</p>
+  </div>
+  <div class="body">
+    <h1 class="masthead-title">Vergleich aus einem Dokument &mdash; die abgedruckte Vergleichsspalte als Basis</h1>
+    <p class="masthead-sub">Issue: n8vmb-vergleich-aus-einem-dokument-die-abgedruckte-vergleichsspalte-als-basis &middot; Generated 2026-09-28</p>
+  </div>
+</header>
+
+<hr class="rule">
+
+<section class="row" id="strategy">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">01</span>Strategy</p>
+    <p class="margin-note">Zuerst lesen &mdash; der Rest ist Detail.</p>
+    <p class="margin-note is-affirmed">Alle Zahlen ausgef&uuml;hrt, nicht
+      vermutet.</p>
+  </div>
+  <div class="body">
+    <h2>Strategy summary</h2>
+
+    <p>Der Vergleichs-Tab braucht <strong>keinen neuen Rechenweg</strong>.
+       <code>aggregiereDokument()</code> sammelt je Haushaltsstelle in einem
+       Durchlauf schon beides &mdash; <code>wert</code> (Spalte&nbsp;1) und
+       <code>vergleich</code> (Spalte&nbsp;2). Der interne Modus ist damit
+       <span class="mark mark-green">eine Projektion, kein zweiter
+       Pfad</span>: dieselbe Map, auf einem anderen Feld gelesen. Weil alle
+       f&uuml;nf Sichten sowie Filter und CSV-Export ausschlie&szlig;lich die
+       fertigen <code>zeilen</code> lesen &mdash; einzige Ausnahme ist
+       <code>kontrolle()</code> &mdash; bleibt der gesamte Block ab
+       <code>vergleich-daten.js:123</code> unver&auml;ndert.</p>
+
+    <p>Die kleinste Signatur ist deshalb <em>gar keine neue Signatur</em>:
+       <code>a</code> tr&auml;gt einen exportierten Sentinel-String.
+       <code>dokument_id</code> ist <code>INTEGER PRIMARY KEY</code>, eine
+       Kollision ist strukturell ausgeschlossen. Ein zus&auml;tzliches
+       <code>modus</code>-Feld w&auml;re ein zweiter Zustand f&uuml;r dieselbe
+       Sache.</p>
+
+    <p>Die Datenlage ist belegt, nicht vermutet &mdash; jede Zahl unten wurde
+       gegen die echten Fixtures ausgef&uuml;hrt.</p>
+
+    <ul class="points">
+      <li class="point">
+        <p class="point-claim">Der interne Diff des NVA 2026 trifft die
+          Akzeptanzkriterien exakt.</p>
+        <p class="point-detail">Ertr&auml;ge +790.300, Aufwendungen +502.200,
+          Nettoergebnis +288.100. Zeile f&uuml;r Zeile deckungsgleich mit der
+          abgedruckten Spalte&nbsp;3: 160 EHH- und 178 FHH-Schl&uuml;ssel mit
+          Bewegung, 0 Abweichungen. Dasselbe gilt f&uuml;r NVA 2025, RA 2024
+          und RA 2025.</p>
+      </li>
+      <li class="point is-risk">
+        <p class="point-claim">Ein OH-CSV-Dokument hat gar keine
+          Spalte&nbsp;2 &mdash; tr&auml;gt aber deren Namen.</p>
+        <p class="point-detail">3149 Posten gepr&uuml;ft:
+          <code>ev</code>/<code>fv</code> durchgehend 0, w&auml;hrend
+          <code>spalte_vergleich</code> weiter &bdquo;VA 2025&ldquo;
+          behauptet. Die Sichtbarkeits- und Auswahlpr&uuml;fung muss
+          datenbasiert sein, nicht typbasiert.</p>
+      </li>
+      <li class="point is-risk">
+        <p class="point-claim"><code>kontrolle()</code> darf im internen Modus
+          nicht rechnen.</p>
+        <p class="point-detail">Dort ist <code>aggA.wert</code> per
+          Konstruktion <code>aggB.vergleich</code> &mdash; die Pr&uuml;fung
+          fände immer 0 Abweichungen und schriebe eine Selbstbest&auml;tigung,
+          die wie ein Beweis aussieht. Genau das verbietet D1.</p>
+      </li>
+      <li class="point is-risk">
+        <p class="point-claim">Die Basis-Map muss geklont werden.</p>
+        <p class="point-detail">Wird <code>aggB</code> in-place
+          umgeschrieben, sind <code>wert</code> und <code>vergleich</code>
+          dasselbe Objekt: jedes <code>delta</code> wird 0, und kein
+          bestehender Test f&auml;llt zwingend.</p>
+      </li>
+      <li class="point is-note">
+        <p class="point-claim">Ein Voranschlag druckt keine Differenz ab.</p>
+        <p class="point-detail">Seine Spalte&nbsp;3 ist der RA des
+          Vorvorjahres (1275 von 1276 Abweichungen gegen die Rechnung). Der
+          interne Modus rechnet dort korrekt, ist aber nicht gegen eine
+          Spalte belegbar.</p>
+      </li>
+      <li class="point is-question">
+        <p class="point-claim">Spiegelfall zu D2, neu gefunden.</p>
+        <p class="point-detail">Die Vergleichsspalte eines VA ist der
+          Vorjahres-Voranschlag <em>im Original, ohne Nachtrag</em> (0
+          Abweichungen gegen NVA-Spalte&nbsp;2, 191/231 gegen
+          Spalte&nbsp;1) &mdash; beim RA ist es umgekehrt. Kein Blocker
+          f&uuml;r D3, aber ein Satz in der Doku wert.</p>
+      </li>
+    </ul>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num is-green">0</div>
+        <div class="stat-label">Abweichungen intern vs. Spalte 3</div></div>
+      <div class="stat">
+        <div class="stat-num">+288.100</div>
+        <div class="stat-label">Nettoergebnis-Delta EHH</div></div>
+      <div class="stat">
+        <div class="stat-num is-orange">4</div>
+        <div class="stat-label">brechende e2e-Tests</div></div>
+      <div class="stat">
+        <div class="stat-num is-red">7</div>
+        <div class="stat-label">dokumentierte Fallstricke</div></div>
+    </div>
+
+    <div class="callout is-affirmed">
+      <p class="callout-label">Empfehlung</p>
+      <p>Sentinel <code>BASIS_INTERN</code> in
+         <code>vergleich-daten.js</code>; <code>baueDiff</code> baut
+         <code>aggB</code> zuerst und leitet <code>aggA</code> per
+         <strong>Klon</strong> aus <code>aggB.vergleich</code> ab;
+         <code>kontrolle()</code> liefert intern
+         <code>{ modus: "intern", ausloeser }</code> statt einer Pr&uuml;fung
+         (und weiter <code>null</code>, wo gar keine Beziehung besteht &mdash;
+         das h&auml;lt <code>run.mjs:1270-1277</code> gr&uuml;n); Sichtbarkeit
+         und Auswahleintrag gegen
+         <code>hatVergleichsspalte(posten, dokId, haushalt)</code>; ein
+         einziger Helfer <code>basisLabel()</code> versorgt Kopf, Kennzahlen,
+         Wasserfall und CSV.</p>
+    </div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="flow">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">02</span>Flow</p>
+    <p class="margin-note">Engine zuerst &mdash; Schritt 1 ist ohne Browser
+      belegbar.</p>
+  </div>
+  <div class="body">
+    <h2>Task flow &amp; dependencies</h2>
+
+    <p>Die sechs Schritte des empfohlenen Vorgehens aus
+       <em>Architecture Patterns &rarr; Recommended Approach</em>. Die
+       Reihenfolge ist bewusst &bdquo;Engine zuerst&ldquo;: Schritt&nbsp;1 ist
+       vollst&auml;ndig in Node testbar, ohne Browser.</p>
+    <div class="flow">
+      <div class="flow-node is-foundation">
+        <span class="n">Schritt 1</span>
+        <span class="t">vergleich-daten.js</span>
+        <span class="d">Sentinel, klonende interneBasis, kontrolle-Korrektur,
+          hatVergleichsspalte, interneBasisLabel.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Schritt 2</span>
+        <span class="t">dashboard-data.js</span>
+        <span class="d">standardVergleich(dok, posten) &mdash; die interne
+          Spalte gewinnt (D1).</span>
+      </div>
+      <div class="flow-node is-key">
+        <span class="n">Schritt 3</span>
+        <span class="t">vergleich.js</span>
+        <span class="d">Sichtbarkeit, Auswahleintrag, basisLabel fuer vier
+          Beschriftungsstellen, dritter Kontroll-Zweig.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Schritt 4</span>
+        <span class="t">index.html</span>
+        <span class="d">Ueberschrift, Lead und Kontroll-Notiz nachziehen.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Schritt 5</span>
+        <span class="t">Tests</span>
+        <span class="d">4 js-Tests anpassen, 10 neue; 4 e2e-Tests anpassen,
+          4 neue.</span>
+      </div>
+      <div class="flow-node">
+        <span class="n">Schritt 6</span>
+        <span class="t">BROWSER-APP.md</span>
+        <span class="d">D4-Nachzug inkl. Entfernen der widerlegten
+          RA-Begruendung.</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="decisions">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">03</span>Decisions</p>
+    <p class="margin-note is-question">Zwei Entscheidungen bleiben dem Plan
+      &uuml;berlassen.</p>
+  </div>
+  <div class="body">
+    <h2>Key decisions &amp; options</h2>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Signatur von <code>baueDiff</code></p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Keine neue Signatur &mdash; <code>a</code>
+        tr&auml;gt den exportierten Sentinel <code>BASIS_INTERN</code>.
+        <code>dokument_id</code> ist <code>INTEGER PRIMARY KEY</code>
+        (<code>web/schema.sql:19</code>), alle Vergleiche laufen ohnehin per
+        <code>String(...)</code>. Der Eingriff betr&auml;gt vier Zeilen.</p>
+      <p class="decision-body rejected">Ein drittes Feld
+        <code>modus: "intern"</code> &mdash; zwei Felder f&uuml;r einen
+        Zustand; <code>{ a: 5, modus: "intern" }</code> ist
+        widerspr&uuml;chlich und m&uuml;sste an vier Stellen mitgepr&uuml;ft
+        werden.</p>
+      <p class="decision-body rejected"><code>a: null</code> als
+        &bdquo;intern&ldquo; &mdash; <code>null</code> hei&szlig;t im
+        <code>zustand</code> schon &bdquo;noch nichts gew&auml;hlt&ldquo;.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Sichtbarkeitspr&uuml;fung</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Datenbasiert:
+        <code>hatVergleichsspalte(posten, dokId, haushalt)</code> summiert
+        <code>ev</code>/<code>fv</code>. Ersetzt
+        <code>docs.length &gt;= 2</code> in
+        <code>vergleich.js:98</code>.</p>
+      <p class="decision-body rejected">Pr&uuml;fung auf <code>typ</code>
+        &mdash; empirisch falsch: ein OH-CSV-Dokument ist
+        <code>typ: "VA"</code> mit leerer Spalte&nbsp;2 und w&uuml;rde einen
+        Diff mit 1016 Zeilen &bdquo;neu&ldquo; und Basis 0 erzeugen.</p>
+      <p class="decision-body rejected">Pr&uuml;fung auf
+        <code>fassung === "OH-CSV"</code> &mdash; Proxy statt Sache; der
+        Halb-Zustand hei&szlig;t <code>"OH-CSV (nur EHH)"</code>, und
+        <code>fassung</code> fehlt in <code>DATA.dokumente</code>
+        ohnehin.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title"><code>kontrolle()</code> im internen
+          Modus</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Nicht rechnen. Stattdessen
+        <code>{ modus: "intern", spalte, dokument, ausloeser }</code> &mdash;
+        die Engine benennt das ausl&ouml;sende Dokument und ob es geladen ist,
+        die Oberfl&auml;che tr&auml;gt keine Fachlogik.
+        <code>null</code> bleibt reserviert f&uuml;r &bdquo;gar keine
+        Beziehung&ldquo;, damit <code>run.mjs:1270-1277</code> gr&uuml;n
+        bleibt.</p>
+      <p class="decision-body rejected">Laufen lassen &mdash; Tautologie:
+        &bdquo;Gepr&uuml;ft. Alle 1048 Haushaltsstellen stimmen
+        &uuml;berein&ldquo; bei jedem Dokument.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Korrektur an <code>kontrolle()</code>
+          (aus D2)</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Der Begr&uuml;ndungskommentar
+        <code>vergleich-daten.js:334-336</code> ist widerlegt und muss weg
+        &mdash; ebenso die identische Passage in
+        <code>docs/BROWSER-APP.md:118-120</code> (nur diese zwei Stellen,
+        <code>src/</code> ist nicht betroffen). Neues Pr&auml;dikat
+        <code>raSoll</code>: <code>dB.typ === "RA"</code> und gleiches Jahr.
+        Die Rechnung 346-382 bleibt unver&auml;ndert. Nachgerechnet: RA 2025
+        gegen NVA 2025 &mdash; 1156 EHH / 1160 FHH gepr&uuml;ft, 0
+        Abweichungen.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Beschriftungsregel (D3 + D2)</p>
+        <span class="lozenge is-note">Gesetzt</span>
+      </div>
+      <p class="decision-body">Ein Helfer
+        <code>interneBasisLabel(d)</code> in <code>vergleich-daten.js</code>:
+        beim RA <code>Soll &lt;Jahr&gt; (laut RA)</code>, sonst
+        <code>&lt;spalte_vergleich&gt; (laut &lt;typ&gt;)</code>. Jahr und Typ
+        kommen aus <code>DATA.dokumente</code>, der Spaltenname aus
+        <code>loader.js:spalten()</code> beim Import &mdash; kein Parsen von
+        Strings. Acht Verwendungsstellen, eine Regel.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Ort der D1-Vorbelegung</p>
+        <span class="lozenge is-open">Offen</span>
+      </div>
+      <p class="decision-body">Empfohlen:
+        <code>standardVergleich(dok, posten)</code> in
+        <code>dashboard-data.js:659</code> mit optionalem
+        <code>posten</code> &mdash; die Vorbelegung bleibt an einer Stelle und
+        ist in Node ohne DOM testbar. Preis: drei bestehende js-Tests ziehen
+        mit.</p>
+      <p class="decision-body rejected">In <code>fuelleAuswahl</code>
+        &mdash; kein js-Test bricht, aber die Vorbelegungslogik liegt dann an
+        zwei Orten und ist nur per e2e pr&uuml;fbar.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title"><code>raSoll</code> mit
+          <code>dA.typ === "VA"</code>?</p>
+        <span class="lozenge is-open">Offen</span>
+      </div>
+      <p class="decision-body">Empfohlen zulassen: liegt kein NVA des Jahres
+        vor, ist der VA der g&uuml;ltige Plan. Weicht er ab, tr&auml;gt der
+        bestehende &bdquo;Fassungsfrage&ldquo;-Text das schon (an den
+        Fixtures: 191 EHH / 231 FHH Abweichungen = der Nachtragseffekt). Nur
+        NVA zuzulassen w&auml;re rauschfreier. Abw&auml;gung, keine
+        Messung.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-head">
+        <p class="decision-title">Richtungstausch-Knopf</p>
+        <span class="lozenge is-chosen">Chosen</span>
+      </div>
+      <p class="decision-body">Im internen Modus <code>disabled</code>. Der
+        Sentinel darf nie in <code>b</code> landen &mdash; dort liefert
+        <code>aggregiereDokument</code> eine leere Map und
+        <code>baueDiff</code> eine leere Ansicht ohne Fehlermeldung.</p>
+      <p class="decision-body rejected">Den Knopf umdeuten zu &bdquo;wechsle
+        auf das geladene Basisdokument&ldquo; &mdash; zweite Bedeutung
+        f&uuml;r einen Knopf; genau das Muster, das
+        <code>vergleich.js:12-15</code> f&uuml;r den Dokument-Umschalter
+        ausdr&uuml;cklich ablehnt.</p>
+    </div>
+
+    <div class="callout is-risk">
+      <p class="callout-label">Kopplung, die nicht getrennt werden darf</p>
+      <p>Sichtbarkeit ab einem Dokument und die neue Vorbelegung
+         geh&ouml;ren in <em>denselben</em> Schritt. Sonst wird
+         <code>vergleich.js:136-137</code> erstmals mit einem Dokument
+         erreicht, <code>standardVergleich</code> liefert dort
+         <code>null</code> und der Fallback greift
+         <code>docs[docs.length - 2].id</code> &mdash;
+         <code>undefined</code>, TypeError beim Aufbau des sichtbaren
+         Tabs.</p>
+    </div>
+
+    <div class="callout is-question">
+      <p class="callout-label">Offen benannte Unstimmigkeit</p>
+      <p>CONTEXT.md D2 nennt f&uuml;r &bdquo;RA-Soll gegen
+         NVA-Spalte&nbsp;2&ldquo; 138 Posten / 16.083.400&nbsp;EUR; die
+         je-Haushalt getrennte Nachrechnung ergibt 191 / 9.211.600 (EHH) und
+         231 / 18.238.700 (FHH). Die Richtung ist in beiden Rechnungen
+         identisch und eindeutig &mdash; nur die Z&auml;hlweise unterscheidet
+         sich. Die Entscheidung D2 ist davon nicht ber&uuml;hrt.</p>
+    </div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="detail">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">04</span>Detail</p>
+  </div>
+  <div class="body">
+    <h2>Full detail</h2>
+    <details class="detail">
+      <summary>Show full artifact source
+        <span class="summary-hint">click to expand</span></summary>
+      <div class="detail-body">
+        <pre><code id="artifact-source-target"></code></pre>
+      </div>
+    </details>
+
+    <p>Der vollst&auml;ndige, kanonische Text steht in
+       <code>RESEARCH.md</code> &mdash; darin unter anderem der
+       <code>&lt;interfaces&gt;</code>-Block mit allen Signaturen,
+       Zeilennummern und dem DOM-Vertrag, die Antworten auf alle sieben
+       Fragen mit <code>pfad:zeile</code>-Belegen, sowie die
+       Testbruch-Tabellen f&uuml;r <code>tests/js/run.mjs</code> und
+       <code>tests/e2e/vergleich.spec.mjs</code>.</p>
+    <p>Die Rohbefunde der drei Mandate liegen daneben in
+       <code>research/codebase.md</code>, <code>research/ecosystem.md</code>
+       und <code>research/pitfalls.md</code> &mdash; letzteres enth&auml;lt
+       die neun ausgef&uuml;hrten Messungen samt Zahlen.</p>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="row" id="provenance">
+  <div class="margin">
+    <p class="kicker"><span class="kicker-num">05</span>Provenance</p>
+  </div>
+  <div class="body">
+    <h2>Provenance</h2>
+    <p>Generated from the canonical <code>.md</code>. This HTML is never
+       hand-edited &mdash; if the <code>.md</code> changes, regenerate with
+       <code>/issue:view</code>.</p>
+    <footer class="footer">
+      <span>Source: <code>RESEARCH.md</code> &middot;
+        SHA-256 <code>1b90c98c982cfd2e7d10ae7598800c0b1c7c999f4cfe9a3e664ad6bd60e31d65</code></span>
+      <span>Generated 2026-09-28 &middot; design system ds-1</span>
+    </footer>
+  </div>
+</section>
+
+</div>
+
+<!-- Raw artifact source as DATA, never markup. -->
+<script type="application/json" id="artifact-source">
+{"source": "# Research: Vergleich aus einem Dokument \u2014 die abgedruckte Vergleichsspalte als Basis\n\n**Researched:** 2026-09-28\n**Issue:** n8vmb-vergleich-aus-einem-dokument-die-abgedruckte-vergleichsspalte-als-basis\n**Confidence:** HIGH (alle Datenaussagen ausgefuehrt, nicht vermutet)\n\n<user_constraints>\n## User Constraints (from CONTEXT.md)\n\n### Locked Decisions\n\n**D1 \u2014 Vorbelegung: die dokumentinterne Spalte gewinnt.** Traegt das\nVergleichsdokument eine Vergleichsspalte, ist diese die Basis-Vorbelegung \u2014\nauch dann, wenn das passende zweite Dokument geladen ist. Warum: sie ist per\nDefinition die Fassung, gegen die das Dokument rechnet. Folge: Die\nSelbstkontrolle laeuft nicht mehr automatisch mit. Das Kontroll-Panel muss\nerklaeren, wodurch sie ausgeloest wird \u2014 dadurch, dass man ein geladenes\nDokument als Basis waehlt.\n\n**D2 \u2014 Der Rechnungsabschluss: Frage empirisch geklaert.** Das Soll eines RA\nist der Voranschlag **inklusive Nachtrag** (geprueft an `RA-2025-Auflage.pdf`\ngegen `NVA-2025-Auflage.pdf`: 0 Abweichungen gegen NVA-Spalte 1). Der RA\nbekommt den internen Modus ohne Sonderwarnung. Seine Basis heisst nicht wie\nabgedruckt, sondern **\u201eSoll <Jahr> (laut RA)\"**. Zweite Folge \u2014 Korrektur am\nbestehenden Code: `kontrolle()` in `web/js/vergleich-daten.js` schliesst den RA\nheute aus, mit der Begruendung, seine Spalte 2 sei nicht entscheidbar. Diese\nBegruendung ist widerlegt. **Der Kommentar ist falsch und muss weg**; der\nRA-Fall laesst sich stattdessen unterstuetzen: liegt der NVA desselben Jahres\nals Basis vor, ist dessen Spalte 1 gegen die Soll-Spalte des RA pruefbar.\n\n**D3 \u2014 Beschriftung der internen Basis.** Spaltenname plus kurze Herkunft in\nKlammern, etwa \u201eVA 2026 (laut NVA)\". Kurz genug fuer Achsenlabels und\nTabellenkoepfe. Beim RA gilt D2: dort tritt \u201eSoll <Jahr> (laut RA)\" an die\nStelle des abgedruckten Spaltennamens.\n\n**D4 \u2014 Umfang.** Wie im ISSUE.md: interne Basis, Auswahl-Eintrag, Vorbelegung,\nSichtbarkeit ab einem Dokument, Beschriftung \u2014 plus Tests (js und e2e) und\nNachzug in `docs/BROWSER-APP.md`. Dazu aus D2 die Korrektur an `kontrolle()`\nsamt falschem Kommentar.\n\n### Claude's Discretion\n\nNicht explizit als Ermessensraum ausgewiesen. Faktisch offen und in dieser\nRecherche entschieden: die **Form** der Signaturerweiterung von `baueDiff`, die\n**Art** der Sichtbarkeitspruefung, der **Ort** der D1-Vorbelegung\n(`standardVergleich` vs. `fuelleAuswahl`), das Verhalten des\nRichtungstausch-Knopfs und die Form des CSV-Dateinamens.\n\n### Deferred Ideas (OUT OF SCOPE)\n\n- **Das Kontroll-Panel um aktives Umschalten auf das ausloesende Dokument\n  erweitern** (CONTEXT.md D4, \u201eNicht in diesem Schritt\"). Das Panel **nennt**\n  das ausloesende Dokument, es **schaltet** nicht darauf um.\n- **D2 ueber mehrere Jahre breiter absichern** (CONTEXT.md \u201eOffen gelassen\").\n  Weitere Herzogenburger RA liegen bereit, werden aber in diesem Schritt nicht\n  geholt.\n</user_constraints>\n\n## Summary\n\nDer Vergleichs-Tab braucht **keinen neuen Rechenweg**, sondern eine zweite\nHerkunft fuer die Basis-Seite \u2014 und die liegt bereits vor.\n`aggregiereDokument()` (`web/js/vergleich-daten.js:55-87`) sammelt je\nHaushaltsstelle in einem Durchlauf **beides**: `wert` (Spalte 1, Zeile 79) und\n`vergleich` (Spalte 2, Zeile 80). Der interne Modus ist deshalb eine\nProjektion: dieselbe Map, auf einem anderen Feld gelesen. Weil alle fuenf\nSichten (`status`, `eckwerte`, `gruppen`, `treemap`, `wasserfall`) sowie\n`filtereZeilen` und `alsCsv` ausschliesslich die fertigen `zeilen` lesen \u2014\neinzige Ausnahme ist `kontrolle()` \u2014 bleibt ab `vergleich-daten.js:123` alles\nunveraendert. Die kleinste Signatur ist deshalb **gar keine neue Signatur**:\n`a` traegt einen exportierten Sentinel-String. `dokument_id` ist\n`INTEGER PRIMARY KEY` (`web/schema.sql:19`), eine Kollision ist strukturell\nausgeschlossen.\n\nDie Datenlage ist belegt, nicht vermutet. Der interne Diff des NVA 2026 ergibt\nErtraege **+790.300**, Aufwendungen **+502.200**, Nettoergebnis **+288.100** \u2014\nexakt die Akzeptanzkriterien. Zeile fuer Zeile stimmt er mit der abgedruckten\nSpalte 3 ueberein: 160 EHH- und 178 FHH-Schluessel mit Bewegung, **0\nAbweichungen**; dasselbe gilt fuer NVA 2025, RA 2024 und RA 2025. Ein\n**Voranschlag** druckt dagegen keine Differenz ab (seine Spalte 3 ist der RA\ndes Vorvorjahres) \u2014 der interne Modus rechnet dort korrekt, ist aber nicht\ngegen eine Spalte belegbar. Und die schaerfste Einschraenkung: ein\n**OH-CSV-Dokument hat ueberhaupt keine Spalte 2** (`ev`/`fv` durchgehend 0,\n3149 Posten geprueft), traegt aber trotzdem den Spaltennamen \u201eVA 2025\". Die\nSichtbarkeits- und Auswahlpruefung muss daher **datenbasiert** sein, nicht\ntypbasiert.\n\nZwei Fallstricke entscheiden ueber Erfolg oder stille Fehlfunktion. Erstens\ndarf `kontrolle()` im internen Modus **nicht rechnen**: `aggA.wert` ist dann\nper Konstruktion `aggB.vergleich`, die Pruefung findet immer 0 Abweichungen und\nschreibt eine Selbstbestaetigung, die nichts belegt. Zweitens muss die\nBasis-Map **geklont** werden \u2014 wird `aggB` in-place umgeschrieben, wird jedes\n`delta` zu 0, ohne dass ein Test zwingend faellt.\n\n**Primary recommendation:** Sentinel `BASIS_INTERN` in `vergleich-daten.js`\nexportieren; `baueDiff` baut `aggB` zuerst und leitet `aggA` bei Sentinel per\n**Klon** aus `aggB.vergleich` ab; `kontrolle()` liefert im internen Modus statt\neiner Pruefung ein `{ modus: \"intern\", ausloeser }`-Objekt (und weiter `null`,\nwo gar keine Beziehung besteht \u2014 das haelt `run.mjs:1270-1277` gruen);\nSichtbarkeit und Auswahleintrag gegen einen neuen, **datenbasierten** Helfer\n`hatVergleichsspalte(posten, dokId, haushalt)`; ein einziger Helfer\n`basisLabel()` in `vergleich.js` versorgt Kopf, Kennzahlen, Wasserfall und CSV.\n\n## Codebase Analysis\n\n### Relevant Code\n\n| Datei | Zweck | Zuletzt geaendert | Relevanz |\n|---|---|---|---|\n| `web/js/vergleich-daten.js` | Diff-Engine, rein rechnend | `d3b0511` (PR #36) | KERN \u2014 `baueDiff`, `kontrolle`, `aggregiereDokument` |\n| `web/js/vergleich.js` | Oberflaeche des Tabs | `d3b0511` | KERN \u2014 Zustand, Auswahl, Sichtbarkeit, Beschriftung |\n| `web/js/dashboard-data.js` | `dokumente()` 74, `standardVergleich()` 659, `collect()` 671 | `d3b0511` | HOCH \u2014 Vorbelegung, Dokumentfelder |\n| `web/js/dashboard-charts.js` | `chartDiffWasserfall` 1443, `chartDiffGruppen` 1537, `chartDiffTreemap` 1592 | `d3b0511` | MITTEL \u2014 nur der Wasserfall nimmt Labels |\n| `web/js/loader.js` | `spalten()` 13-24, `dokumentDatensatz()` 27-43 | aelter | MITTEL \u2014 Herkunft von `spalte_vergleich` |\n| `web/js/csv-parser.js` | `HEADER` 31-47, `parseCsvBytes` 236-322, Kommentar 330-333 | aelter | HOCH \u2014 Beweis, dass OH-CSV keine Spalte 2 hat |\n| `web/index.html` | Panel 363-521, Kontroll-Panel 396-411, Tabellenkopf 495-513 | `d3b0511` | MITTEL \u2014 Ueberschrift/Lead/Notiz |\n| `tests/js/run.mjs` | Vergleichs-Tests 1104-1327 | `d3b0511` | HOCH |\n| `tests/e2e/vergleich.spec.mjs` | Browser-Tests | `d3b0511` | HOCH |\n| `docs/BROWSER-APP.md` | Abschnitt 87-121 | `d3b0511` | MITTEL \u2014 D4-Nachzug, falsche Begruendung 118-120 |\n\nAlle Kerndateien stammen aus einem einzigen Commit (`d3b0511`, PR #36, bereits\ngemerged). Keine offenen PRs auf diesen Dateien \u2014 die Interfaces sind frisch\nund stabil.\n\n### Interfaces\n\n<interfaces>\n// From web/js/vergleich-daten.js \u2014 die Diff-Engine (rein rechnend, kein DOM)\nexport const HAUSHALTE = [\"EHH\", \"FHH\"]                       // Zeile 31\nexport const STATUS = [\"neu\", \"entfallen\", \"geaendert\", \"unveraendert\"]  // 35\nexport const WASSERFALL_N = 10                                // 272\n\nexport function schluessel(p): string                         // 38\n  // `${p.ansatz}|${p.konto}|${p.richtung}`\n\nexport function aggregiereDokument(posten, dokId, haushalt): Map<string, {\n  key, gruppe, gruppe_text, ansatz, ansatz_text, konto, konto_text,\n  bezeichnung, richtung, gebarung,\n  wert: number,        // Spalte 1 \u2014 ew/fw     (Zeile 79)\n  vergleich: number,   // Spalte 2 \u2014 ev/fv     (Zeile 80)  <-- die interne Basis\n}>                                                            // 55-87\n\nexport function baueDiff(posten, dokumente, { a, b, haushalt = \"EHH\" }): {\n  haushalt: \"EHH\" | \"FHH\",\n  a, b,\n  zeilen: Array<{\n    key, gruppe, gruppe_text, ansatz, ansatz_text, konto, konto_text,\n    bezeichnung, richtung, gebarung,\n    a: number, b: number, delta: number,\n    prozent: number | null,\n    status: \"neu\" | \"entfallen\" | \"geaendert\" | \"unveraendert\",\n  }>,\n  status: { neu, entfallen, geaendert, unveraendert, gesamt, veraendert },\n  eckwerte: Array<{ titel, a, b, delta, prozent, gut: \"auf\"|\"ab\"|\"neutral\" }>,\n  gruppen: Array<{ gruppe, gruppe_text, einnahme, ausgabe }>,\n  treemap: Array<{ gruppe, gruppe_text, ansatz, ansatz_text,\n                   einnahme, ausgabe, delta }>,\n  wasserfall: { von: number, nach: number,\n                schritte: Array<{ ansatz, name, beitrag }> },\n  kontrolle: null | {\n    spalte, dokument, fassung_a, fassung_b,\n    geprueft: number, ohne_beleg: number,\n    abweichungen: Array<{ key, gruppe, ansatz, ansatz_text, konto,\n                          bezeichnung, richtung,\n                          basis, abgedruckt, abweichung }>,\n    summeAbweichung: number, bestanden: boolean,\n  },\n}                                                             // 118-174\n\nexport function filtereZeilen(zeilen, f = {}): Array<Zeile>    // 406\n  // f: { richtung, gruppe, gebarung, status, schwelle, suche }\nexport function alsCsv(zeilen, labelA, labelB): string         // 431\n\n// NICHT exportiert (modulintern):\nfunction wertVon(p, haushalt)            // 42  -> haushalt === \"FHH\" ? p.fw : p.ew\nfunction vergleichVon(p, haushalt)       // 49  -> haushalt === \"FHH\" ? p.fv : p.ev\nfunction statusVon(a, b)                 // 90\nfunction euroRund(x)                     // 99\nfunction saldoBeitrag(zeile)             // 105\nfunction statusZaehlung(zeilen)          // 176   liest NUR zeilen\nfunction eckwerte(zeilen, haushalt)      // 186   liest NUR zeilen\nfunction gruppenDelta(zeilen)            // 227   liest NUR zeilen\nfunction treemapDelta(zeilen)            // 245   liest NUR zeilen\nfunction wasserfall(zeilen)              // 277   liest NUR zeilen\nfunction kontrolle(aggA, aggB, dokumente, a, b)  // 337  liest die AGGREGATE\n\n// From web/js/vergleich.js \u2014 Oberflaeche\nexport function baueVergleich(datenNeu): void                  // 92\nconst zustand = { a: null, b: null, haushalt: \"EHH\",\n                  sortKey: \"delta\", sortAbsteigend: true,\n                  verdrahtet: false }                          // 28-35\nlet daten = null; let diff = null; const charts = {}           // 37-41\nconst LIMIT = 500                                              // 25\nconst STATUS_TEXT = { neu, entfallen, geaendert, unveraendert } // 43-48\n// modulintern:\nfunction euro(v) / euroVz(v) / prozentVz(p)                    // 51 / 55 / 60\nfunction el(id) / text(id, wert)                               // 69 / 73\nfunction dokument(id)                                          // 78  -> DATA.dokumente-Lookup\nfunction dokLang(d)                                            // 86  -> label (+ fassung)\nfunction fuelleAuswahl()                                       // 131\nfunction fuelleGruppenFilter()                                 // 157\nfunction verdrahte()                                           // 175\nfunction passeGroesseAn()                                      // 244\nfunction rechneUndZeichne()                                    // 252\nfunction zeichneKopf()                                         // 274\nfunction zeichneKennzahlen()                                   // 308\nfunction zeichneKontrolle()                                    // 336\nfunction zeichneCharts()                                       // 401\nfunction zeichneChart(divId, option) / revive(o)               // 419 / 440\nfunction aktuelleFilter() / sortiere(zeilen)                   // 459 / 470\nfunction zeichneTabelle() / markiereSortierung()               // 486 / 546\nfunction escapeHtml(s)                                         // 558\nfunction ladeCsv()                                             // 566\n\n// From web/js/dashboard-data.js\nexport function collect(db): {\n  meta: { gemeinde, dok_anzahl, posten_anzahl, default_dok,\n          default_vergleich: { a, b } | null },                // 693-701\n  dokumente: Array<Dokument>, posten: Array<Posten>,\n  aggregate: Record<string, Aggregat>, trend: Trend,\n}                                                              // 671-705\nexport function standardVergleich(dok): { a, b } | null        // 659-668\n  // 660: if (!dok || dok.length < 2) return null\n  // 661-665: juengstes NVA mit passendem VA desselben Jahres\n  // 666: sonst die zwei juengsten\n\n// Dokument-Datensatz (dashboard-data.js:80-94)\n{ id: number, typ: \"VA\"|\"NVA\"|\"RA\", jahr: number | null,\n  label: string,              // `${typ} ${jahr}`                (Zeile 89)\n  spalte_wert: string,        // z. B. \"VA 2026 inkl. NVA\"\n  spalte_vergleich: string,   // z. B. \"VA 2026\"   <-- Grundlage von D3\n  spalte_dritte: string,      // z. B. \"1. NVA\"\n  einwohner: number | null }\n// `fassung` ist NICHT in DATA.dokumente enthalten, obwohl vergleich.js:88 und\n// :383 darauf zugreifen \u2014 dort immer undefined. Bestandsbefund, kein Blocker.\n\n// Posten-Datensatz (dashboard-data.js:140-152)\n{ dok, typ, jahr, richtung, gebarung, gruppe, gruppe_text,\n  ansatz, ansatz_text, konto, konto_text, bezeichnung, mvag, qu,\n  ew, ev, ed,     // Ergebnishaushalt: Spalte 1 / 2 / 3\n  fw, fv, fd }    // Finanzierungshaushalt: Spalte 1 / 2 / 3\n\n// From web/js/loader.js\nexport function spalten(typ, jahr): [string, string, string]   // 13-24\n  // jahr null        -> [\"Spalte 1\", \"Spalte 2\", \"Spalte 3\"]\n  // RA               -> [`RA ${jahr}`, `VA ${jahr}`, \"Abweichung RA-VA\"]\n  // NVA              -> [`VA ${jahr} inkl. NVA`, `VA ${jahr}`, \"1. NVA\"]\n  // sonst (VA)       -> [`VA ${jahr}`, `VA ${jahr-1}`, `RA ${jahr-2}`]\nexport function dokumentDatensatz(dateiname, meta)             // 27-43\n  // Zeile 31 setzt spalte_wert/_vergleich/_dritte aus spalten() \u2014 IMMER,\n  // auch fuer OH-CSV, wo keine Spalte-2-Daten existieren.\n\n// From web/js/dashboard-charts.js\nexport function chartDiffWasserfall(diff, labelA = \"Basis\",\n                                    labelB = \"Vergleich\"): EChartsOption  // 1443\nexport function chartDiffGruppen(diff): EChartsOption          // 1537  (keine Labels)\nexport function chartDiffTreemap(diff): EChartsOption          // 1592  (keine Labels)\n\n// From web/js/dashboard-app.js\nexport function baueDashboard(db): boolean                     // 22\n  // 23 collect(db); 39 baueVergleich(daten) \u2014 einziger Aufrufer\n\n// DOM-Vertrag (web/index.html)\n#vgl-a  #vgl-b  #vgl-hh  #vgl-tausch          // Auswahl, 375-390\n#vgl-kopf                                      // 391\n#vgl-stats  #vgl-statuszeile                   // 393-394\n#vgl-kontrolle-panel[hidden]  #vgl-kontrolle   // 396-411\n#c_vgl_wasserfall  #c_vgl_treemap  #c_vgl_gruppen\n#vgl-f-such #vgl-f-gruppe #vgl-f-richtung #vgl-f-gebarung\n#vgl-f-status #vgl-f-schwelle                  // Filter\n#vgl-csv  #vgl-meta  #vgl-hint                 // Export/Fusszeilen\n#vgl-th-a (506)  #vgl-th-b (508)  #vgl-tbody   // Tabelle\n.tab-btn[data-tab=\"vergleich\"] (229)  [data-panel=\"vergleich\"] (363)\n</interfaces>\n\n### Reusable Components\n\nAlles, was der Modus braucht, existiert bereits \u2014 zu bauen ist nur die\nVerzweigung:\n\n- `aggregiereDokument()` liefert `wert` **und** `vergleich` in einem Durchlauf\n  (Zeilen 79/80). Genau dafuer wurde `vergleich` eingesammelt.\n- Die fuenf Sichten lesen ausschliesslich `zeilen` \u2014 `statusZaehlung` 176,\n  `eckwerte` 186, `gruppenDelta` 227, `treemapDelta` 245, `wasserfall` 277.\n- `filtereZeilen` 406 und `alsCsv(zeilen, labelA, labelB)` 431 sind bereits\n  label- und dokumentagnostisch.\n- `chartDiffWasserfall(diff, labelA, labelB)` 1443 nimmt Labels als Parameter.\n- `spalte_vergleich`, `typ`, `jahr` liegen in `DATA.dokumente` bereit \u2014 die\n  Beschriftung braucht kein erneutes PDF-Lesen.\n\n### Potential Conflicts\n\n- **`fuelleAuswahl` crasht bei einem Dokument** (`vergleich.js:136-137`):\n  `standardVergleich` liefert `null` (verifiziert), der Fallback greift auf\n  `docs[docs.length - 2].id` = `docs[-1]` = `undefined`. Heute unerreichbar,\n  weil der Tab bei einem Dokument ausgeblendet wird (98, 118) \u2014 **mit der neuen\n  Sichtbarkeit wird dieser Pfad erreichbar.**\n- **`vgl-b`-Handler ruft `fuelleAuswahl` nicht** (`vergleich.js:180-183`). Der\n  interne Auswahleintrag gehoert aber zum gewaehlten `b` und muss beim Wechsel\n  neu beschriftet oder entfernt werden.\n- **`vgl-tausch` vertauscht blind** (188-195). Mit dem Sentinel in `a` landet\n  er in `b`; `aggregiereDokument(posten, \"intern\", hh)` liefert eine leere Map\n  und `baueDiff` eine leere Ansicht \u2014 ohne Fehlermeldung.\n- **`dokument(zustand.a)` liefert `undefined`** fuer den Sentinel (78-80). Die\n  bestehenden Fallbacks (291, 330, 407, 572) schreiben dann ueberall \u201eBasis\" \u2014\n  funktional, aber genau das verbietet das Akzeptanzkriterium zur Herkunft.\n- **`web/index.html:365` Ueberschrift \u201eVergleich zweier Dokumente\"** und Lead\n  366-371 sowie die Kontroll-Panel-Notiz 400-406 behaupten den\n  Zwei-Dokumente-Zwang.\n- **`docs/BROWSER-APP.md:118-120`** traegt die identische widerlegte\n  RA-Begruendung wie der Code-Kommentar. Beide Stellen muessen zusammen weg\n  (D2). Die Python-Seite (`src/`) enthaelt keine Diff-Engine und ist nicht\n  betroffen (per grep geprueft).\n\n---\n\n## Die sieben Fragen\n\n### 1 \u2014 Wie muss `baueDiff()` erweitert werden?\n\n**Kleinste Signatur: keine neue Signatur.** `a` traegt einen exportierten\nSentinel-String. Begruendung:\n\n- `dokument_id` ist `INTEGER PRIMARY KEY` (`web/schema.sql:19`) und wird in\n  `vergleich.js` und in `baueDiff` durchgehend per `String(...)` verglichen\n  (z. B. `vergleich-daten.js:57`, `339-340`; `vergleich.js:79, 133, 253`). Ein\n  nicht-numerischer String kann nicht kollidieren.\n- Ein zusaetzliches `modus`-Feld waere ein **zweiter Zustand fuer dieselbe\n  Sache** \u2014 `{ a: 5, modus: \"intern\" }` ist widerspruechlich und muesste\n  ueberall mitgeprueft werden. Der Sentinel *in* `a` hat genau einen Zustand.\n- `zustand.a` und der `value` des `#vgl-a`-Select bleiben **ein** Feld. Kein\n  Zweitzustand in der Oberflaeche.\n\nDer Eingriff in `baueDiff` (`vergleich-daten.js:118-174`) betrifft **vier\nZeilen**:\n\n```\nZeile 120-121 heute:\n    const aggA = aggregiereDokument(posten, a, hh)\n    const aggB = aggregiereDokument(posten, b, hh)\n\nkuenftig (Reihenfolge gedreht \u2014 aggB ist die Quelle der internen Basis):\n    const intern = String(a) === BASIS_INTERN\n    const aggB = aggregiereDokument(posten, b, hh)\n    const aggA = intern ? interneBasis(aggB) : aggregiereDokument(posten, a, hh)\n\nZeile 172 heute:\n    kontrolle: kontrolle(aggA, aggB, dokumente, a, b)\n\nkuenftig:\n    kontrolle: intern\n      ? internHinweis(dokumente, b)\n      : kontrolle(aggA, aggB, dokumente, a, b)\n```\n\nDazu ein neuer, exportierter Sentinel und eine kleine Projektion:\n\n```\nexport const BASIS_INTERN = \"intern\"\n\n// Die abgedruckte Vergleichsspalte als Basis-Seite. Ein KLON \u2014 die\n// Vergleichsseite darf nicht mitgeaendert werden.\nfunction interneBasis(aggB) {\n  const m = new Map()\n  for (const [k, e] of aggB) m.set(k, { ...e, wert: e.vergleich, vergleich: 0 })\n  return m\n}\n```\n\n**Warum `zeilen`, `eckwerte`, `gruppen`, `treemap`, `wasserfall` unveraendert\nweiterfunktionieren:** ab `vergleich-daten.js:123` liest die Engine nur noch\n`aggA`/`aggB` in Gestalt zweier Maps derselben Form, und ab Zeile 162 nur noch\ndie fertigen `zeilen`. Konkret:\n\n- **123-156** Schluesselunion, `wa`/`wb` aus `.wert`, Nullzeilen-Filter (134),\n  `stamm = eb || ea` (140), `prozent` (153), `status` (154) \u2014 alles\n  strukturell identisch. Im internen Modus ist die Schluesselmenge\n  `aggA.keys() === aggB.keys()`, und `stamm` ist immer `eb`, weil\n  `interneBasis` die Stammdaten mitklont.\n- **160** Sortierung nach `|delta|` \u2014 unveraendert.\n- **167-171** `statusZaehlung(zeilen)`, `eckwerte(zeilen, hh)`,\n  `gruppenDelta(zeilen)`, `treemapDelta(zeilen)`, `wasserfall(zeilen)` \u2014 alle\n  fuenf nehmen ausschliesslich `zeilen`. Kein Aufruf liest `aggA`, `aggB`, `a`,\n  `b` oder `dokumente`.\n- Ebenso ausserhalb: `filtereZeilen(zeilen, f)` 406, `alsCsv(zeilen, ...)` 431,\n  `chartDiffWasserfall(diff, ...)` 1443, `chartDiffGruppen(diff)` 1537,\n  `chartDiffTreemap(diff)` 1592.\n\nDie **einzige** Funktion, die die Aggregate liest, ist `kontrolle()` (337) \u2014 und\ngenau die darf im internen Modus nicht rechnen (siehe Frage 5).\n\nEmpirisch bestaetigt (ausgefuehrt): der so gebildete interne Diff ergibt fuer\nNVA 2026 EHH 1048 Zeilen, Status `{neu 32, entfallen 6, geaendert 122,\nunveraendert 888}`, Ertraege +790.300, Aufwendungen +502.200, Nettoergebnis\n+288.100, Wasserfall von 473.600 nach 761.700. Confidence: **HIGH**.\n\n**Fallstrick (F2, HOCH):** wird `aggA` durch Ueberschreiben statt Klonen\ngebildet (`e.wert = e.vergleich` auf `aggB`), sind `wert` und `vergleich`\ndanach dasselbe Objekt \u2014 jedes `delta` wird 0, `wasserfall.nach` falsch, und\n**kein bestehender Test faellt zwingend**. Der Klon muss explizit sein, und ein\nneuer Test muss ihn absichern (siehe Frage 7, Test 3).\n\n### 2 \u2014 Welche Stellen in `vergleich.js` haengen an \u201ezwei Dokument-Ids\"?\n\n| Stelle | Zeile(n) | Heutige Annahme | Was passieren muss |\n|---|---|---|---|\n| **Zustand** | 28-35 | `a`, `b` sind Dokument-Ids | `a` darf `BASIS_INTERN` sein. Kein neues Feld. Kommentar ergaenzen. |\n| **`dokument(id)`** | 78-80 | Lookup findet immer etwas | Bleibt wie es ist (liefert `undefined`) \u2014 aber nicht mehr direkt fuer Labels verwenden. |\n| **Neu: `basisLabel()` / `basisSpalte()`** | \u2014 | \u2014 | Ein Helfer, der bei Sentinel die D3-Beschriftung aus `dokument(zustand.b)` bildet, sonst `dokLang(dA)` bzw. `dA.spalte_wert`. **Vier Aufrufer** (Kopf, Kennzahlen, Charts, CSV) \u2014 damit die Beschriftungsregel genau einmal existiert. |\n| **`fuelleAuswahl`** | 131-155 | beide Selects gleich befuellt; Vorbelegung aus `meta.default_vergleich` | (a) `gueltig()` (133) muss `BASIS_INTERN` akzeptieren, solange das gewaehlte `b` eine Vergleichsspalte traegt. (b) Der Fallback 136-137 `docs[docs.length - 2].id` **crasht bei einem Dokument** \u2014 muss auf `{ a: BASIS_INTERN, b: docs[docs.length-1].id }` gehen. (c) In `#vgl-a` den internen Eintrag als **erste** Option voranstellen (Frage 3). (d) `#vgl-b` bleibt unveraendert reine Dokumentliste. |\n| **`verdrahte` / `#vgl-b`** | 180-183 | ruft nur `rechneUndZeichne` | Muss zuerst die Basis-Auswahl neu aufbauen: der interne Eintrag gehoert zum gewaehlten `b` (Label aendert sich, Eintrag entfaellt ggf.). `fuelleAuswahl()` bzw. ein herausgezogenes `fuelleBasisAuswahl()` davor aufrufen. |\n| **`verdrahte` / `#vgl-tausch`** | 188-195 | `a`/`b` sind tauschbar | Tausch ist im internen Modus sinnlos (der Sentinel darf nie in `b`). Empfehlung: Knopf `disabled` setzen (mit `title`-Begruendung), gesetzt aus `rechneUndZeichne`. Alternative \u2014 Tausch **wechselt** auf das geladene Basisdokument \u2014 waere eine zweite Bedeutung fuer denselben Knopf; nicht empfohlen. |\n| **`rechneUndZeichne`** | 252-272 | `a === b`-Ausweichlogik 253-261 | Der Sentinel ist nie gleich `b`, der Zweig ist damit inert. Trotzdem explizit ueberspringen, denn `docs[i>0?i-1:Math.min(1,docs.length-1)]` ist bei einem Dokument `docs[0]` = `b` selbst (F7). Am Ende: Tausch-Knopf-Zustand setzen. |\n| **`zeichneKopf`** | 274-303 | 275 `dokument(zustand.a)`; 282 `dokLang(dA)`; 286 `dA.spalte_wert`; 291 `thA` = `dA.label` | 282 auf `basisLabel()`, 286 auf `basisSpalte()`, 291 auf `basisLabel()`. Der Satz \u201eGegenuebergestellt werden die Betragsspalten \u2026\" (285-287) traegt im internen Modus die Herkunft \u2014 er ist die Stelle, an der \u201elaut NVA-Dokument\" ausgeschrieben gehoert. |\n| **`zeichneKennzahlen`** | 308-334 | 311 `dA`; 330 `dA.label` | 330 auf `basisLabel()`. `k.a`/`k.b` unveraendert. |\n| **`zeichneKontrolle`** | 336-399 | 341-344: `!k` -> Panel `hidden` | Neuer dritter Zweig fuer `k.modus === \"intern\"`: Panel **sichtbar**, Hinweistext mit dem ausloesenden Dokument und ob es geladen ist (D1). Panel bleibt `hidden` nur bei `k === null`. |\n| **`zeichneCharts`** | 401-414 | 405-410 `dA.label` fuer `chartDiffWasserfall` | 407 auf `basisLabel()`. `chartDiffTreemap`/`chartDiffGruppen` nehmen keine Labels \u2014 nichts zu tun. |\n| **`zeichneTabelle`** | 486-544 | \u2014 | **Keine Aenderung.** Liest nur `diff.zeilen`, Filter und `diff.haushalt`. Verifiziert: Schwellwert 100.000 auf dem internen Diff -> 11 Zeilen, Ertraege +146.000, Aufwendungen +280.400 (also erscheint \u201eSaldoeffekt\"); Volltext \u201ekommunalsteuer\" -> 1 Treffer, delta \u2212200.000. |\n| **`ladeCsv`** | 566-592 | 568 `dA`; 572 `dA.label`; 581 Dateiname | 572 auf `basisLabel()`. Fuer 581 eine **eigene Kurzform**: `\"VA 2026 (laut NVA)\"` wuerde zu `va-2026-(laut-nva)` (F6). Empfehlung: Klammern entfernen, z. B. `vergleich_va-2026-laut-nva_nva-2026_ehh.csv`. |\n| **Sichtbarkeit** | 97-118 | `docs.length >= 2` | Siehe Frage 6. |\n\n**Die Aenderung ist klein, weil `zeichneTabelle` \u2014 die groesste Funktion \u2014 gar\nnicht betroffen ist** und weil ein einziger Helfer (`basisLabel`) vier\nBeschriftungsstellen versorgt.\n\n### 3 \u2014 Wie wird die Basis-Auswahl aufgebaut? Welcher Wert steht fuer die interne Spalte?\n\n**Der Wert: ein exportierter, nicht-numerischer Sentinel.**\n\n```\n// web/js/vergleich-daten.js\n// Basis-Auswahl: dieser Wert steht nicht fuer ein Dokument, sondern fuer die\n// im Vergleichsdokument abgedruckte Vergleichsspalte. Kollisionsfrei, weil\n// dokument_id INTEGER PRIMARY KEY ist (web/schema.sql:19).\nexport const BASIS_INTERN = \"intern\"\n```\n\nDer Sentinel gehoert in `vergleich-daten.js`, weil dort seine Bedeutung\ninterpretiert wird (`baueDiff`); `vergleich.js` importiert ihn (die\nImport-Zeile 17 existiert bereits).\n\n**Aufbau des `#vgl-a`-Select** (`fuelleAuswahl`, heute 139-153): der interne\nEintrag steht als **erste** Option vor den Dokumenten, danach unveraendert alle\ngeladenen Dokumente. Er erscheint nur, wenn das **gerade gewaehlte `b`** eine\ngefuellte Vergleichsspalte traegt (Frage 6) \u2014 er ist eine Eigenschaft von `b`,\nnicht der Dokumentliste. `#vgl-b` bleibt eine reine Dokumentliste.\n\n```\nBasis:      [ VA 2026 (laut NVA) ]   <-- BASIS_INTERN, Vorbelegung (D1)\n            [ RA 2024 ]\n            [ NVA 2025 ]\n            [ RA 2025 ]\n            [ VA 2026 ]              <-- das geladene Dokument, weiter waehlbar\nVergleich:  [ ... alle Dokumente ... ]\n```\n\nZwei Konsequenzen fuer die Verdrahtung:\n\n1. **`gueltig()` (Zeile 133) erweitern:**\n   `id === BASIS_INTERN || docs.some((d) => String(d.id) === String(id))`.\n   Damit ueberlebt die Auswahl einen Dashboard-Neuaufbau (`baueVergleich` laeuft\n   nach jedem Upload und bei jedem Palettenwechsel, siehe Kommentar 8-10) \u2014\n   aber nur, solange das gewaehlte `b` seine Spalte behaelt.\n2. **`#vgl-b`-Wechsel muss die Basis-Auswahl neu aufbauen** (heute nicht,\n   180-183): das Label des internen Eintrags haengt an `b`, und bei einem `b`\n   ohne Vergleichsspalte muss der Eintrag verschwinden \u2014 samt Umschalten der\n   Basis auf ein geladenes Dokument.\n\n**Vorbelegung (D1) \u2014 Ort der Entscheidung.** Zwei Orte sind moeglich:\n\n| Ort | Vorteil | Nachteil |\n|---|---|---|\n| **`standardVergleich(dok, posten)`** in `dashboard-data.js:659` \u2014 empfohlen | Die Vorbelegung bleibt an genau **einer** Stelle (`meta.default_vergleich`, gesetzt in `collect()` 699); in Node unittestbar ohne DOM | Signaturerweiterung; drei bestehende Tests muessen mitziehen (Frage 7) |\n| `fuelleAuswahl()` in `vergleich.js:134-138` | keine Signaturaenderung, kein js-Test bricht | Vorbelegungslogik an zwei Orten; nur per e2e testbar |\n\n**Empfehlung: `standardVergleich(dok, posten)`** mit `posten` als **optionalem**\nArgument. Neue Reihenfolge: (1) gibt es ein Dokument mit gefuellter\nVergleichsspalte, gewinnt das juengste davon als `{ a: BASIS_INTERN, b: id }`;\n(2) sonst die bestehende VA/NVA-Paar-Suche (661-665); (3) sonst die zwei\njuengsten (666); (4) sonst `null`. Ohne `posten` faellt die Funktion auf das\nheutige Verhalten zurueck \u2014 das haelt die beiden Tests mit nackten\nDokumentobjekten (`run.mjs:1114`, `1118`) lauffaehig, wenn sie nur die\nErwartung anpassen.\n\n### 4 \u2014 Wie wird die Beschriftung gebildet?\n\n**Regel (aus D3 + D2):**\n\n```\nfunction interneBasisLabel(d) {\n  return d.typ === \"RA\"\n    ? `Soll ${d.jahr} (laut RA)`\n    : `${d.spalte_vergleich} (laut ${d.typ})`\n}\n```\n\n**Ausgefuehrt gegen die Fixtures:**\n\n| Dokument | `typ` | `jahr` | `spalte_vergleich` | interne Beschriftung |\n|---|---|---|---|---|\n| NVA 2026 | NVA | 2026 | `VA 2026` | **VA 2026 (laut NVA)** |\n| NVA 2025 | NVA | 2025 | `VA 2025` | **VA 2025 (laut NVA)** |\n| RA 2025 | RA | 2025 | `VA 2025` | **Soll 2025 (laut RA)** |\n| RA 2024 | RA | 2024 | `VA 2024` | **Soll 2024 (laut RA)** |\n| VA 2026 | VA | 2026 | `VA 2025` | **VA 2025 (laut VA)** |\n\n**Woher Jahres- und Typbezug kommen:** beide stehen fertig in\n`DATA.dokumente` \u2014 `typ` und `jahr` aus `dashboard-data.js:80-94` (SQL-Select\nZeile 77-79 gegen `dokument.typ` / `dokument.finanzjahr`), `spalte_vergleich`\naus derselben Zeile. Der String selbst entsteht **beim Import**:\n`dokumentDatensatz()` (`loader.js:27-43`) ruft `spalten(meta.typ, jahr)`\n(Zeile 31), `spalten()` (13-24) baut die drei Namen aus Typ und Jahr und\npersistiert sie in `dokument.spalte_wert/_vergleich/_dritte`. Die Jahreszahl\nfuer die RA-Form kommt aus `d.jahr` \u2014 **nicht** aus dem Parsen von\n`spalte_vergleich`.\n\n**Wo die Beschriftung erscheinen muss** (Akzeptanzkriterium \u201eKopfzeile,\nTabellenkoepfe und CSV-Name benennen die Herkunft\"):\n\n| Ort | Datei:Zeile |\n|---|---|\n| Kopfzeile \u201eBasis \u2026\" | `vergleich.js:282` |\n| Kopfzeile \u201eBetragsspalten \u201eX\" und \u201eY\"\" | `vergleich.js:286` |\n| Tabellenkopf `#vgl-th-a` | `vergleich.js:291` |\n| Kennzahlen-Karte, Basiszeile | `vergleich.js:330` |\n| Wasserfall, erste Kategorie | `vergleich.js:407` -> `dashboard-charts.js:1449` |\n| CSV-Kopfzeile | `vergleich.js:572` -> `alsCsv` labelA (`vergleich-daten.js:442`) |\n| CSV-Dateiname | `vergleich.js:581` (Kurzform, F6) |\n| `kontrolle().spalte` im RA-Fall | `vergleich-daten.js:384` (siehe Frage 5) |\n\nWeil `interneBasisLabel` auch in `kontrolle()` gebraucht wird, gehoert die\nFunktion nach `vergleich-daten.js` und wird von `vergleich.js` importiert \u2014 eine\nRegel, ein Ort.\n\n**Zusatzbefund (MEDIUM-relevant, nicht in CONTEXT.md):** die Vergleichsspalte\neines **Voranschlags** ist der Vorjahres-Voranschlag **im Original, ohne\nNachtrag**. Ausgefuehrt: VA 2026 Spalte 2 gegen NVA 2025 Spalte 2 (original) \u2014\n1116 EHH / 1144 FHH Schluessel, **0 Abweichungen**; gegen NVA 2025 Spalte 1\n(inkl. NVA) \u2014 191 EHH / 231 FHH Abweichungen (9.211.600 / 18.238.700 EUR). Das\nist der **Spiegelfall zu D2**: beim RA enthaelt das Soll den Nachtrag, beim VA\nnicht. \u201eVA 2025 (laut VA)\" ist damit korrekt, bedeutet aber nicht dasselbe wie\nein separat geladener \u201eNVA 2025\". **Kein Grund, D3 anzutasten** \u2014 aber ein Satz\nin `docs/BROWSER-APP.md` wert.\n\n### 5 \u2014 Welche Aenderung braucht `kontrolle()`?\n\nDrei Aenderungen, alle in `vergleich-daten.js`.\n\n**(a) Der falsche Kommentar muss weg.** Zeilen **334-336**:\n\n> \u201eDer Rechnungsabschluss bleibt bewusst aussen vor: seine Spalte 2 ist das\n> Soll, und das kann den Nachtrag schon enthalten \u2014 welches Dokument gemeint\n> ist, laesst sich aus dem Seitenkopf nicht entscheiden.\"\n\nLaut D2 widerlegt. **Dieselbe Passage steht ein zweites Mal** in\n`docs/BROWSER-APP.md:118-120` und muss zusammen mit dem Code-Kommentar\nverschwinden (per grep geprueft: nur diese zwei Stellen; `src/` ist nicht\nbetroffen).\n\n**(b) Der RA-Fall wird unterstuetzt.** Der RA ist heute nicht explizit\nausgeschlossen, sondern **durch Auslassung**: die Praedikate 342-343 lassen nur\n`nva` (dB=NVA, dA=VA, gleiches Jahr) und `vaFolge` (dB=VA, dA=VA, Jahr\u22121) zu,\n344 verwirft alles andere. Verifiziert: `baueDiff({ a: NVA 2025, b: RA 2025 })`\n-> `kontrolle === null`.\n\nNeues Praedikat:\n\n```\nconst raSoll = dB.typ === \"RA\" && dA.jahr === dB.jahr &&\n               (dA.typ === \"NVA\" || dA.typ === \"VA\")\nif (!nva && !vaFolge && !raSoll) return null\n```\n\nDie Rechnung selbst (346-382) bleibt **unveraendert**: sie stellt `aggA.wert`\ngegen `aggB.vergleich` \u2014 genau \u201eNVA-Spalte 1 gegen RA-Soll\". Ausgefuehrt: RA\n2025 gegen NVA 2025 \u2014 **1156 EHH / 1160 FHH geprueft, 0 Abweichungen,\n`bestanden === true`**. Das ist exakt die Rechnung aus D2.\n\nZur `dA.typ === \"VA\"`-Haelfte: liegt kein NVA des Jahres vor, ist der VA der\ngueltige Plan und legitim als Basis. Weicht er ab, ist das die bekannte\nFassungsfrage, und der bestehende Abweichungstext (374-386) traegt das schon.\nAusgefuehrt gegen die Fixtures: VA-artige Basis gegen RA-Soll weicht auf\n191 EHH / 231 FHH Stellen ab \u2014 das ist informativ, nicht falsch. **Kleine\noffene Entscheidung fuer den Plan:** `dA.typ === \"VA\"` mit zulassen (empfohlen,\nehrlicher) oder nur NVA (weniger Rauschen).\n\n**(c) `spalte` im RA-Fall.** Zeile 384 liefert `dB.spalte_vergleich` = `\"VA\n2025\"` \u2014 laut D2 die irrefuehrende PDF-Beschriftung. Hier dieselbe D3-Regel\nanwenden: bei `dB.typ === \"RA\"` -> `Soll ${dB.jahr} (laut RA)`. Ein\ngemeinsames `interneBasisLabel(d)` bedient Frage 4 und diese Stelle.\n\n**(d) Interner Modus: NICHT rechnen \u2014 das ist der gefaehrlichste Punkt des\nIssues.** Im internen Modus ist `aggA.wert` per Konstruktion `aggB.vergleich`.\n`kontrolle()` wuerde 0 Abweichungen finden und schreiben: **\u201eGeprueft. Alle\n1048 belegbaren Haushaltsstellen der Basis stimmen mit der Spalte \u201eVA 2026\"\ndes Vergleichsdokuments ueberein.\"** (`vergleich.js:348-357`) \u2014 eine\nTautologie, die wie ein Beweis aussieht. Genau das verbietet D1.\n\n**Was das Panel dann zeigen soll.** D1: \u201eim Kontroll-Panel steht stattdessen\nein Hinweis, dass ein geladenes Basisdokument sie ausloest, samt Angabe, welches\nDokument dafuer passt und ob es schon geladen ist.\" Empfohlene Form \u2014 der\nHinweis kommt **aus der Engine**, damit `vergleich.js` keine Fachlogik traegt:\n\n```\n// Rueckgabe im internen Modus \u2014 keine Pruefung, sondern ihre Voraussetzung.\n{ modus: \"intern\",\n  spalte: interneBasisLabel(dB),\n  dokument: dB.label,\n  ausloeser: { label: \"VA 2026\", geladen: true | false, id: number | null } }\n```\n\nDas ausloesende Dokument ist eine reine Funktion von `dokumente` und `b`:\ndB=NVA -> der VA desselben Jahres; dB=VA -> der VA des Vorjahres; dB=RA -> der\nNVA desselben Jahres, sonst der VA desselben Jahres. `geladen` = ob dieses\nDokument in `dokumente` steht.\n\n**Wichtig fuer die Testlage:** `kontrolle` muss weiter **`null`** liefern, wo\ngar keine Beziehung besteht (z. B. RA 2024 als Basis gegen NVA 2026, verifiziert\n`null` und auch nach (b) noch `null`, weil `dA.typ === \"RA\"`). Nur der interne\nModus liefert das Objekt. Damit bleibt `run.mjs:1270-1277` gruen und\n`vergleich.js:342-344` behaelt seinen `hidden`-Zweig \u2014 es kommt ein dritter\nZweig fuer `k.modus === \"intern\"` hinzu.\n\n### 6 \u2014 Sichtbarkeit\n\n**Die Stelle heute:** `web/js/vergleich.js:98`\n\n```\nconst mehrere = (daten.dokumente || []).length >= 2\n```\n\nbenutzt an **vier** Stellen: 101 (`tabBtn.hidden = !mehrere`), 103-105 (alle\n`.gat-panel, .stats, .gat-callout` im Panel), 107-116 (Leer-Hinweis `.vgl-leer`\nanlegen/entfernen), 118 (`if (!mehrere) return`). `vergleich.js` ist\nAlleinbesitzer dieser Sichtbarkeit \u2014 `dashboard.js:94` (`activateTab`) macht\neinen `hidden`-Knopf nicht wieder sichtbar.\n\n**Die neue Bedingung:**\n\n```\nconst docs = daten.dokumente || []\nconst vergleichbar =\n  docs.length >= 2 ||\n  docs.some((d) => hatVergleichsspalte(daten.posten, d.id))\n```\n\n**Traegt jeder Dokumenttyp eine brauchbare Vergleichsspalte? Nein.**\n\nGegen `loader.js:spalten()` (13-24) sieht es so aus: jeder Typ **benennt** eine\nSpalte 2 \u2014 RA `VA ${jahr}`, NVA `VA ${jahr}`, VA `VA ${jahr-1}`. Der Name ist\naber kein Daten-Nachweis. Ausgefuehrt (Summe `|vergleich|` ueber alle\nSchluessel):\n\n| Dokument | Spalte-2-Name | EHH | FHH |\n|---|---|---|---|\n| RA 2024 | `VA 2024` | 44.209.200 | 53.937.200 |\n| NVA 2025 | `VA 2025` | 45.265.000 | 64.611.500 |\n| RA 2025 | `VA 2025` | 48.615.800 | 55.619.200 |\n| VA 2026 | `VA 2025` | 45.265.000 | 64.611.500 |\n| NVA 2026 | `VA 2026` | 44.607.400 | 69.675.900 |\n| **OH-CSV VA 2026 (31912)** | `VA 2025` | **0** | **0** |\n\n**Haben OH-CSV-Dokumente eine gefuellte Spalte 2? Nein \u2014 nachgewiesen.**\n`offenerhaushalt_31912_2026_va_{ehh,fhh}.csv` durch `verarbeiteCsvDateien` +\n`collect`: 3149 Posten, `ev != 0`: **0**, `fv != 0`: **0**, `ed != 0`: 0,\n`fd != 0`: 0, `Summe|vergleich|` = **0**.\n\nUrsache im Code:\n\n- `HEADER` (`csv-parser.js:31-47`) hat 16 Spalten mit **einer** `Wert`-Spalte.\n- `parseCsvBytes` setzt nur `eh_wert` bzw. `fh_wert` (`csv-parser.js:304-308`).\n- Der Kommentar `csv-parser.js:330-333` sagt es ausdruecklich: \u201eSpalten 2/3\n  (eh_vergleich/eh_dritte, fh_vergleich/fh_dritte) liegen im OH-CSV nicht vor\n  und bleiben 0.\"\n- **Trotzdem** schreibt `dokumentDatensatz` (`loader.js:31`) via\n  `spalten(\"VA\", 2026)` weiter `spalte_vergleich = \"VA 2025\"`. Der Name\n  existiert, die Daten nicht.\n\n**Folge \u2014 die Pruefung MUSS datenbasiert sein.** Ein typbasiertes Gate (\u201ejeder\nVA/NVA/RA hat eine Spalte 2\") wuerde einem OH-CSV-Dokument eine interne Basis\nanbieten und einen Diff erzeugen, dessen Basis ueberall 0 ist: **1016 Zeilen\n\u201eneu\", still und falsch**, mit einer Kopfzeile, die \u201eVA 2025 (laut VA)\"\nbehauptet. Auch nicht auf `fassung === \"OH-CSV\"` pruefen \u2014 der Halb-Zustand\nheisst `\"OH-CSV (nur EHH)\"` (`run.mjs:882-886`, `921-927`), das waeren zwei\nStrings, die synchron bleiben muessten. Ausserdem ist `fassung` in\n`DATA.dokumente` gar nicht enthalten (`dashboard-data.js:80-94`).\n\n**Empfohlener Helfer** (exportiert aus `vergleich-daten.js`, weil er zur\nAggregationslogik gehoert):\n\n```\n// Traegt das Dokument in seiner zweiten Betragsspalte ueberhaupt Zahlen?\n// Nicht am Typ und nicht am Spaltennamen entscheidbar: ein OH-CSV-Dokument\n// traegt den Namen (\"VA 2025\"), aber keine Werte (csv-parser.js:330-333).\nexport function hatVergleichsspalte(posten, dokId, haushalt) {\n  const id = String(dokId)\n  for (const p of posten) {\n    if (String(p.dok) !== id) continue\n    if (haushalt !== \"FHH\" && (p.ev || 0) !== 0) return true\n    if (haushalt !== \"EHH\" && (p.fv || 0) !== 0) return true\n  }\n  return false\n}\n```\n\nOhne `haushalt` heisst das \u201eeine der beiden Haelften\". Kosten: ein Durchlauf\nueber `DATA.posten` (6529 Posten bei fuenf Dokumenten) \u2014 vernachlaessigbar.\nAlle fuenf PDFs haben **beide** Haelften gefuellt, der Halb-Fall tritt bei den\nFixtures nicht auf, ist aber beim CSV-Nachreichungspfad strukturell moeglich \u2014\ndie Pruefung je Haelfte ist die ehrliche.\n\n**Leer-Hinweis (107-116).** Der Text \u201eFuer einen Vergleich braucht es zwei\nDokumente \u2014 bitte ein weiteres laden (etwa den Voranschlag zum\nNachtragsvoranschlag).\" trifft nicht mehr. Neue Bedingung: **weder** \u22652\nDokumente **noch** irgendein Dokument mit gefuellter Spalte. Mit den\nvorhandenen Fixtures ist der einzige erreichbare Fall **ein einzelnes\nOH-CSV-Dokument** \u2014 der Text sollte genau das benennen: eine OH-CSV bringt\nkeine Vergleichszahl mit, es braucht ein zweites Dokument.\n\n**Anschlussfalle (F-hoch):** mit Sichtbarkeit ab einem Dokument wird\n`fuelleAuswahl:136-137` erstmals mit einem Dokument erreicht \u2014\n`standardVergleich` liefert dort `null` (verifiziert) und der Fallback\n`docs[docs.length - 2].id` ist `undefined` -> **TypeError**. Muss mit der\nSichtbarkeitsaenderung **im selben Schritt** behoben werden, sonst ist der Tab\nsichtbar und wirft beim Aufbau.\n\n### 7 \u2014 Tests\n\n#### `tests/js/run.mjs` \u2014 was bricht\n\n| Zeile | Testname | Bricht? | Warum / was zu tun |\n|---|---|---|---|\n| 1105-1112 | `default_vergleich ist VA 2026 -> NVA 2026` | **JA**, wenn D1 in `standardVergleich` implementiert wird (empfohlen) | Neu erwarten: `{ a: BASIS_INTERN, b: <NVA 2026 id> }`. Bei D1 in `fuelleAuswahl` bleibt der Test unberuehrt. |\n| 1114-1116 | `standardVergleich mit einem Dokument liefert null` | **JA** | Mit einem Dokument **mit** Vergleichsspalte muss jetzt `{ a: BASIS_INTERN, b: 1 }` kommen. Achtung: der Test uebergibt ein **nacktes** Objekt `{id:1,typ:\"VA\",jahr:2026}` und **keine** `posten` \u2014 die neue Signatur muss ein fehlendes `posten` tolerieren. Test um einen zweiten Fall ergaenzen: ohne Vergleichsspalte weiter `null`. |\n| 1118-1127 | `standardVergleich ohne NVA nimmt die zwei juengsten` | **Moeglich** | Ebenfalls nackte Objekte ohne `posten`. Bleibt gruen, wenn die Funktion ohne `posten` auf das heutige Verhalten zurueckfaellt. Explizit absichern. |\n| 1129-1246 | Diff-Block EHH/FHH/Tausch | nein | Alle Aufrufe uebergeben explizite `a`/`b`-Dokument-Ids. |\n| 1247-1268 | Kontroll-Block (Spalte, 2 Abweichungen, 200600, Ansatz 429000) | nein | Zwei-Dokumente-Pfad unveraendert. |\n| 1270-1277 | `Kontrolle entfaellt fuer ein Paar, das sie nicht belegen kann` | nein | RA 2024 als Basis gegen NVA 2026 bleibt `null` \u2014 `dA.typ === \"RA\"` erfuellt kein Praedikat, auch nicht das neue `raSoll` (das fordert `dB.typ === \"RA\"`). Trotzdem beim Umbau bewusst nachpruefen. |\n| 1280-1327 | Filter, CSV-Export, drei Chart-Vorlagen | nein | Arbeiten auf `dEhh`/`dFhh` aus dem Zwei-Dokumente-Pfad. |\n\n#### `tests/e2e/vergleich.spec.mjs` \u2014 was bricht\n\n| Zeile | Testname | Bricht? | Warum / was zu tun |\n|---|---|---|---|\n| **158-168** | `Vergleichs-Tab bleibt verborgen, solange nur ein Dokument geladen ist` | **JA, per Design** | Ausgefuehrt: VA 2026 allein hat 1116 EHH- / 1144 FHH-Posten mit gefuellter Spalte 2. Der Tab wird **sichtbar**. Ersetzen durch: (a) Tab ist mit nur dem VA **sichtbar**; (b) neuer Test \u2014 mit nur dem **OH-CSV-Paar** bleibt der Tab verborgen und der Leer-Hinweis steht (Upload-Pfad in `tests/e2e/csv-upload.spec.mjs`). |\n| **52-77** | `Vorbelegung ist VA 2026 -> NVA 2026 mit Kennzahlen und Diagrammen` | **JA** | 57-60 erwartet in `#vgl-a` den `value` der VA-2026-Option; kuenftig steht dort der Sentinel. Anpassen. Die Assertions 61-63 (`#vgl-kopf` enthaelt `VA 2026`, `NVA 2026`, `Ergebnishaushalt`) halten weiter, wenn der Kopf \u201eBasis VA 2026 (laut NVA) \u2192 Vergleich NVA 2026\" schreibt. 66-76 (3 Karten, 3 Diagramme, Statuszeile) halten. |\n| **142-155** | `Kontrolle gegen die abgedruckte Vergleichsspalte laeuft` | **JA** | Mit interner Vorbelegung laeuft die Pruefung nicht. Umschreiben: zuerst `#vgl-a` auf das geladene VA 2026 `selectOption`, dann wie bisher \u201eAbweichung\" + 2 `tbody`-Zeilen. **Plus neuer Test:** bei interner Vorbelegung ist das Panel sichtbar und nennt das ausloesende Dokument (D1). |\n| **131-140** | `Richtungstausch dreht Basis und Vergleich` | **JA** | `#vgl-a` haelt den Sentinel; der Tausch-Knopf ist (Empfehlung) `disabled`. Umschreiben: erst das geladene VA 2026 waehlen, dann tauschen; `#vgl-th-a` -> `NVA 2026` gilt weiter. **Plus:** neuer Test, dass der Knopf im internen Modus `disabled` ist. |\n| 79-99 | `Tabelle zeigt voreingestellt nur Veraenderungen` | **nein** (verifiziert) | Interner Diff EHH: 160 veraendert von 1048 Zeilen, `{neu 32, entfallen 6, geaendert 122, unveraendert 888}` \u2014 \u201ealle\" liefert also echt mehr. `#vgl-th-a` `toContainText('VA 2026')` trifft auch in \u201eVA 2026 (laut NVA)\"; `#vgl-th-b` unveraendert. |\n| 101-117 | `Schwellwert-Filter und Volltextsuche wirken` | **nein** (verifiziert) | Interner Diff, Schwelle 100.000: 11 Zeilen (< 160); Ertraege +146.000 **und** Aufwendungen +280.400 \u2260 0, also erscheint \u201eSaldoeffekt\"; \u201ekommunalsteuer\" -> 1 Treffer \u201eKommunalsteuer\", delta \u2212200.000. |\n| 119-129 | `Haushalts-Umschalter zeigt vier Kennzahlen im Finanzierungshaushalt` | **nein** (verifiziert) | Interner FHH-Diff: 178 bewegte Schluessel, investive Auszahlungen 13.361.100 -> 11.556.900. Vier Karten, vierte enthaelt \u201einvestive\". |\n| 35-50 | `Dokumente stehen in Entwicklungsreihenfolge, NVA ist Default` | nein | Betrifft den globalen Umschalter, nicht den Tab. |\n\n#### Neue js-Tests (`tests/js/run.mjs`)\n\n1. **Eckwerte des internen Diffs.** `baueDiff(posten, dokumente,\n   { a: BASIS_INTERN, b: NVA2026.id, haushalt: \"EHH\" })` -> Ertraege-Delta\n   **+790.300**, Aufwendungen-Delta **+502.200**, Nettoergebnis-Delta\n   **+288.100** (= Anlage 1a, = Akzeptanzkriterium; ausgefuehrt bestaetigt).\n2. **Zeile fuer Zeile gegen die abgedruckte Spalte 3.** Fuer jeden Schluessel\n   `delta === Math.round(ed)` (EHH) bzw. `fd` (FHH): **160 EHH / 178 FHH**\n   Schluessel mit Bewegung, **0 Abweichungen** (ausgefuehrt). Mindestens NVA\n   2026 pinnen; RA 2025 (1270 EHH / 1267 FHH, 0 Abweichungen) als zweiter Typ\n   ist billig und deckt den RA-Fall mit ab.\n3. **Kein Mutations-Leck (F2).** Nach dem internen `baueDiff` muss ein\n   Zwei-Dokumente-`baueDiff` auf denselben `posten` unveraenderte Zahlen\n   liefern; und `wasserfall.nach` des internen Diffs muss **761.700** sein (der\n   Saldo aus Spalte 1, schon in `run.mjs:1170` gepinnt). Faellt ohne Klon.\n4. **Keine Tautologie-Kontrolle (F1).** Interner Diff -> `kontrolle.modus ===\n   \"intern\"`, **nicht** `bestanden === true`, und `kontrolle.ausloeser.label`\n   nennt \u201eVA 2026\" mit `geladen: true/false`.\n5. **Die D2-Korrektur.** `baueDiff({ a: NVA2025.id, b: RA2025.id })` ->\n   `kontrolle !== null`, `geprueft === 1156` (EHH) bzw. `1160` (FHH),\n   `abweichungen.length === 0`, `bestanden === true` (ausgefuehrt bestaetigt).\n   Zusatz: `kontrolle.spalte === \"Soll 2025 (laut RA)\"`.\n6. **`hatVergleichsspalte`.** `true` fuer alle fuenf PDFs in beiden Haelften;\n   **`false`** fuer das gemergte OH-CSV-Dokument (31912). Der CSV-Testabschnitt\n   (`run.mjs:879-920`) baut die dafuer noetige isolierte `:memory:`-DB schon.\n7. **`standardVergleich`.** Mit nur dem NVA 2026 (+ `posten`) ->\n   `{ a: BASIS_INTERN, b: id }`; mit nur einem OH-CSV-Dokument -> `null`; ohne\n   `posten` -> heutiges Verhalten.\n8. **`interneBasisLabel`.** NVA 2026 -> `\"VA 2026 (laut NVA)\"`; RA 2025 ->\n   `\"Soll 2025 (laut RA)\"`; VA 2026 -> `\"VA 2025 (laut VA)\"`.\n9. **CSV-Export.** `alsCsv(zeilenIntern.slice(0,3), \"VA 2026 (laut NVA)\", \"NVA\n   2026\")` \u2014 Kopfzeile traegt das interne Label, weiter 14 Spalten.\n10. **Wasserfall-Beschriftung.** `chartDiffWasserfall(diffIntern, \"VA 2026\n    (laut NVA)\", \"NVA 2026\")` \u2014 erste und letzte `xAxis`-Kategorie.\n\n#### Neue e2e-Tests (`tests/e2e/vergleich.spec.mjs`)\n\n- **Nur den NVA 2026 laden** (neue Ladehilfe neben `ladePaar`): Tab sichtbar;\n  `#vgl-kopf` enthaelt \u201elaut NVA\"; `#vgl-a` haelt den Sentinel; 3\n  Kennzahlen-Karten; 3 Diagramme gerendert; `#vgl-th-a` traegt das interne\n  Label; `#vgl-kontrolle-panel` sichtbar mit dem Ausloeser-Hinweis (nicht\n  \u201eGeprueft\"); `#vgl-tausch` `disabled`.\n- **Mit beiden PDFs: interne Vorbelegung (D1)** \u2014 `#vgl-a` haelt den Sentinel,\n  obwohl VA 2026 geladen ist; die VA-2026-Option ist waehlbar; nach dem\n  Umschalten erscheint die Selbstkontrolle mit 2 `tbody`-Zeilen.\n- **Nur das OH-CSV-Paar laden:** Tab `hidden`, `.vgl-leer` sichtbar.\n- **CSV-Name:** Klick auf `#vgl-csv` im internen Modus, Download-Name enthaelt\n  die Herkunft (Playwright `page.waitForEvent('download')`).\n\n#### Doku (D4)\n\n- `docs/BROWSER-APP.md:118-120` \u2014 die widerlegte RA-Begruendung entfernen und\n  durch die D2-Erkenntnis ersetzen (Soll = Voranschlag inkl. Nachtrag, belegt\n  an RA 2025 gegen NVA 2025).\n- `docs/BROWSER-APP.md:87-117` \u2014 den internen Modus beschreiben: Herkunft,\n  Beschriftungsregel, warum die interne Spalte die Vorbelegung ist, warum\n  OH-CSV ihn nicht anbietet.\n- `docs/BROWSER-APP.md:76-81` (Spaltentabelle) \u2014 vermerken, welche Spalte 3\n  eine **Differenz** ist (NVA, RA) und welche nicht (VA).\n- `web/index.html:365-371` Ueberschrift/Lead und `:400-406`\n  Kontroll-Panel-Notiz sprechen von \u201ezwei Dokumenten\" und muessen mitziehen.\n\n---\n\n## Standard Stack\n\nKeine neue Bibliothek. Der Bestand bleibt unveraendert:\n\n| Baustein | Version | Zweck | Warum Standard | Confidence |\n|---|---|---|---|---|\n| ECharts (CDN jsDelivr) | 5.5.1 | Diagramme | bereits eingebunden, `web/index.html:22` | HIGH |\n| Design-System CSS (CDN) | \u2014 | Optik | `web/index.html:21`, CLAUDE.md verlangt CDN | HIGH |\n| `@sqlite.org/sqlite-wasm` | ^3.50.1-build1 | Datenhaltung | `package.json` | HIGH |\n| `mupdf` | ^1.26.0 | PDF-Parsing | `package.json` | HIGH |\n| `@playwright/test` | ^1.60.0 | e2e | `package.json` | HIGH |\n\n### Alternatives Considered\n\n| Statt | Koennte man | Abwaegung |\n|---|---|---|\n| Sentinel in `a` | drittes Feld `modus: \"intern\"` | Zwei Felder fuer einen Zustand \u2014 `{ a: 5, modus: \"intern\" }` ist widerspruechlich und muesste in `zustand`, `fuelleAuswahl`, `rechneUndZeichne`, `ladeCsv` mitgeprueft werden. **Sentinel gewinnt.** |\n| Sentinel in `a` | `a: null` als \u201eintern\" | `null` heisst in `zustand` (28-29) schon \u201enoch nichts gewaehlt\". Doppelbedeutung. |\n| `hatVergleichsspalte` datenbasiert | Pruefung auf `typ` | Empirisch falsch: OH-CSV ist `typ: \"VA\"` mit leerer Spalte 2. |\n| `hatVergleichsspalte` datenbasiert | Pruefung auf `fassung === \"OH-CSV\"` | Proxy statt Sache; Halb-Zustand `\"OH-CSV (nur EHH)\"`; `fassung` fehlt in `DATA.dokumente`. |\n| D1 in `standardVergleich` | D1 in `fuelleAuswahl` | Kein js-Test bricht \u2014 aber Vorbelegungslogik an zwei Orten und nur per e2e pruefbar. |\n| `kontrolle` liefert `{ modus: \"intern\", ... }` | `kontrolle: null` + Fachlogik in `vergleich.js` | Die Oberflaeche muesste wissen, welches Dokument die Pruefung ausloest \u2014 Domaenenlogik im DOM-Modul. |\n| Tausch-Knopf `disabled` | Tausch wechselt auf das geladene Basisdokument | Zweite Bedeutung fuer einen Knopf; genau die Sorte Doppeldeutigkeit, die `vergleich.js:12-15` fuer den Dokument-Umschalter ausdruecklich vermeidet. |\n\n## Don't Hand-Roll\n\n| Problem | Nicht bauen | Stattdessen | Warum |\n|---|---|---|---|\n| Basis-Werte je Haushaltsstelle | zweite Aggregation | `aggregiereDokument()` `vergleich-daten.js:55` \u2014 liefert `wert` **und** `vergleich` | genau dafuer wurde `vergleich` gesammelt |\n| Diff-Zeilen, Status, Prozent | zweiter Rechenweg | Block `vergleich-daten.js:123-160` | Issue-Constraint \u201ekeine zweite Rechenlogik\" |\n| Kennzahlen/Gruppen/Treemap/Wasserfall | neue Aggregatoren | `eckwerte` 186, `gruppenDelta` 227, `treemapDelta` 245, `wasserfall` 277 | lesen nur `zeilen` |\n| Filter, CSV | neue Serialisierer | `filtereZeilen` 406, `alsCsv(zeilen, labelA, labelB)` 431 | schon label-agnostisch |\n| Wasserfall-Beschriftung | neue Chart-Funktion | `chartDiffWasserfall(diff, labelA, labelB)` `dashboard-charts.js:1443` | nimmt Labels als Parameter |\n| Spaltenname/Jahr/Typ | PDF neu lesen, String parsen | `d.spalte_vergleich`, `d.typ`, `d.jahr` aus `DATA.dokumente` | beim Import persistiert (`loader.js:31`) |\n| Kollisionsfreier Sentinel | UUID, Praefix-Schema | fester String; `dokument_id` ist `INTEGER PRIMARY KEY` | Kollision strukturell ausgeschlossen |\n| \u201eHat das Dokument eine Spalte 2?\" | Typ-/Namenspruefung | `hatVergleichsspalte(posten, dokId, haushalt)` ueber `ev`/`fv` | Name existiert ohne Daten (OH-CSV) |\n\n## Architecture Patterns\n\n### Recommended Approach\n\n1. **`vergleich-daten.js`** \u2014 `BASIS_INTERN` exportieren; `interneBasis(aggB)`\n   als **klonende** Projektion; `baueDiff` dreht 120-121 und verzweigt in vier\n   Zeilen; `interneBasisLabel(d)` und `hatVergleichsspalte(posten, dokId,\n   haushalt)` exportieren; `kontrolle()` \u2014 Kommentar 334-336 weg, `raSoll`-Fall\n   dazu, `spalte` beim RA ueber `interneBasisLabel`, interner Modus liefert\n   `{ modus: \"intern\", ausloeser }`.\n2. **`dashboard-data.js`** \u2014 `standardVergleich(dok, posten)`: interne Spalte\n   gewinnt (D1), `posten` optional.\n3. **`vergleich.js`** \u2014 Sichtbarkeitsbedingung (98) datenbasiert; `fuelleAuswahl`\n   um den internen Eintrag und einen 1-Dokument-taugliche Vorbelegung; `vgl-b`\n   baut die Basis-Auswahl neu; ein `basisLabel()`/`basisSpalte()`-Paar fuer\n   Kopf (282, 286, 291), Kennzahlen (330), Wasserfall (407) und CSV (572, 581);\n   dritter Zweig in `zeichneKontrolle`; Tausch-Knopf im internen Modus\n   `disabled`.\n4. **`web/index.html`** \u2014 Ueberschrift/Lead (365-371) und Kontroll-Notiz\n   (400-406) nachziehen.\n5. **Tests** \u2014 Frage 7.\n6. **`docs/BROWSER-APP.md`** \u2014 D4-Nachzug inkl. Entfernen von 118-120.\n\nDie Reihenfolge ist bewusst \u201eEngine zuerst\": Schritt 1 ist vollstaendig in\nNode testbar (`npm run test:js`), ohne Browser. Schritt 3 ist danach reine\nVerdrahtung gegen eine bereits belegte Engine.\n\n### Anti-Patterns to Avoid\n\n- **Ein zweites `baueDiffIntern()`.** Verstoesst direkt gegen den\n  Issue-Constraint und verdoppelt fuenf Aggregatoren.\n- **`kontrolle()` im internen Modus laufen lassen.** Tautologie, die wie ein\n  Beweis aussieht (F1).\n- **`aggB` in-place umschreiben.** Zerstoert die Vergleichsseite still (F2).\n- **Typ- oder namensbasiertes Gating.** Empirisch falsch fuer OH-CSV.\n- **Beschriftung an vier Stellen einzeln zusammensetzen.** Ein Helfer, sonst\n  laufen Kopf, Tabellenkopf, Achse und CSV auseinander \u2014 genau das, was das\n  Akzeptanzkriterium verhindern soll.\n- **Ein zweites Zustandsfeld neben `a`.** Zwei Quellen fuer einen Zustand.\n- **Den Tausch-Knopf umdeuten.** Doppelbedeutung; `vergleich.js:12-15` lehnt\n  genau dieses Muster fuer den Dokument-Umschalter explizit ab.\n\n## Common Pitfalls\n\n### Die Tautologie-Kontrolle\n**Was schiefgeht:** `kontrolle()` laeuft im internen Modus und meldet\n\u201eGeprueft. Alle 1048 belegbaren Haushaltsstellen stimmen ueberein.\"\n**Warum:** `aggA.wert` ist dort per Konstruktion `aggB.vergleich` \u2014 die\nPruefung vergleicht eine Zahl mit sich selbst.\n**Vermeidung:** `baueDiff` ruft `kontrolle()` im internen Modus nicht auf;\nstattdessen `{ modus: \"intern\", ausloeser }`.\n**Warnzeichen:** `kontrolle.geprueft` entspricht der Zeilenzahl des Diffs\n(1048) statt einer kleineren belegbaren Menge; `abweichungen.length === 0` bei\njedem Dokument.\n\n### Die mutierte Basis-Map\n**Was schiefgeht:** ueberall `delta === 0`, `wasserfall.nach` falsch, Treemap\nleer.\n**Warum:** `aggA` wurde durch `e.wert = e.vergleich` auf `aggB` gebildet \u2014\n`wert` und `vergleich` sind danach dasselbe Objekt.\n**Vermeidung:** expliziter Klon (`{ ...e, wert: e.vergleich, vergleich: 0 }`).\n**Warnzeichen:** `status.unveraendert === status.gesamt`; `wasserfall.von ===\nwasserfall.nach`.\n\n### Das typbasierte Gate\n**Was schiefgeht:** ein OH-CSV-Dokument bekommt eine interne Basis; der Diff\nzeigt 1016 Zeilen \u201eneu\" mit Basis 0.\n**Warum:** `spalte_vergleich` wird immer geschrieben (`loader.js:31`), die\nDaten fehlen (`csv-parser.js:330-333`).\n**Vermeidung:** `hatVergleichsspalte` ueber `ev`/`fv`.\n**Warnzeichen:** `eckwerte[0].a === 0`; Statusverteilung fast nur \u201eneu\".\n\n### Der `undefined`-Fallback in `fuelleAuswahl`\n**Was schiefgeht:** TypeError beim Aufbau, sobald der Tab mit **einem**\nDokument sichtbar wird.\n**Warum:** `standardVergleich` liefert `null` (verifiziert), Zeile 136-137\ngreift `docs[docs.length - 2].id` = `docs[-1]`.\n**Vermeidung:** Sichtbarkeit und Vorbelegung im **selben** Schritt aendern.\n**Warnzeichen:** leerer Tab bei genau einem Dokument, Fehler in der Konsole.\n\n### Der veraltete interne Auswahleintrag\n**Was schiefgeht:** nach einem `#vgl-b`-Wechsel steht im Basis-Select noch\n\u201eVA 2026 (laut NVA)\", obwohl `b` nun der RA 2025 ist.\n**Warum:** `vgl-b`-Handler (180-183) ruft `fuelleAuswahl` nicht.\n**Vermeidung:** Basis-Auswahl bei jedem `b`-Wechsel neu aufbauen.\n**Warnzeichen:** Kopfzeile und Select-Label widersprechen sich.\n\n### Der Richtungstausch mit Sentinel\n**Was schiefgeht:** leere Ansicht ohne Fehlermeldung.\n**Warum:** der Sentinel landet in `b`; `aggregiereDokument(posten, \"intern\",\nhh)` liefert eine leere Map.\n**Vermeidung:** Knopf im internen Modus `disabled`.\n**Warnzeichen:** `diff.zeilen.length === 0`, alle Karten 0 EUR.\n\n### Der Klammer-Dateiname\n**Was schiefgeht:** `vergleich_va-2026-(laut-nva)_nva-2026_ehh.csv`.\n**Warum:** `ladeCsv` 580-583 ersetzt nur Whitespace.\n**Vermeidung:** eigene Kurzform fuer den Dateinamen (Klammern entfernen).\n**Warnzeichen:** Klammern im Download-Namen.\n\n## Environment Availability\n\n| Abhaengigkeit | gebraucht von | vorhanden | Version | Rueckfall |\n|---|---|---|---|---|\n| Node | `npm run test:js` | ja | v26.8.1 | \u2014 |\n| `node_modules` **im Worktree** | Tests | **nein** \u2014 Node loest nach oben auf `<repo>/node_modules` auf | \u2014 | `npm install` im Worktree, falls der Haupt-Checkout aufraeumt |\n| `@sqlite.org/sqlite-wasm`, `mupdf` | Tests | ja (ueber den Haupt-Checkout) | s. `package.json` | \u2014 |\n| Loader-Shim | `npm run test:js` | ja | `tests/js/gat-charts-shim.mjs` (`package.json:test:js`) | \u2014 |\n| Playwright | e2e | ja | 1.60.0 | \u2014 |\n| Python | `pytest`, `ruff`, `mypy` | ja | 3.13.5 | \u2014 |\n| Fixtures | Tests | ja | 5 PDFs + 2 OH-CSV-Paare in `documents/` | \u2014 |\n| Netz (ECharts/DS per CDN) | e2e-Rendering | vorausgesetzt | \u2014 | CLAUDE.md: kein Offline-Ziel |\n\n## Project Constraints (from CLAUDE.md)\n\nAus `/Users/florianmotlik/Code/GrueneAT/web-apps/CLAUDE.md` (Workspace) und\n`<worktree>/CLAUDE.md` (Repo):\n\n- **Immer im Worktree arbeiten, nie am `main`-Checkout.** Worktrees entstehen\n  nur ueber `issue-cli`. Aenderungen gehen per **PR** nach `main`.\n- **Kein Vendoring von Drittabhaengigkeiten.** ECharts, Design-System,\n  Schriften per CDN oder Package Manager. Legacy `web/vendor/...` ist Altlast.\n  \u2192 Fuer diesen Issue irrelevant: keine neue Abhaengigkeit.\n- **Es gibt kein Offline-Ziel.** Nichts einbetten oder buendeln.\n- **Browser-App: Vanilla JavaScript, ESM, kein Build-Schritt.** \u2192 Der Modus\n  bleibt in `vergleich-daten.js` / `vergleich.js`; kein Bundler, kein\n  Transpiler, keine neue Datei noetig.\n- **Deutsch in UI-Texten und Code-Bezeichnern.** \u2192 `BASIS_INTERN`,\n  `interneBasis`, `interneBasisLabel`, `hatVergleichsspalte`, `basisLabel`,\n  `ausloeser`, `modus` passen in den Bestand (`zustand`, `fuelleAuswahl`,\n  `rechneUndZeichne`, `zeichneKopf`).\n- **Keine Werkzeug-Attribution** in Commits, Code oder Kommentaren.\n- **Tests muessen gruen bleiben:** `npm run test:js`,\n  `PYTHONPATH=src pytest -q`, `ruff check src tests`, `mypy src`. Dazu\n  `npx playwright test`. \u2192 Die Python-Seite ist von diesem Issue nicht\n  betroffen (per grep geprueft), muss aber gruen bleiben.\n- **Conventional Commit** (ISSUE.md-Constraint).\n- **Deployment** ueber GitHub Pages bei jedem Push auf `main`.\n\nKeine Empfehlung dieser Recherche widerspricht einer dieser Direktiven.\n\n## Sources\n\n### HIGH confidence\n- Codebase-Analyse: `web/js/vergleich-daten.js`, `vergleich.js`,\n  `dashboard-data.js`, `dashboard-charts.js`, `loader.js`, `csv-parser.js`,\n  `dashboard-app.js`, `dashboard.js`, `web/index.html`, `web/schema.sql`,\n  `tests/js/run.mjs`, `tests/e2e/vergleich.spec.mjs`, `docs/BROWSER-APP.md`\n  (jeweils mit Zeilenangabe belegt).\n- **Ausgefuehrte Messungen** gegen die echten Fixtures, Pfad\n  `verarbeitePdf`/`verarbeiteCsvDateien` -> `collect` ->\n  `aggregiereDokument`/`baueDiff`, gefahren mit\n  `node --import ./tests/js/gat-charts-shim.mjs`: interner Diff gegen Spalte 3\n  (5 Dokumente x 2 Haelften), Eckwerte NVA 2026 EHH/FHH, Zeilenzahlen intern\n  vs. zwei Dokumente, D2-Nachrechnung RA 2025 gegen NVA 2025, Spiegelfall\n  VA 2026 Spalte 2 gegen NVA 2025, OH-CSV-Spalte-2-Fuellung,\n  Filter-/Suchverhalten auf dem internen Diff, `standardVergleich` mit einem\n  Dokument, `kontrolle()` fuer NVA-2025->RA-2025. Rohdaten in\n  `research/pitfalls.md`.\n- `git log` (`d3b0511`, PR #36 gemerged; keine offenen Aenderungen auf den\n  Kerndateien).\n- `CLAUDE.md` (Workspace und Repo), `ISSUE.md`, `CONTEXT.md`.\n\n### MEDIUM confidence\n- Die Empfehlung, `dA.typ === \"VA\"` im neuen `raSoll`-Praedikat mitzuzulassen:\n  fachlich schluessig (ohne NVA ist der VA der gueltige Plan) und durch die\n  Fixtures illustriert (191 EHH / 231 FHH Abweichungen = Nachtragseffekt), aber\n  eine Abwaegung, keine Messung.\n- Die Empfehlung, D1 in `standardVergleich` statt in `fuelleAuswahl` zu\n  verorten: Testbarkeitsargument, keine Messung.\n\n### LOW confidence (needs validation)\n- **Nichts.** Es wurde keine Behauptung aus Trainingswissen uebernommen; alle\n  Datenaussagen sind ausgefuehrt, alle Codeaussagen mit `pfad:zeile` belegt.\n\n### Bekannte Unstimmigkeit (offen benannt)\nCONTEXT.md D2 nennt fuer \u201eRA-Soll gegen NVA-Spalte 2\" **138 Posten /\n16.083.400 EUR**; meine je-Haushalt getrennte Nachrechnung ergibt **191\nPosten / 9.211.600 EUR (EHH)** und **231 / 18.238.700 (FHH)**. Die Richtung\nist in beiden Rechnungen identisch und eindeutig (Spalte 1 = 0 Abweichungen,\nSpalte 2 = viele) \u2014 die Zaehlweise unterscheidet sich (D2 hat EHH und FHH\noffenbar in einem Schluesselraum gezaehlt). **Die Entscheidung D2 ist davon\nnicht beruehrt.** Wird die Zahl in `docs/BROWSER-APP.md` zitiert, sollte die\nZaehlweise mit dabeistehen.\n\n## Metadata\n\n**Confidence breakdown:**\n\n| Bereich | Level | Grund |\n|---|---|---|\n| Codebase / Interfaces | HIGH | vollstaendig gelesen, jede Aussage mit Zeilenangabe |\n| Datenaussagen (Spalte 2/3, Eckwerte, OH-CSV) | HIGH | ausgefuehrt gegen die echten Fixtures |\n| `baueDiff`-Signatur | HIGH | folgt aus der Datenflussanalyse: nur `kontrolle()` liest die Aggregate |\n| D2-Bestaetigung | HIGH | unabhaengig nachgerechnet, 0 Abweichungen in beiden Haelften |\n| Testbruch-Liste | HIGH | jede Bruch-/Nicht-Bruch-Aussage gegen die internen Diff-Werte geprueft |\n| Beschriftungsregel | HIGH (Form aus D3 gesetzt) | gegen alle fuenf Fixtures gerendert |\n| `raSoll` mit `dA.typ === \"VA\"` | MEDIUM | Abwaegung, keine Messung |\n| Ort der D1-Vorbelegung | MEDIUM | Abwaegung, keine Messung |\n| Ecosystem / neue Bibliotheken | HIGH (N/A) | kein Bedarf; Bestand per CDN/npm belegt |\n\n**Research date:** 2026-09-28\n**Sub-agents used:** keine \u2014 das `Agent`-Werkzeug stand in dieser Umgebung\nnicht zur Verfuegung. Die drei Mandate (CODEBASE, ECOSYSTEM, PITFALLS) wurden\nsequenziell durchgefuehrt und getrennt abgelegt.\n**Raw research files:** `.issues/n8vmb-vergleich-aus-einem-dokument-die-abgedruckte-vergleichsspalte-als-basis/research/`\n(`codebase.md`, `ecosystem.md`, `pitfalls.md`)\n**MAP.md:** nicht vorhanden (`.issues/MAP.md` existiert nicht) \u2014 Orientierung\nkam aus der direkten Codelektuere.\n"}
+</script>
+
+<script>
+/* Report script - classic script only. No modules, no fetch, no imports. */
+(function () {
+  "use strict";
+  var dataEl = document.getElementById("artifact-source");
+  var target = document.getElementById("artifact-source-target");
+  if (dataEl && target) {
+    try {
+      target.textContent = JSON.parse(dataEl.textContent).source || "";
+    } catch (e) {
+      target.textContent = dataEl.textContent;
+    }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) { ev.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

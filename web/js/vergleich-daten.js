@@ -34,6 +34,12 @@ export const HAUSHALTE = ["EHH", "FHH"]
 // sie anbietet.
 export const STATUS = ["neu", "entfallen", "geaendert", "unveraendert"]
 
+// Basis-Auswahl: dieser Wert steht nicht fuer ein Dokument, sondern fuer die
+// im Vergleichsdokument abgedruckte Vergleichsspalte. Kollisionsfrei, weil
+// dokument_id INTEGER PRIMARY KEY ist (web/schema.sql:19) und Ids ueberall
+// per String(...) verglichen werden.
+export const BASIS_INTERN = "intern"
+
 // Eindeutiger VRV-Schluessel einer Haushaltsstelle.
 export function schluessel(p) {
   return `${p.ansatz}|${p.konto}|${p.richtung}`
@@ -106,19 +112,36 @@ function saldoBeitrag(zeile) {
   return zeile.richtung === "einnahme" ? zeile.delta : -zeile.delta
 }
 
+// Die abgedruckte Vergleichsspalte als Basis-Seite: dieselbe Map, auf dem
+// Feld `vergleich` gelesen. Ein KLON — wuerde `aggB` in-place umgeschrieben
+// (e.wert = e.vergleich), waeren Basis und Vergleich danach dasselbe Objekt
+// und jedes delta 0. Das faellt in keinem bestehenden Test auf.
+function interneBasis(aggB) {
+  const m = new Map()
+  for (const [k, e] of aggB) {
+    m.set(k, { ...e, wert: e.vergleich, vergleich: 0 })
+  }
+  return m
+}
+
 // Der eigentliche Diff.
 //
 //   posten     — DATA.posten (alle Dokumente)
 //   dokumente  — DATA.dokumente (fuer Typ/Jahr und die Selbstkontrolle)
-//   a, b       — dokument_id der Basis und des Vergleichs
+//   a, b       — dokument_id der Basis und des Vergleichs; `a` kann
+//                stattdessen BASIS_INTERN sein — dann ist die Basis-Seite
+//                die im Vergleichsdokument abgedruckte Vergleichsspalte
 //   haushalt   — 'EHH' | 'FHH'
 //
 // Liefert ein Objekt mit Zeilen, Kennzahlen, Aggregaten fuer die Diagramme
 // und dem Ergebnis der Selbstkontrolle.
 export function baueDiff(posten, dokumente, { a, b, haushalt = "EHH" }) {
   const hh = haushalt === "FHH" ? "FHH" : "EHH"
-  const aggA = aggregiereDokument(posten, a, hh)
+  // Die Reihenfolge ist gedreht: aggB ist im internen Modus die Quelle der
+  // Basis-Seite und muss deshalb zuerst stehen.
+  const intern = String(a) === BASIS_INTERN
   const aggB = aggregiereDokument(posten, b, hh)
+  const aggA = intern ? interneBasis(aggB) : aggregiereDokument(posten, a, hh)
 
   const zeilen = []
   const keys = new Set([...aggA.keys(), ...aggB.keys()])
@@ -169,8 +192,38 @@ export function baueDiff(posten, dokumente, { a, b, haushalt = "EHH" }) {
     gruppen: gruppenDelta(zeilen),
     treemap: treemapDelta(zeilen),
     wasserfall: wasserfall(zeilen),
-    kontrolle: kontrolle(aggA, aggB, dokumente, a, b),
+    kontrolle: intern
+      ? internHinweis(dokumente, b)
+      : kontrolle(aggA, aggB, dokumente, a, b),
   }
+}
+
+// Beschriftung der dokumentinternen Basis (CONTEXT.md D3): Spaltenname plus
+// kurze Herkunft. Beim Rechnungsabschluss tritt eine neutrale, zutreffende
+// Form an die Stelle der abgedruckten (CONTEXT.md D2): sein "Soll" ist der
+// Voranschlag INKLUSIVE Nachtrag, die abgedruckte Bezeichnung verschweigt
+// das. Beim Voranschlag ist es umgekehrt — seine Spalte 2 ist der
+// Vorjahres-VA im Original, ohne dessen Nachtrag.
+export function interneBasisLabel(d) {
+  if (!d) return "Basis"
+  if (d.typ === "RA") return `Soll ${d.jahr} (laut RA)`
+  return `${d.spalte_vergleich} (laut ${d.typ})`
+}
+
+// Traegt das Dokument in seiner zweiten Betragsspalte ueberhaupt Zahlen?
+// Nicht am Typ entscheidbar: ein OH-CSV-Dokument traegt den Spaltennamen
+// ("VA 2025", geschrieben in loader.js:31), aber keine Werte — der
+// CSV-Parser setzt nur eh_wert/fh_wert (csv-parser.js:305,307; Kommentar
+// 330-333). Ohne Werte entstuende ein Diff mit Basis 0 auf jeder Zeile.
+// Ohne `haushalt` heisst das "eine der beiden Haelften".
+export function hatVergleichsspalte(posten, dokId, haushalt) {
+  const id = String(dokId)
+  for (const p of posten || []) {
+    if (String(p.dok) !== id) continue
+    if (haushalt !== "FHH" && (p.ev || 0) !== 0) return true
+    if (haushalt !== "EHH" && (p.fv || 0) !== 0) return true
+  }
+  return false
 }
 
 function statusZaehlung(zeilen) {
@@ -317,6 +370,57 @@ function wasserfall(zeilen) {
   return { von, nach, schritte }
 }
 
+// Welches geladene Dokument wuerde die Selbstkontrolle ausloesen?
+//   dB = NVA -> der VA desselben Jahres
+//   dB = VA  -> der VA des Vorjahres
+//   dB = RA  -> der NVA desselben Jahres (sein Soll enthaelt den Nachtrag,
+//               CONTEXT.md D2), sonst der VA desselben Jahres
+function ausloeserFuer(docs, dB) {
+  if (dB.typ === "NVA") {
+    return docs.find((d) => d.typ === "VA" && d.jahr === dB.jahr) || null
+  }
+  if (dB.typ === "VA") {
+    return docs.find((d) => d.typ === "VA" && d.jahr === dB.jahr - 1) || null
+  }
+  if (dB.typ === "RA") {
+    return (
+      docs.find((d) => d.typ === "NVA" && d.jahr === dB.jahr) ||
+      docs.find((d) => d.typ === "VA" && d.jahr === dB.jahr) ||
+      null
+    )
+  }
+  return null
+}
+
+// Rueckgabe im internen Modus — keine Pruefung, sondern ihre Voraussetzung.
+// `kontrolle()` darf hier nicht rechnen: `aggA.wert` ist im internen Modus
+// per Konstruktion `aggB.vergleich`, die Pruefung faende immer 0
+// Abweichungen und schriebe eine Tautologie, die wie ein Beweis aussieht
+// (CONTEXT.md D1). Die Engine liefert stattdessen die Voraussetzung der
+// Pruefung, damit vergleich.js keine Fachlogik traegt.
+function internHinweis(dokumente, b) {
+  const docs = dokumente || []
+  const dB = docs.find((d) => String(d.id) === String(b))
+  if (!dB) return null
+  const gefunden = ausloeserFuer(docs, dB)
+  const erwartetesLabel =
+    dB.typ === "NVA"
+      ? `VA ${dB.jahr}`
+      : dB.typ === "VA"
+        ? `VA ${dB.jahr - 1}`
+        : `NVA ${dB.jahr}`
+  return {
+    modus: "intern",
+    spalte: interneBasisLabel(dB),
+    dokument: dB.label,
+    ausloeser: {
+      label: gefunden ? gefunden.label : erwartetesLabel,
+      geladen: !!gefunden,
+      id: gefunden ? gefunden.id : null,
+    },
+  }
+}
+
 // Selbstkontrolle gegen die abgedruckte Vergleichsspalte.
 //
 // Jedes VRV-Dokument druckt in seiner zweiten Betragsspalte eine
@@ -331,9 +435,14 @@ function wasserfall(zeilen) {
 // beschlossenen ab, und der Nachtrag rechnet gegen die beschlossene. Deshalb
 // heisst das Ergebnis "Abweichung", nicht "Fehler".
 //
-// Der Rechnungsabschluss bleibt bewusst aussen vor: seine Spalte 2 ist das
-// Soll, und das kann den Nachtrag schon enthalten — welches Dokument gemeint
-// ist, laesst sich aus dem Seitenkopf nicht entscheiden.
+// Der Rechnungsabschluss druckt in Spalte 2 sein Soll ab — geprueft an den
+// Herzogenburg-Fixtures RA-2025-Auflage.pdf gegen NVA-2025-Auflage.pdf ist
+// das der Voranschlag INKLUSIVE Nachtrag: gegen die NVA-Spalte 1 ("VA 2025
+// inkl. NVA") 0 Abweichungen, gegen die NVA-Spalte 2 (Original) viele
+// (CONTEXT.md D2). Die Spalte ist damit eindeutig; irrefuehrend ist nur die
+// abgedruckte Bezeichnung "VA Jahr", die den Nachtrag verschweigt — deshalb
+// heisst die Basis dort ueber interneBasisLabel() neutral "Soll Jahr (laut
+// RA)".
 function kontrolle(aggA, aggB, dokumente, a, b) {
   const docs = dokumente || []
   const dA = docs.find((d) => String(d.id) === String(a))
@@ -341,7 +450,16 @@ function kontrolle(aggA, aggB, dokumente, a, b) {
   if (!dA || !dB) return null
   const nva = dB.typ === "NVA" && dA.typ === "VA" && dA.jahr === dB.jahr
   const vaFolge = dB.typ === "VA" && dA.typ === "VA" && dA.jahr === dB.jahr - 1
-  if (!nva && !vaFolge) return null
+  // Der Rechnungsabschluss druckt in Spalte 2 sein Soll ab — den gueltigen
+  // Plan des Jahres, Nachtrag inbegriffen (CONTEXT.md D2). Liegt der NVA
+  // desselben Jahres als Basis vor, ist dessen Spalte 1 dagegen pruefbar.
+  // Ohne NVA ist der VA der gueltige Plan und als Basis legitim; weicht er
+  // ab, ist das die bekannte Fassungsfrage, die der bestehende
+  // Abweichungstext (unten) schon traegt.
+  const raSoll =
+    dB.typ === "RA" && dA.jahr === dB.jahr &&
+    (dA.typ === "NVA" || dA.typ === "VA")
+  if (!nva && !vaFolge && !raSoll) return null
 
   const abweichungen = []
   let geprueft = 0
@@ -381,7 +499,13 @@ function kontrolle(aggA, aggB, dokumente, a, b) {
   }
   abweichungen.sort((x, y) => Math.abs(y.abweichung) - Math.abs(x.abweichung))
   return {
-    spalte: dB.spalte_vergleich || "Vergleichsspalte",
+    // Beim RA verschweigt die abgedruckte Bezeichnung ("VA Jahr") den
+    // Nachtrag (CONTEXT.md D2) — interneBasisLabel() nennt die Herkunft
+    // stattdessen neutral und zutreffend.
+    spalte:
+      dB.typ === "RA"
+        ? interneBasisLabel(dB) || "Vergleichsspalte"
+        : dB.spalte_vergleich || "Vergleichsspalte",
     dokument: dB.label,
     fassung_a: dA.fassung || "",
     fassung_b: dB.fassung || "",

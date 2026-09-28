@@ -14,7 +14,14 @@
 // gleichzeitig zur Wahl. Ein Umschalter mit zwei Bedeutungen waere in beiden
 // Rollen unklar.
 
-import { baueDiff, filtereZeilen, alsCsv } from "./vergleich-daten.js"
+import {
+  baueDiff,
+  filtereZeilen,
+  alsCsv,
+  BASIS_INTERN,
+  interneBasisLabel,
+  hatVergleichsspalte,
+} from "./vergleich-daten.js"
 import {
   chartDiffWasserfall,
   chartDiffGruppen,
@@ -25,6 +32,8 @@ import {
 const LIMIT = 500
 
 // Zustand der Bedienung. Ueberlebt einen Neuaufbau des Dashboards.
+// `a` traegt entweder eine Dokument-Id ODER den Sentinel BASIS_INTERN —
+// kein zweites Zustandsfeld, sonst gibt es zwei Quellen fuer einen Zustand.
 const zustand = {
   a: null,
   b: null,
@@ -88,34 +97,66 @@ function dokLang(d) {
   return d.fassung ? `${d.label} (${d.fassung})` : d.label
 }
 
+// Beschriftung der Basis-Seite — eine Regel, ein Ort. `lang` haengt im
+// Zwei-Dokumente-Fall die Fassung an (Kopfzeile); ueberall sonst bleibt es
+// beim Kurzlabel (Tabellenkopf, Karten, Achse, CSV). Laufen diese Stellen
+// auseinander, ist genau der Unterschied verdeckt, den das Issue sichtbar
+// machen will: "VA 2026 (laut NVA)" gegen ein separat geladenes "VA 2026".
+function basisLabel(lang = false) {
+  if (String(zustand.a) === BASIS_INTERN) {
+    return interneBasisLabel(dokument(zustand.b))
+  }
+  const dA = dokument(zustand.a)
+  if (!dA) return "Basis"
+  return lang ? dokLang(dA) : dA.label
+}
+
+// Die Betragsspalte der Basis fuer den Erklaersatz der Kopfzeile.
+function basisSpalte() {
+  const dB = dokument(zustand.b)
+  if (String(zustand.a) === BASIS_INTERN) {
+    return dB ? `${dB.spalte_vergleich} (abgedruckt im ${dB.label})` : ""
+  }
+  const dA = dokument(zustand.a)
+  return dA ? dA.spalte_wert : ""
+}
+
 // --- Aufbau --------------------------------------------------------------- //
 export function baueVergleich(datenNeu) {
   daten = datenNeu
   const wrap = el("vgl-a")
   if (!wrap) return
 
-  // Weniger als zwei Dokumente: der Tab hat nichts zu vergleichen.
-  const mehrere = (daten.dokumente || []).length >= 2
+  // Vergleichbar ist: zwei Dokumente gegeneinander — oder ein Dokument, das
+  // seine Vergleichszahl selbst abdruckt. Die Pruefung geht ueber die DATEN
+  // (ev/fv), nicht ueber den Typ: ein OH-CSV-Dokument traegt den
+  // Spaltennamen, aber keine Werte (csv-parser.js:330-333). Am Typ gemessen
+  // entstuenden dort still ueber 1000 Zeilen "neu" gegen eine Basis von 0.
+  const docs = daten.dokumente || []
+  const vergleichbar =
+    docs.length >= 2 ||
+    docs.some((d) => hatVergleichsspalte(daten.posten, d.id))
   const panel = document.querySelector('[data-panel="vergleich"]')
   const tabBtn = document.querySelector('.tab-btn[data-tab="vergleich"]')
-  if (tabBtn) tabBtn.hidden = !mehrere
+  if (tabBtn) tabBtn.hidden = !vergleichbar
   if (panel) {
     panel.querySelectorAll(".gat-panel, .stats, .gat-callout").forEach((n) => {
-      n.hidden = !mehrere
+      n.hidden = !vergleichbar
     })
     const hinweis = panel.querySelector(".vgl-leer")
-    if (!mehrere && !hinweis) {
+    if (!vergleichbar && !hinweis) {
       const p = document.createElement("p")
       p.className = "vgl-leer"
       p.textContent =
-        "Fuer einen Vergleich braucht es zwei Dokumente — bitte ein " +
-        "weiteres laden (etwa den Voranschlag zum Nachtragsvoranschlag)."
+        "Fuer einen Vergleich braucht es entweder ein zweites Dokument " +
+        "oder eines, das seine Vergleichszahl selbst abdruckt — eine " +
+        "OH-CSV traegt zwar den Spaltennamen, aber keine Vergleichszahl."
       panel.appendChild(p)
-    } else if (mehrere && hinweis) {
+    } else if (vergleichbar && hinweis) {
       hinweis.remove()
     }
   }
-  if (!mehrere) return
+  if (!vergleichbar) return
 
   fuelleAuswahl()
   fuelleGruppenFilter()
@@ -127,30 +168,67 @@ export function baueVergleich(datenNeu) {
 }
 
 // Basis und Vergleich mit allen Dokumenten fuellen; Vorbelegung aus
-// meta.default_vergleich, sofern der User noch nichts gewaehlt hat.
+// meta.default_vergleich, sofern der User noch nichts gewaehlt hat. `#vgl-a`
+// bekommt zusaetzlich einen internen Eintrag, solange das gewaehlte `b`
+// eine gefuellte Vergleichsspalte fuehrt; `#vgl-b` bleibt eine reine
+// Dokumentliste.
 function fuelleAuswahl() {
   const docs = daten.dokumente
-  const gueltig = (id) => docs.some((d) => String(d.id) === String(id))
-  if (!gueltig(zustand.a) || !gueltig(zustand.b) || zustand.a === zustand.b) {
+  const istDok = (id) => docs.some((d) => String(d.id) === String(id))
+  // Der interne Eintrag gehoert zum gewaehlten Vergleichsdokument: gueltig
+  // nur, solange dieses ueberhaupt Zahlen in seiner zweiten Spalte fuehrt.
+  const internMoeglich = () =>
+    istDok(zustand.b) && hatVergleichsspalte(daten.posten, zustand.b)
+  const gueltigA = (id) => (id === BASIS_INTERN ? internMoeglich() : istDok(id))
+
+  if (!gueltigA(zustand.a) || !istDok(zustand.b) || zustand.a === zustand.b) {
     const v = daten.meta.default_vergleich
-    zustand.a = v ? v.a : docs[docs.length - 2].id
-    zustand.b = v ? v.b : docs[docs.length - 1].id
-  }
-  for (const [id, gewaehlt] of [
-    ["vgl-a", zustand.a],
-    ["vgl-b", zustand.b],
-  ]) {
-    const sel = el(id)
-    sel.innerHTML = ""
-    for (const d of docs) {
-      const o = document.createElement("option")
-      o.value = String(d.id)
-      o.textContent = d.label
-      o.title = dokLang(d)
-      sel.appendChild(o)
+    if (v) {
+      zustand.a = v.a
+      zustand.b = v.b
+    } else if (docs.length >= 2) {
+      zustand.a = docs[docs.length - 2].id
+      zustand.b = docs[docs.length - 1].id
+    } else {
+      // Nur ein Dokument, keine Vorbelegung aus den Daten (theoretisch nur
+      // moeglich, wenn es weder ein Paar noch eine gefuellte Spalte 2 hat) —
+      // ohne diesen Zweig griffe docs[docs.length - 2] ins Leere.
+      zustand.b = docs[docs.length - 1].id
+      zustand.a = BASIS_INTERN
     }
-    sel.value = String(gewaehlt)
   }
+
+  const selA = el("vgl-a")
+  selA.innerHTML = ""
+  if (internMoeglich()) {
+    const o = document.createElement("option")
+    o.value = BASIS_INTERN
+    o.textContent = interneBasisLabel(dokument(zustand.b))
+    o.title =
+      "Die im Vergleichsdokument selbst abgedruckte Vergleichsspalte — " +
+      "keine separat geladene Datei."
+    selA.appendChild(o)
+  }
+  for (const d of docs) {
+    const o = document.createElement("option")
+    o.value = String(d.id)
+    o.textContent = d.label
+    o.title = dokLang(d)
+    selA.appendChild(o)
+  }
+  selA.value = String(zustand.a)
+
+  const selB = el("vgl-b")
+  selB.innerHTML = ""
+  for (const d of docs) {
+    const o = document.createElement("option")
+    o.value = String(d.id)
+    o.textContent = d.label
+    o.title = dokLang(d)
+    selB.appendChild(o)
+  }
+  selB.value = String(zustand.b)
+
   el("vgl-hh").value = zustand.haushalt
 }
 
@@ -179,6 +257,10 @@ function verdrahte() {
   })
   el("vgl-b").addEventListener("change", (ev) => {
     zustand.b = ev.target.value
+    // Das Label des internen Eintrags haengt an b, und bei einem b ohne
+    // Vergleichsspalte muss der Eintrag verschwinden — die Auswahl also
+    // neu bauen, bevor gerechnet wird.
+    fuelleAuswahl()
     rechneUndZeichne()
   })
   el("vgl-hh").addEventListener("change", (ev) => {
@@ -250,7 +332,12 @@ function passeGroesseAn() {
 
 // Diff rechnen und alles zeichnen. Laeuft bei jeder Aenderung der Auswahl.
 function rechneUndZeichne() {
-  if (String(zustand.a) === String(zustand.b)) {
+  // Der Sentinel ist nie ein Dokument und braucht die Ausweichlogik nicht —
+  // docs[i > 0 ? ... ] faende dort ohnehin kein "gleiches" Dokument.
+  if (
+    String(zustand.a) !== BASIS_INTERN &&
+    String(zustand.a) === String(zustand.b)
+  ) {
     const docs = daten.dokumente
     // Gleiche Auswahl auf beiden Seiten ergibt einen leeren Diff — auf das
     // Nachbardokument ausweichen, statt eine leere Ansicht zu zeigen.
@@ -269,26 +356,37 @@ function rechneUndZeichne() {
   zeichneKontrolle()
   zeichneCharts()
   zeichneTabelle()
+
+  // Der Sentinel darf nie in b landen: aggregiereDokument(posten, "intern",
+  // hh) liefert sonst still eine leere Ansicht, ohne Fehlermeldung.
+  const tausch = el("vgl-tausch")
+  if (tausch) {
+    const intern = String(zustand.a) === BASIS_INTERN
+    tausch.disabled = intern
+    tausch.title = intern
+      ? "Im dokumentinternen Vergleich nicht moeglich — die abgedruckte " +
+        "Spalte ist immer die Basis."
+      : ""
+  }
 }
 
 function zeichneKopf() {
-  const dA = dokument(zustand.a)
   const dB = dokument(zustand.b)
   const hh =
     diff.haushalt === "FHH" ? "Finanzierungshaushalt" : "Ergebnishaushalt"
   const kopf = el("vgl-kopf")
   if (kopf) {
     kopf.innerHTML =
-      `<strong>Basis ${escapeHtml(dokLang(dA))}</strong> → ` +
+      `<strong>Basis ${escapeHtml(basisLabel(true))}</strong> → ` +
       `<strong>Vergleich ${escapeHtml(dokLang(dB))}</strong> · ${hh} · ` +
       `${diff.status.gesamt.toLocaleString("de-AT")} Haushaltsstellen<br>` +
       `Gegenuebergestellt werden die Betragsspalten ` +
-      `„${escapeHtml(dA ? dA.spalte_wert : "")}" und ` +
+      `„${escapeHtml(basisSpalte())}" und ` +
       `„${escapeHtml(dB ? dB.spalte_wert : "")}".`
   }
   const thA = el("vgl-th-a")
   const thB = el("vgl-th-b")
-  if (thA) thA.firstChild.textContent = dA ? dA.label : "Basis"
+  if (thA) thA.firstChild.textContent = basisLabel()
   if (thB) thB.firstChild.textContent = dB ? dB.label : "Vergleich"
 
   const s = diff.status
@@ -308,7 +406,6 @@ function zeichneKopf() {
 function zeichneKennzahlen() {
   const ziel = el("vgl-stats")
   if (!ziel) return
-  const dA = dokument(zustand.a)
   const dB = dokument(zustand.b)
   ziel.innerHTML = ""
   for (const k of diff.eckwerte) {
@@ -327,7 +424,7 @@ function zeichneKennzahlen() {
       `<div class="gat-metric-card__num">${euroVz(k.delta)}</div>` +
       `<div class="${klasse}">${prozentVz(k.prozent)}</div>` +
       `<div class="vgl-karte__basis">` +
-      `${dA ? dA.label : "Basis"}: ${euro(k.a)}<br>` +
+      `${basisLabel()}: ${euro(k.a)}<br>` +
       `${dB ? dB.label : "Vergleich"}: ${euro(k.b)}</div>`
     ziel.appendChild(karte)
   }
@@ -343,6 +440,24 @@ function zeichneKontrolle() {
     return
   }
   panel.hidden = false
+  // Interner Modus (CONTEXT.md D1): die Basis IST die abgedruckte Spalte —
+  // eine Gegenprobe gegen sich selbst belegt nichts. Statt "Geprueft" nennt
+  // das Panel, wodurch die Kontrolle ausgeloest wird.
+  if (k.modus === "intern") {
+    const a = k.ausloeser
+    body.innerHTML =
+      `<p class="vgl-pruef">` +
+      `Die Basis <strong>ist</strong> die im ${escapeHtml(k.dokument)} ` +
+      `selbst abgedruckte Spalte „${escapeHtml(k.spalte)}" — eine ` +
+      `Gegenprobe gegen sich selbst belegt nichts. Die Kontrolle laeuft, ` +
+      `sobald oben als Basis das geladene Dokument ` +
+      `„${escapeHtml(a.label)}" gewaehlt wird` +
+      (a.geladen
+        ? "; es ist bereits geladen."
+        : ` — dafuer muesste „${escapeHtml(a.label)}" erst geladen werden.`) +
+      `</p>`
+    return
+  }
   const dA = dokument(zustand.a)
   if (k.bestanden) {
     body.innerHTML =
@@ -399,15 +514,10 @@ function zeichneKontrolle() {
 }
 
 function zeichneCharts() {
-  const dA = dokument(zustand.a)
   const dB = dokument(zustand.b)
   zeichneChart(
     "c_vgl_wasserfall",
-    chartDiffWasserfall(
-      diff,
-      dA ? dA.label : "Basis",
-      dB ? dB.label : "Vergleich",
-    ),
+    chartDiffWasserfall(diff, basisLabel(), dB ? dB.label : "Vergleich"),
   )
   zeichneChart("c_vgl_treemap", chartDiffTreemap(diff))
   zeichneChart("c_vgl_gruppen", chartDiffGruppen(diff))
@@ -565,21 +675,20 @@ function escapeHtml(s) {
 
 function ladeCsv() {
   if (!diff) return
-  const dA = dokument(zustand.a)
   const dB = dokument(zustand.b)
   const zeilen = sortiere(filtereZeilen(diff.zeilen, aktuelleFilter()))
-  const csv = alsCsv(
-    zeilen,
-    dA ? dA.label : "Basis",
-    dB ? dB.label : "Vergleich",
-  )
+  const csv = alsCsv(zeilen, basisLabel(), dB ? dB.label : "Vergleich")
   // BOM, damit Excel die Umlaute in UTF-8 erkennt.
   const blob = new Blob([`﻿${csv}`], {
     type: "text/csv;charset=utf-8",
   })
+  // Klammern raus, sonst wuerde "VA 2026 (laut NVA)" zu
+  // "va-2026-(laut-nva)" — die Herkunft soll trotzdem lesbar bleiben
+  // ("va-2026-laut-nva").
+  const teil = (s) => s.replace(/[()]/g, "").replace(/\s+/g, "-")
   const name =
-    `vergleich_${(dA ? dA.label : "basis").replace(/\s+/g, "-")}_` +
-    `${(dB ? dB.label : "vergleich").replace(/\s+/g, "-")}_` +
+    `vergleich_${teil(basisLabel())}_` +
+    `${teil(dB ? dB.label : "vergleich")}_` +
     `${diff.haushalt}.csv`
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")

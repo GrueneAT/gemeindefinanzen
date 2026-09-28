@@ -357,17 +357,21 @@
       </section>
     </section>
 
-    <!-- Vergleich zweier Dokumente. Die Auswahl A -> B, alle Kennzahlen,
-         Diagramme und die Diff-Tabelle werden von web/js/vergleich.js
-         gefuellt; hier steht nur das Geruest. -->
+    <!-- Vergleich aus einem oder zwei Dokumenten. Die Auswahl A -> B, alle
+         Kennzahlen, Diagramme und die Diff-Tabelle werden von
+         web/js/vergleich.js gefuellt; hier steht nur das Geruest. -->
     <section class="tab-panel" data-panel="vergleich">
       <div class="gat-section-head">
-        <h2>Vergleich zweier Dokumente</h2>
-        <p class="lead">Was hat sich zwischen zwei Dokumenten geaendert — und
-          wo? Verglichen wird Haushaltsstelle fuer Haushaltsstelle ueber den
-          VRV-Schluessel aus Ansatz, Konto und Richtung. Der Vergleich ist
-          damit exakt und nicht geschaetzt; wo das Vergleichsdokument seine
-          Vergleichszahl selbst abdruckt, rechnet die Kontrolle unten nach.</p>
+        <h2>Vergleich</h2>
+        <p class="lead">Was hat sich veraendert — und wo? Verglichen wird
+          Haushaltsstelle fuer Haushaltsstelle ueber den VRV-Schluessel aus
+          Ansatz, Konto und Richtung. Der Vergleich ist damit exakt und nicht
+          geschaetzt. Als Basis dient entweder ein zweites geladenes
+          Dokument oder die im Vergleichsdokument selbst abgedruckte
+          Vergleichsspalte — vorbelegt ist die abgedruckte Spalte, weil sie
+          per Definition die Fassung ist, gegen die das Dokument rechnet.
+          Wird stattdessen ein geladenes Dokument als Basis gewaehlt, rechnet
+          die Kontrolle unten die abgedruckte Spalte nach.</p>
       </div>
 
       <section class="gat-panel">
@@ -395,15 +399,20 @@
       <p class="result-meta vgl-statuszeile" id="vgl-statuszeile"></p>
 
       <!-- Selbstkontrolle — nur sichtbar, wenn das gewaehlte Paar sie
-           zulaesst (siehe kontrolle() in vergleich-daten.js). -->
+           zulaesst (siehe kontrolle() in vergleich-daten.js). Braucht ein
+           GELADENES Basisdokument: eine abgedruckte Spalte gegen sich selbst
+           nachzurechnen belegt nichts. -->
       <section class="gat-panel" id="vgl-kontrolle-panel" hidden>
         <div class="gat-panel__head">
           <h3>Kontrolle gegen die abgedruckte Vergleichsspalte</h3>
-          <p class="gat-panel__note">Das Vergleichsdokument druckt die Zahlen
-            der Basis selbst mit ab. Stimmen beide ueberein, ist dieser
-            Vergleich belegt und nicht nur plausibel. Weichen sie ab, ist das
-            fast immer eine Fassungsfrage — die aufgelegte Version eines
-            Voranschlags ist nicht die beschlossene.</p>
+          <p class="gat-panel__note">Diese Kontrolle braucht ein geladenes
+            Dokument als Basis — eine abgedruckte Spalte gegen sich selbst
+            nachzurechnen belegt nichts. Ist die Basis ein geladenes
+            Dokument, druckt das Vergleichsdokument dessen Zahlen selbst mit
+            ab; stimmen beide ueberein, ist dieser Vergleich belegt und
+            nicht nur plausibel. Weichen sie ab, ist das fast immer eine
+            Fassungsfrage — die aufgelegte Version eines Voranschlags ist
+            nicht die beschlossene.</p>
         </div>
         <div class="gat-panel__body" id="vgl-kontrolle"></div>
       </section>
