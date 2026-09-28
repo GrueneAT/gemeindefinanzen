@@ -11,6 +11,8 @@
 // GitHub Pages zuverlaessig. In Node (Testumgebung) ist `indexedDB`
 // undefiniert — dann arbeitet die App als reine In-Memory-DB ohne Fehler.
 
+import { TYP_ORDER_SQL } from "./reference.js"
+
 const DB_NAME = "gemeindefinanzen.sqlite3"
 const IDB_NAME = "gemeindefinanzen"
 const IDB_STORE = "datenbank"
@@ -339,7 +341,9 @@ export function dokumentEntfernen(db, dokId) {
   })
 }
 
-// Liste der geladenen Dokumente.
+// Liste der geladenen Dokumente, in Entwicklungsreihenfolge des Finanzjahres
+// (VA vor NVA vor RA). Alphabetisch nach `typ` waere NVA, RA, VA — also genau
+// verkehrt.
 export function dokumente(db) {
   return db.abfrage(
     `SELECT dokument_id, gemeinde, typ, finanzjahr, quelldatei, seiten,
@@ -347,6 +351,6 @@ export function dokumente(db) {
             (SELECT COUNT(*) FROM posten
              WHERE posten.dokument_id = dokument.dokument_id
                AND zeilentyp='detail') AS detailposten
-     FROM dokument ORDER BY finanzjahr, typ`,
+     FROM dokument ORDER BY finanzjahr, ${TYP_ORDER_SQL}`,
   )
 }

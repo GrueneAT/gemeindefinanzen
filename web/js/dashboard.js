@@ -856,15 +856,15 @@
   registerChart("c_bindung_a", "dok", "bindung_a");
   registerChart("c_bindung_b", "dok", "bindung_b");
 
-  // Typabhaengige Panels (R3 nur RA, R4 nur VA) ein-/ausblenden, wenn der
-  // User das Dokument wechselt. data-typ-panel="RA"/"VA" ist im Markup
-  // gesetzt.
+  // Typabhaengige Panels (R3 nur RA, R4 nur VA und NVA) ein-/ausblenden,
+  // wenn der User das Dokument wechselt. data-typ-panel traegt im Markup
+  // einen Dokumenttyp oder eine Komma-Liste ("RA", "VA,NVA").
   onDocChange(function (dokId) {
     var dok = docs.find(function (x) { return String(x.id) === String(dokId); });
     if (!dok) return;
     document.querySelectorAll("[data-typ-panel]").forEach(function (panel) {
-      var noetig = panel.dataset.typPanel;
-      panel.hidden = noetig !== dok.typ;
+      var noetig = String(panel.dataset.typPanel || "").split(",");
+      panel.hidden = noetig.indexOf(dok.typ) === -1;
     });
     // ECharts kennt die Groesse erst nach dem Layout — Resize anstossen.
     requestAnimationFrame(resizeVisibleCharts);

@@ -88,3 +88,33 @@ export function kontenklasse(konto) {
   }
   return klassen[konto.slice(0, 1)] || "Sonstige"
 }
+
+// ===========================================================================
+// Dokumenttyp-Reihenfolge — die Entwicklungsreihenfolge eines Finanzjahres
+// ===========================================================================
+// Ein Finanzjahr durchlaeuft immer dieselben Stufen: der Voranschlag wird im
+// Vorjahr beschlossen, ein Nachtragsvoranschlag aendert ihn im laufenden
+// Jahr, der Rechnungsabschluss schliesst es danach ab. Sortierung und
+// Vorbelegung in der ganzen App folgen dieser Reihenfolge — deshalb steht
+// sie hier einmal und wird nicht je Abfrage neu buchstabiert.
+export const TYP_RANG = { VA: 0, NVA: 1, RA: 2 }
+
+// SQL-Ausdruck fuer `ORDER BY finanzjahr, ${TYP_ORDER_SQL}`. Erwartet eine
+// Spalte `typ` im Abfrage-Kontext.
+export const TYP_ORDER_SQL =
+  "CASE typ WHEN 'VA' THEN 0 WHEN 'NVA' THEN 1 WHEN 'RA' THEN 2 ELSE 3 END"
+
+// Rang eines Dokumenttyps; unbekannte Typen hinten.
+export function typRang(typ) {
+  const r = TYP_RANG[String(typ || "").toUpperCase()]
+  return r === undefined ? 3 : r
+}
+
+// Zwei Dokumente in Entwicklungsreihenfolge vergleichen (Jahr, dann Typ).
+// Als Sortierfunktion fuer Arrays von { typ, jahr } verwendbar.
+export function vergleicheDokumente(a, b) {
+  const ja = a.jahr ?? a.finanzjahr ?? 0
+  const jb = b.jahr ?? b.finanzjahr ?? 0
+  if (ja !== jb) return ja - jb
+  return typRang(a.typ) - typRang(b.typ)
+}
