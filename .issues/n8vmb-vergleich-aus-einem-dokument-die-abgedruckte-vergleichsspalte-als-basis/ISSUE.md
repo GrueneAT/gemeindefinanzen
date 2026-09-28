@@ -1,7 +1,7 @@
 ---
 id: n8vmb
 title: 'Vergleich aus einem Dokument: die abgedruckte Vergleichsspalte als Basis'
-status: open
+status: done
 priority: high
 labels:
 - web-app
