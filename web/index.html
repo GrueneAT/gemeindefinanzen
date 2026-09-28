@@ -226,6 +226,7 @@
       </div>
       <div class="tabs gat-tabbar">
         <button class="tab-btn gat-tab" data-tab="ueberblick">Ueberblick</button>
+        <button class="tab-btn gat-tab" data-tab="vergleich">Vergleich</button>
         <button class="tab-btn gat-tab" data-tab="einnahmen">Einnahmen</button>
         <button class="tab-btn gat-tab" data-tab="ausgaben">Ausgaben</button>
         <button class="tab-btn gat-tab" data-tab="investitionen">Investitionen</button>
@@ -354,6 +355,179 @@
           <div id="c_trend_eck" class="dash-chart" style="height:440px"></div>
         </div>
       </section>
+    </section>
+
+    <!-- Vergleich zweier Dokumente. Die Auswahl A -> B, alle Kennzahlen,
+         Diagramme und die Diff-Tabelle werden von web/js/vergleich.js
+         gefuellt; hier steht nur das Geruest. -->
+    <section class="tab-panel" data-panel="vergleich">
+      <div class="gat-section-head">
+        <h2>Vergleich zweier Dokumente</h2>
+        <p class="lead">Was hat sich zwischen zwei Dokumenten geaendert — und
+          wo? Verglichen wird Haushaltsstelle fuer Haushaltsstelle ueber den
+          VRV-Schluessel aus Ansatz, Konto und Richtung. Der Vergleich ist
+          damit exakt und nicht geschaetzt; wo das Vergleichsdokument seine
+          Vergleichszahl selbst abdruckt, rechnet die Kontrolle unten nach.</p>
+      </div>
+
+      <section class="gat-panel">
+        <div class="gat-panel__head"><h3>Auswahl</h3></div>
+        <div class="gat-panel__body">
+          <div class="filterbar">
+            <label>Basis
+              <select id="vgl-a"></select></label>
+            <label>Vergleich
+              <select id="vgl-b"></select></label>
+            <label>Haushalt
+              <select id="vgl-hh">
+                <option value="EHH">Ergebnishaushalt</option>
+                <option value="FHH">Finanzierungshaushalt</option>
+              </select></label>
+            <label class="vgl-tausch-feld">&nbsp;
+              <button type="button" class="gat-btn gat-btn--secondary"
+                id="vgl-tausch">Richtung tauschen</button></label>
+          </div>
+          <p class="result-meta" id="vgl-kopf"></p>
+        </div>
+      </section>
+
+      <div class="stats stats--auto" id="vgl-stats"></div>
+      <p class="result-meta vgl-statuszeile" id="vgl-statuszeile"></p>
+
+      <!-- Selbstkontrolle — nur sichtbar, wenn das gewaehlte Paar sie
+           zulaesst (siehe kontrolle() in vergleich-daten.js). -->
+      <section class="gat-panel" id="vgl-kontrolle-panel" hidden>
+        <div class="gat-panel__head">
+          <h3>Kontrolle gegen die abgedruckte Vergleichsspalte</h3>
+          <p class="gat-panel__note">Das Vergleichsdokument druckt die Zahlen
+            der Basis selbst mit ab. Stimmen beide ueberein, ist dieser
+            Vergleich belegt und nicht nur plausibel. Weichen sie ab, ist das
+            fast immer eine Fassungsfrage — die aufgelegte Version eines
+            Voranschlags ist nicht die beschlossene.</p>
+        </div>
+        <div class="gat-panel__body" id="vgl-kontrolle"></div>
+      </section>
+
+      <section class="gat-panel">
+        <div class="gat-panel__head">
+          <h3>Von Saldo zu Saldo — was den Unterschied macht</h3>
+          <p class="gat-panel__note">Die Bruecke vom Saldo der Basis zum Saldo
+            des Vergleichs, aufgeschluesselt nach Ansatz. Gruen hebt den
+            Saldo, Clay senkt ihn. Die zehn groessten Stufen einzeln, der
+            Rest als „Sonstige".</p>
+        </div>
+        <div class="gat-panel__body">
+          <div id="c_vgl_wasserfall" class="dash-chart" style="height:500px"></div>
+        </div>
+      </section>
+
+      <div class="dash-grid">
+        <section class="gat-panel">
+          <div class="gat-panel__head">
+            <h3>Wo sich etwas bewegt hat</h3>
+            <p class="gat-panel__note">Flaeche ist der Betrag der
+              Veraenderung, Farbe ihre Richtung: Clay fuer eine Erhoehung,
+              Gruen fuer eine Senkung. Gegliedert nach Aufgabengruppe und
+              Ansatz — unveraenderte Ansaetze fehlen.</p>
+          </div>
+          <div class="gat-panel__body">
+            <div id="c_vgl_treemap" class="dash-chart" style="height:470px"></div>
+          </div>
+        </section>
+        <section class="gat-panel">
+          <div class="gat-panel__head">
+            <h3>Veraenderung je Aufgabengruppe</h3>
+            <p class="gat-panel__note">Je Aufgabengruppe die Veraenderung
+              der Einnahmen und der Ausgaben getrennt — der Ueberblick,
+              bevor man in die Tabelle geht.</p>
+          </div>
+          <div class="gat-panel__body">
+            <div id="c_vgl_gruppen" class="dash-chart" style="height:470px"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="gat-panel">
+        <div class="gat-panel__head">
+          <h3>Alle Veraenderungen im Detail</h3>
+          <p class="gat-panel__note">Eine Zeile je Haushaltsstelle. Sortiert
+            nach der Hoehe der Veraenderung; Kopfzeilen sind klickbar.
+            Voreingestellt sind nur die Zeilen, die sich geaendert haben.</p>
+        </div>
+        <div class="gat-panel__body">
+          <div class="filterbar">
+            <label>Volltextsuche
+              <input type="search" class="search" id="vgl-f-such"
+                placeholder="Bezeichnung, Konto, Ansatz ..."></label>
+            <label>Aufgabengruppe
+              <select id="vgl-f-gruppe"><option value="">alle</option></select></label>
+            <label>Richtung
+              <select id="vgl-f-richtung"><option value="">alle</option>
+                <option value="einnahme">Einnahme</option>
+                <option value="ausgabe">Ausgabe</option></select></label>
+            <label>Gebarung
+              <select id="vgl-f-gebarung"><option value="">alle</option>
+                <option value="operativ">operativ</option>
+                <option value="investiv">investiv</option>
+                <option value="finanzierung">finanzierung</option>
+                <option value="ruecklage">ruecklage</option></select></label>
+            <label>Status
+              <select id="vgl-f-status">
+                <option value="veraendert">nur Veraenderungen</option>
+                <option value="">alle</option>
+                <option value="neu">neu</option>
+                <option value="entfallen">entfallen</option>
+                <option value="geaendert">betragsgeaendert</option>
+                <option value="unveraendert">unveraendert</option>
+              </select></label>
+            <label>Veraenderung ab
+              <input type="number" class="betrag" id="vgl-f-schwelle"
+                placeholder="EUR" min="0" step="1000"></label>
+          </div>
+          <p class="result-meta" id="vgl-meta"></p>
+          <p class="mj-actions">
+            <button type="button" class="gat-btn gat-btn--secondary"
+              id="vgl-csv">Gefilterte Tabelle als CSV</button>
+          </p>
+          <div class="table-scroll gat-table-scroll">
+            <table class="dtable gat-table gat-table--zebra gat-table--dense gat-table--sticky-col">
+              <thead><tr>
+                <th class="sortable" data-vkey="gruppe">Gruppe
+                  <span class="arrow"></span></th>
+                <th class="sortable" data-vkey="ansatz">Ansatz
+                  <span class="arrow"></span></th>
+                <th class="sortable" data-vkey="konto">Konto
+                  <span class="arrow"></span></th>
+                <th class="sortable" data-vkey="bezeichnung">Bezeichnung
+                  <span class="arrow"></span></th>
+                <th class="sortable" data-vkey="richtung">Richtung
+                  <span class="arrow"></span></th>
+                <th class="sortable num gat-table__num" data-vkey="a"
+                  id="vgl-th-a">Basis<span class="arrow"></span></th>
+                <th class="sortable num gat-table__num" data-vkey="b"
+                  id="vgl-th-b">Vergleich<span class="arrow"></span></th>
+                <th class="sortable num gat-table__num" data-vkey="delta">
+                  Veraenderung<span class="arrow"></span></th>
+                <th class="sortable num gat-table__num" data-vkey="prozent">
+                  Prozent<span class="arrow"></span></th>
+                <th class="sortable" data-vkey="status">Status
+                  <span class="arrow"></span></th>
+              </tr></thead>
+              <tbody id="vgl-tbody"></tbody>
+            </table>
+          </div>
+          <p class="table-hint" id="vgl-hint"></p>
+        </div>
+      </section>
+
+      <div class="gat-callout">
+        <strong>Wichtige Einordnung</strong>
+        <p>Der Vergleich zeigt, <strong>welche</strong> Zahlen sich geaendert
+          haben — nicht warum. Ein Nachtragsvoranschlag verschiebt Mittel aus
+          sachlichen, rechtlichen und politischen Gruenden; jede Zeile braucht
+          eine eigene Erklaerung. Ergebnis- und Finanzierungshaushalt werden
+          getrennt gerechnet und nie addiert.</p>
+      </div>
     </section>
 
     <section class="tab-panel" data-panel="einnahmen">

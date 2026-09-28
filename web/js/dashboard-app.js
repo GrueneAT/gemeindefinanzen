@@ -2,8 +2,9 @@
 //
 // baueDashboard(db) baut ueber dashboard-data.js/dashboard-charts.js dieselben
 // DATA-/CFG-Objekte wie die Python-Pipeline, ergaenzt die dokumentabhaengigen
-// Bedienelemente (Dokument-Umschalter, Filter-Auswahl) und laedt dann die
-// unveraenderte Dashboard-Logik aus web/js/dashboard.js.
+// Bedienelemente (Dokument-Umschalter, Filter-Auswahl), baut den
+// Vergleichs-Tab (web/js/vergleich.js) und laedt dann die unveraenderte
+// Dashboard-Logik aus web/js/dashboard.js.
 //
 // Die Datenbank wird hereingereicht — dieses Modul oeffnet selbst keine DB.
 // app.js oeffnet die DB einmal und ruft baueDashboard mit derselben Instanz
@@ -13,6 +14,7 @@
 import { collect, istPflichtumlage } from "./dashboard-data.js"
 import { alleCharts } from "./dashboard-charts.js"
 import { buildSankeyOption } from "./sankey-drill.js"
+import { baueVergleich } from "./vergleich.js"
 
 // Das Dashboard fuer eine bereits geoeffnete Datenbank aufbauen. Liefert
 // true, wenn Dokumente vorhanden sind und das Dashboard sichtbar gemacht
@@ -31,6 +33,10 @@ export function baueDashboard(db) {
   baueSwitcher(daten)
   fuelleFilter(daten)
   inhalt.hidden = false
+  // Der Vergleichs-Tab haengt nicht am Dokument-Umschalter und baut sich
+  // selbst auf — er braucht nur die gesammelten Daten. Nach inhalt.hidden,
+  // weil ECharts sonst in ein unsichtbares Panel misst.
+  baueVergleich(daten)
 
   // DATA und CFG global bereitstellen — dashboard.js liest diese Namen.
   window.DATA = daten

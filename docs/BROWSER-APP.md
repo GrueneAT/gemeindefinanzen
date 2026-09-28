@@ -45,6 +45,8 @@ index.html   Dokumentverwaltung + Dashboard (Tabs, Umschalter, Suche,
 | `dashboard-charts.js` | `report/charts.py` | ECharts-Optionen (CFG) bauen |
 | `app.js` | — | Seiten-Controller: Dokumentverwaltung + Dashboard |
 | `dashboard-app.js` | `report/html.py` | `baueDashboard(db)` — Dashboard aufbauen |
+| `vergleich-daten.js` | — | Diff zweier Dokumente (rein rechnend) |
+| `vergleich.js` | — | Oberflaeche des Vergleichs-Tabs |
 
 `web/css/dashboard.css` und `web/js/dashboard.js` sind die **verbatim**
 aus dem Python-Report (`report/assets.py`) uebernommenen Darstellungs-Assets.
@@ -56,13 +58,66 @@ Python-Pipeline — das Dashboard verhaelt sich damit identisch.
 mupdf.js ist dieselbe Engine wie PyMuPDF und laeuft auch in Node. Der JS-Port
 wird deshalb in Node gegen den Python-Parser geprueft:
 
-- `npm run test:js` (bzw. `make web-test`) parst alle vier PDFs in
-  `documents/` und vergleicht Posten, Betraege und Pruefstatus gegen die
+- `npm run test:js` (bzw. `make web-test`) parst alle fuenf Herzogenburg-PDFs
+  in `documents/` und vergleicht Posten, Betraege und Pruefstatus gegen die
   Python-Referenzwerte.
 - Die portierte Plausibilitaetspruefung besteht je Dokument 5/5 (20/20
   gesamt) — identisch zur Python-Seite.
 - Die Dashboard-Objekte `DATA` und `CFG` sind byte-gleich zu denen, die
   `report/data.py` und `report/charts.py` erzeugen.
+
+## Dokumenttypen: Reihenfolge und Vergleich
+
+Ein Finanzjahr durchlaeuft immer dieselben Stufen, und in dieser Reihenfolge
+sortiert die App ueberall — Umschalter, Achsen, Dokumentliste, Vorbelegung:
+
+| Stufe | wann | Spalte 1 | Spalte 2 | Spalte 3 |
+|-------|------|----------|----------|----------|
+| **VA** Voranschlag | im Vorjahr beschlossen | VA Jahr | VA Vorjahr | RA Vorvorjahr |
+| **NVA** Nachtragsvoranschlag | im laufenden Jahr | VA Jahr inkl. NVA | VA Jahr | 1. NVA |
+| **RA** Rechnungsabschluss | nach Jahresende | RA Jahr (Ist) | VA Jahr | Abweichung RA-VA |
+
+Der Rang steht einmal in `reference.js` (`TYP_RANG`, `TYP_ORDER_SQL`,
+`typRang`, `vergleicheDokumente`) und wird von `dashboard-data.js` und `db.js`
+von dort bezogen. Alphabetisch nach Typ zu sortieren waere NVA, RA, VA — also
+genau verkehrt. Die Vorbelegung des Dashboards ist das juengste **gueltige**
+Planungsdokument: liegt zu einem Voranschlag ein Nachtrag vor, gewinnt der
+Nachtrag.
+
+### Der Vergleich zweier Dokumente
+
+Der Vergleichs-Tab stellt zwei Dokumente gegeneinander — Haushaltsstelle fuer
+Haushaltsstelle. Der Schluessel ist das VRV-Tripel **(Ansatz, Konto,
+Richtung)**; im Detailnachweis eines PDF kommt jede Kombination genau einmal
+vor, der Vergleich ist damit exakt und braucht kein Namens-Matching.
+
+Aggregiert wird trotzdem, aus einem Formatgrund: ein OH-CSV-Dokument fuehrt
+Ergebnis- und Finanzierungshaushalt in **getrennten** Zeilen, ein PDF-Dokument
+beide Haelften in **einer**. Die Summe je Schluessel und Haushaltshaelfte ist
+in beiden Faellen dieselbe Zahl.
+
+Ergebnis- und Finanzierungshaushalt werden getrennt gerechnet und nie addiert;
+der Tab hat dafuer einen eigenen Umschalter.
+
+**Selbstkontrolle.** Jedes Dokument druckt seine Vergleichszahl mit ab (Spalte
+2 der Tabelle oben). Ist das Basisdokument des Vergleichs genau dieses
+Dokument — ein Nachtrag gegen den Voranschlag desselben Jahres, ein
+Voranschlag gegen den des Vorjahres —, rechnet `kontrolle()` die geladene
+Basis gegen die abgedruckte Spalte nach. Der Diff ist dann belegt und nicht
+nur plausibel.
+
+Weicht es ab, ist das in der Praxis eine **Fassungsfrage**: die zur Auflage
+aufgelegte Version eines Voranschlags ist nicht die beschlossene, und der
+Nachtrag rechnet gegen die beschlossene. Die Herzogenburg-Fixtures zeigen
+genau das — `VA-2026-Auflage.pdf` kennt die Community Nurse noch nicht
+(Aufwand 100.600, Ertrag 100.000), die Vergleichsspalte des
+`NVA-2026-Auflage.pdf` schon. Die beschlossene Fassung liegt als OH-CSV-Paar
+(`offenerhaushalt_31912_2026_va_*.csv`) daneben und stimmt mit der
+Vergleichsspalte des Nachtrags auf allen Haushaltsstellen ueberein.
+
+Der Rechnungsabschluss bleibt von der Kontrolle bewusst ausgenommen: seine
+Spalte 2 ist das Soll, und das kann den Nachtrag schon enthalten — welches
+Dokument gemeint ist, laesst sich aus dem Seitenkopf nicht entscheiden.
 
 ## Datenhaltung
 

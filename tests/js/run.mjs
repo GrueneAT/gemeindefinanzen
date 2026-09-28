@@ -27,8 +27,20 @@ import { verarbeitePdf, verarbeiteCsvDateien } from "../../web/js/pipeline.js"
 import {
   parseCsvBytes, synthAggregate, mergeParseResults,
 } from "../../web/js/csv-parser.js"
-import { collect } from "../../web/js/dashboard-data.js"
-import { alleCharts } from "../../web/js/dashboard-charts.js"
+import { collect, standardVergleich } from "../../web/js/dashboard-data.js"
+import {
+  baueDiff,
+  filtereZeilen,
+  aggregiereDokument,
+  alsCsv,
+} from "../../web/js/vergleich-daten.js"
+import { typRang, vergleicheDokumente } from "../../web/js/reference.js"
+import {
+  alleCharts,
+  chartDiffWasserfall,
+  chartDiffGruppen,
+  chartDiffTreemap,
+} from "../../web/js/dashboard-charts.js"
 import {
   buildSankeyOption,
   quelleVonPosten,
@@ -63,6 +75,7 @@ function pruefe(name, bedingung, detail = "") {
 // Anzahl Detail-/Summe-/Saldoposten je Dokument.
 const ERWARTET = {
   "NVA-2025-Auflage.pdf": { detail: 1254, summe: 702, saldo: 819 },
+  "NVA-2026-Auflage.pdf": { detail: 1114, summe: 696, saldo: 812 },
   "RA 2024-Auflage.pdf": { detail: 1395, summe: 798, saldo: 684 },
   "RA-2025-Auflage.pdf": { detail: 1358, summe: 777, saldo: 666 },
   "VA-2026-Auflage.pdf": { detail: 1408, summe: 690, saldo: 805 },
@@ -70,7 +83,8 @@ const ERWARTET = {
 
 // Fest gepinnte Herzogenburg-Fixtures: der Test darf NICHT den ganzen
 // documents/-Ordner globben, sonst verschieben zusaetzliche PDFs anderer
-// Gemeinden die Erwartungswerte (4 Dokumente, 20/20, 5415 Posten).
+// Gemeinden die Erwartungswerte (5 Dokumente, 5 x 52 Pruefungen,
+// 6529 Posten).
 const FIXTURES = Object.keys(ERWARTET).sort()
 
 function pdfBytes(name) {
@@ -244,8 +258,8 @@ async function teste() {
     readFileSync(join(WURZEL, "web/sql/01-eckwerte.sql"), "utf8"),
   )
   pruefe(
-    "sql/01-eckwerte.sql liefert 4 Zeilen",
-    eckwerte.length === 4,
+    "sql/01-eckwerte.sql liefert 5 Zeilen",
+    eckwerte.length === 5,
     `${eckwerte.length}`,
   )
   // VA 2026: Nettoergebnis 474200 (Referenz: Python-Pipeline)
@@ -258,13 +272,13 @@ async function teste() {
 
   console.log("\ndashboard — DATA/CFG-Aufbau")
   const daten = collect(db)
-  pruefe("DATA: 4 Dokumente", daten.meta.dok_anzahl === 4)
-  pruefe("DATA: 5415 Posten", daten.meta.posten_anzahl === 5415,
+  pruefe("DATA: 5 Dokumente", daten.meta.dok_anzahl === 5)
+  pruefe("DATA: 6529 Posten", daten.meta.posten_anzahl === 6529,
     String(daten.meta.posten_anzahl))
   const cfg = alleCharts(daten)
   pruefe(
     "CFG: dok_charts je Dokument",
-    Object.keys(cfg.dok_charts).length === 4,
+    Object.keys(cfg.dok_charts).length === 5,
   )
   pruefe("CFG: trend_charts vorhanden", "trend_eck" in cfg.trend_charts)
 
@@ -945,7 +959,7 @@ async function teste() {
   const dokNach = db2.wert("SELECT COUNT(*) FROM dokument")
   pruefe(
     "Persistenz-Round-Trip stellt Dokumente und Posten exakt wieder her",
-    postenVor === postenNach && dokVor === dokNach && dokNach === 4,
+    postenVor === postenNach && dokVor === dokNach && dokNach === 5,
     `${dokVor}/${postenVor} -> ${dokNach}/${postenNach}`,
   )
   db2.close()
@@ -1033,6 +1047,320 @@ async function teste() {
   } else {
     console.log("  SKIP web/gemeinden-index.json fehlt — `node scripts/oh-gemeinde-index.mjs`")
   }
+
+  // ======================================================================
+  // Entwicklungsreihenfolge der Dokumenttypen
+  // ======================================================================
+  console.log("\nreference — Entwicklungsreihenfolge VA -> NVA -> RA")
+  pruefe(
+    "typRang: VA vor NVA vor RA",
+    typRang("VA") < typRang("NVA") && typRang("NVA") < typRang("RA"),
+    `${typRang("VA")}/${typRang("NVA")}/${typRang("RA")}`,
+  )
+  pruefe("typRang: unbekannter Typ hinten", typRang("XX") === 3)
+  pruefe(
+    "vergleicheDokumente sortiert Jahr vor Typ",
+    JSON.stringify(
+      [
+        { typ: "RA", jahr: 2026 },
+        { typ: "VA", jahr: 2026 },
+        { typ: "NVA", jahr: 2025 },
+        { typ: "NVA", jahr: 2026 },
+      ]
+        .sort(vergleicheDokumente)
+        .map((d) => `${d.typ}${d.jahr}`),
+    ) === JSON.stringify(["NVA2025", "VA2026", "NVA2026", "RA2026"]),
+  )
+  // DATA.dokumente kommt aus SQL und muss dieselbe Reihenfolge liefern.
+  pruefe(
+    "DATA.dokumente in Entwicklungsreihenfolge",
+    JSON.stringify(datenPK.dokumente.map((d) => d.label)) ===
+      JSON.stringify([
+        "RA 2024",
+        "NVA 2025",
+        "RA 2025",
+        "VA 2026",
+        "NVA 2026",
+      ]),
+    JSON.stringify(datenPK.dokumente.map((d) => d.label)),
+  )
+  // Der Nachtragsvoranschlag ist das gueltige Planungsdokument und damit die
+  // Vorbelegung — nicht der davon ueberholte Voranschlag.
+  const defDok = datenPK.dokumente.find(
+    (d) => String(d.id) === String(datenPK.meta.default_dok),
+  )
+  pruefe(
+    "default_dok ist der juengste NVA, nicht der VA desselben Jahres",
+    defDok.typ === "NVA" && defDok.jahr === 2026,
+    `${defDok.typ} ${defDok.jahr}`,
+  )
+  // Der Nachtragsvoranschlag ist ein Planungsdokument — das
+  // Budgetierungspolster gilt fuer ihn genauso wie fuer den Voranschlag.
+  pruefe(
+    "agg.polster ist Array auch bei NVA-Dokument",
+    Array.isArray(datenPK.aggregate[String(defDok.id)].polster),
+    typeof datenPK.aggregate[String(defDok.id)].polster,
+  )
+  // Die Vorbelegung des Vergleichs ist das VA/NVA-Paar desselben Jahres.
+  const stdV = datenPK.meta.default_vergleich
+  const stdA = datenPK.dokumente.find((d) => String(d.id) === String(stdV.a))
+  const stdB = datenPK.dokumente.find((d) => String(d.id) === String(stdV.b))
+  pruefe(
+    "default_vergleich ist VA 2026 -> NVA 2026",
+    stdA.label === "VA 2026" && stdB.label === "NVA 2026",
+    `${stdA && stdA.label} -> ${stdB && stdB.label}`,
+  )
+  pruefe(
+    "standardVergleich mit einem Dokument liefert null",
+    standardVergleich([{ id: 1, typ: "VA", jahr: 2026 }]) === null,
+  )
+  pruefe(
+    "standardVergleich ohne NVA nimmt die zwei juengsten",
+    JSON.stringify(
+      standardVergleich([
+        { id: 7, typ: "RA", jahr: 2024 },
+        { id: 8, typ: "VA", jahr: 2025 },
+        { id: 9, typ: "VA", jahr: 2026 },
+      ]),
+    ) === JSON.stringify({ a: 8, b: 9 }),
+  )
+
+  // ======================================================================
+  // Diff-Engine — Vergleich VA 2026 gegen NVA 2026
+  // ======================================================================
+  console.log("\nvergleich-daten — Diff zweier Dokumente")
+  const dVa = datenPK.dokumente.find((d) => d.label === "VA 2026")
+  const dNva = datenPK.dokumente.find((d) => d.label === "NVA 2026")
+
+  // Der VRV-Schluessel (Ansatz, Konto, Richtung) ist im Detailnachweis
+  // eindeutig — das ist die Voraussetzung dafuer, dass der Diff exakt ist.
+  const aggNva = aggregiereDokument(datenPK.posten, dNva.id, "EHH")
+  const postenNva = datenPK.posten.filter(
+    (p) => String(p.dok) === String(dNva.id),
+  )
+  pruefe(
+    "VRV-Schluessel ist im Dokument eindeutig (1114 Posten, 1114 Schluessel)",
+    postenNva.length === 1114 && aggNva.size === 1114,
+    `${postenNva.length} Posten / ${aggNva.size} Schluessel`,
+  )
+
+  const dEhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dVa.id,
+    b: dNva.id,
+    haushalt: "EHH",
+  })
+  // Referenz: die Summenzeilen der Anlage 1a des NVA 2026 (Seite 19)
+  // weisen 23.330.800 Ertraege und 22.569.100 Aufwendungen aus.
+  const kEin = dEhh.eckwerte.find((k) => k.titel === "Ertraege")
+  const kAus = dEhh.eckwerte.find((k) => k.titel === "Aufwendungen")
+  const kNet = dEhh.eckwerte.find((k) => k.titel === "Nettoergebnis")
+  pruefe(
+    "EHH: Ertraege des NVA == 23330800 (Anlage 1a)",
+    kEin.b === 23330800,
+    String(kEin.b),
+  )
+  pruefe(
+    "EHH: Aufwendungen des NVA == 22569100 (Anlage 1a)",
+    kAus.b === 22569100,
+    String(kAus.b),
+  )
+  pruefe(
+    "EHH: Nettoergebnis des NVA == 761700 (Anlage 1a)",
+    kNet.b === 761700,
+    String(kNet.b),
+  )
+  pruefe(
+    "EHH: Nettoergebnis-Delta == Ertrags- minus Aufwands-Delta",
+    kNet.delta === kEin.delta - kAus.delta,
+    `${kNet.delta} vs ${kEin.delta - kAus.delta}`,
+  )
+  // Der Wasserfall muss aufgehen: die Summe aller Stufen ist genau die
+  // Differenz der beiden Saldi, sonst fehlt oder doppelt ein Beitrag.
+  const wSumme = dEhh.wasserfall.schritte.reduce((x, e) => x + e.beitrag, 0)
+  pruefe(
+    "EHH: Wasserfall-Stufen summieren sich auf die Saldo-Differenz",
+    wSumme === dEhh.wasserfall.nach - dEhh.wasserfall.von,
+    `${wSumme} vs ${dEhh.wasserfall.nach - dEhh.wasserfall.von}`,
+  )
+  pruefe(
+    "EHH: Statuszaehlung summiert sich auf die Zeilenzahl",
+    dEhh.status.neu +
+      dEhh.status.entfallen +
+      dEhh.status.geaendert +
+      dEhh.status.unveraendert ===
+      dEhh.zeilen.length,
+  )
+  pruefe(
+    "EHH: Zeilen nach Betrag der Veraenderung sortiert",
+    dEhh.zeilen.every(
+      (r, i) =>
+        i === 0 || Math.abs(dEhh.zeilen[i - 1].delta) >= Math.abs(r.delta),
+    ),
+  )
+  pruefe(
+    "EHH: keine Zeile mit Null in beiden Dokumenten",
+    dEhh.zeilen.every((r) => r.a !== 0 || r.b !== 0),
+  )
+  // Die Gruppen-Aggregation darf nichts verlieren.
+  const gSumme = dEhh.gruppen.reduce((x, g) => x + g.einnahme + g.ausgabe, 0)
+  const zSumme = dEhh.zeilen.reduce((x, r) => x + r.delta, 0)
+  pruefe(
+    "EHH: Gruppen-Aggregation erhaelt die Summe der Veraenderungen",
+    gSumme === zSumme,
+    `${gSumme} vs ${zSumme}`,
+  )
+
+  // Finanzierungshaushalt: eigene Kennzahlen, investive Auszahlungen dabei.
+  const dFhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dVa.id,
+    b: dNva.id,
+    haushalt: "FHH",
+  })
+  pruefe(
+    "FHH: vier Kennzahlen inkl. investiver Auszahlungen",
+    dFhh.eckwerte.length === 4 &&
+      dFhh.eckwerte[3].titel.includes("investive"),
+    JSON.stringify(dFhh.eckwerte.map((k) => k.titel)),
+  )
+  pruefe(
+    "FHH: investive Auszahlungen 13361100 -> 11556900",
+    dFhh.eckwerte[3].a === 13361100 && dFhh.eckwerte[3].b === 11556900,
+    `${dFhh.eckwerte[3].a} -> ${dFhh.eckwerte[3].b}`,
+  )
+  pruefe(
+    "EHH und FHH werden getrennt gerechnet (verschiedene Summen)",
+    dEhh.eckwerte[0].b !== dFhh.eckwerte[0].b,
+  )
+
+  // Richtungstausch spiegelt jede Veraenderung.
+  const dTausch = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dNva.id,
+    b: dVa.id,
+    haushalt: "EHH",
+  })
+  pruefe(
+    "Tausch der Richtung spiegelt die Veraenderung",
+    dTausch.zeilen.length === dEhh.zeilen.length &&
+      dTausch.zeilen.reduce((x, r) => x + r.delta, 0) === -zSumme,
+  )
+
+  // Selbstkontrolle: der NVA druckt den Voranschlag in seiner zweiten Spalte
+  // mit ab. Die aufgelegte Fassung des VA 2026 weicht davon in genau einer
+  // Sache ab — die Community Nurse fehlt ihr (Aufwand 100.600, Ertrag
+  // 100.000). Genau das soll die Kontrolle finden.
+  pruefe(
+    "Kontrolle laeuft fuer das Paar VA -> NVA desselben Jahres",
+    dEhh.kontrolle !== null && dEhh.kontrolle.spalte === "VA 2026",
+    dEhh.kontrolle && dEhh.kontrolle.spalte,
+  )
+  pruefe(
+    "Kontrolle findet die Fassungsdifferenz (2 Stellen, 200600 EUR)",
+    dEhh.kontrolle.abweichungen.length === 2 &&
+      dEhh.kontrolle.summeAbweichung === 200600,
+    JSON.stringify({
+      n: dEhh.kontrolle.abweichungen.length,
+      summe: dEhh.kontrolle.summeAbweichung,
+    }),
+  )
+  pruefe(
+    "Kontrolle benennt die betroffene Haushaltsstelle (Community Nurse)",
+    dEhh.kontrolle.abweichungen.every((r) => r.ansatz === "429000"),
+    JSON.stringify(dEhh.kontrolle.abweichungen.map((r) => r.ansatz)),
+  )
+  pruefe(
+    "Kontrolle entfaellt fuer ein Paar, das sie nicht belegen kann",
+    baueDiff(datenPK.posten, datenPK.dokumente, {
+      a: datenPK.dokumente.find((d) => d.label === "RA 2024").id,
+      b: dNva.id,
+      haushalt: "EHH",
+    }).kontrolle === null,
+  )
+
+  // Filter
+  console.log("\nvergleich-daten — Filter und Export")
+  pruefe(
+    "Filter 'nur Veraenderungen' entfernt die unveraenderten Zeilen",
+    filtereZeilen(dEhh.zeilen, { status: "veraendert" }).length ===
+      dEhh.zeilen.length - dEhh.status.unveraendert,
+  )
+  pruefe(
+    "Filter Richtung wirkt",
+    filtereZeilen(dEhh.zeilen, { richtung: "ausgabe" }).every(
+      (r) => r.richtung === "ausgabe",
+    ),
+  )
+  pruefe(
+    "Filter Schwelle laesst nur grosse Veraenderungen durch",
+    filtereZeilen(dEhh.zeilen, { schwelle: 50000 }).every(
+      (r) => Math.abs(r.delta) >= 50000,
+    ),
+  )
+  pruefe(
+    "Filter Volltext findet die Kommunalsteuer",
+    filtereZeilen(dEhh.zeilen, { suche: "kommunalsteuer" }).length > 0,
+  )
+  pruefe(
+    "Filter kombiniert (Gruppe + Status + Schwelle)",
+    filtereZeilen(dEhh.zeilen, {
+      gruppe: "6",
+      status: "veraendert",
+      schwelle: 10000,
+    }).every(
+      (r) =>
+        r.gruppe === "6" &&
+        r.status !== "unveraendert" &&
+        Math.abs(r.delta) >= 10000,
+    ),
+  )
+  const csv = alsCsv(dEhh.zeilen.slice(0, 3), "VA 2026", "NVA 2026")
+  const csvZeilen = csv.split("\n")
+  pruefe(
+    "CSV-Export: Kopfzeile traegt die Dokumentlabels",
+    csvZeilen[0].includes("VA 2026") && csvZeilen[0].includes("NVA 2026"),
+    csvZeilen[0],
+  )
+  pruefe(
+    "CSV-Export: eine Zeile je Posten, gleiche Spaltenzahl",
+    csvZeilen.length === 4 &&
+      csvZeilen.every((z) => z.split(";").length === 14),
+  )
+
+  // Diagramm-Vorlagen der Diff-Ansicht
+  console.log("\ndashboard-charts — Diagramme der Vergleichsansicht")
+  const cW = chartDiffWasserfall(dEhh, "VA 2026", "NVA 2026")
+  pruefe(
+    "chartDiffWasserfall: Sockel- und Wertreihe gleich lang",
+    cW.series[0].data.length === cW.series[1].data.length &&
+      cW.series[0].data.length === cW.xAxis.data.length,
+  )
+  pruefe(
+    "chartDiffWasserfall: erste und letzte Kategorie sind die Dokumente",
+    cW.xAxis.data[0] === "VA 2026" &&
+      cW.xAxis.data[cW.xAxis.data.length - 1] === "NVA 2026",
+  )
+  const cG = chartDiffGruppen(dEhh)
+  pruefe(
+    "chartDiffGruppen: zwei Reihen (Ertraege, Aufwendungen)",
+    cG.series.length === 2 &&
+      cG.series[0].name.includes("Ertraege") &&
+      cG.series[1].name.includes("Aufwendungen"),
+    JSON.stringify(cG.series.map((r) => r.name)),
+  )
+  pruefe(
+    "chartDiffGruppen: FHH benennt Ein- und Auszahlungen",
+    chartDiffGruppen(dFhh).series[0].name.includes("Einzahlungen"),
+  )
+  const cT = chartDiffTreemap(dEhh)
+  pruefe(
+    "chartDiffTreemap: Knoten tragen Betrag und Vorzeichen",
+    cT.series[0].data.length > 0 &&
+      cT.series[0].data.every((g) =>
+        g.children.every(
+          (k) => k.value >= 0 && typeof k.delta === "number" &&
+            k.itemStyle.color.startsWith("#"),
+        ),
+      ),
+  )
 
   console.log(
     `\n${bestanden} bestanden, ${fehlgeschlagen} fehlgeschlagen`,

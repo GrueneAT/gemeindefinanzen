@@ -28,11 +28,24 @@ Upload ins Netz, keine Konten.
 - Dokumentverwaltung und Dashboard auf **einer Seite** — die Verwaltung oben
   (einklappbar), darunter das Dashboard.
 
-**Dashboard:** sieben Themen-Tabs (Überblick, Einnahmen, Ausgaben,
-Investitionen, Transfers & Umlagen, Sparpotenzial, Suche & Daten), ein
-Dokument-Umschalter für den Jahresvergleich, Volltextsuche und Filter über
-alle Posten, Drill-down Aufgabengruppe → Ansatz → Posten sowie ein
-Mehrjahres-Vergleich einzelner Posten oder Gruppen als Liniendiagramm.
+**Dashboard:** neun Themen-Tabs (Überblick, Vergleich, Einnahmen, Ausgaben,
+Investitionen, Transfers & Umlagen, Schulden & Finanzierung, Sparpotenzial,
+Suche & Daten), ein Dokument-Umschalter für den Jahresvergleich,
+Volltextsuche und Filter über alle Posten, Drill-down Aufgabengruppe →
+Ansatz → Posten sowie ein Mehrjahres-Vergleich einzelner Posten oder Gruppen
+als Liniendiagramm.
+
+**Vergleich zweier Dokumente:** Der Vergleichs-Tab stellt zwei beliebige
+geladene Dokumente gegeneinander — typischerweise den Voranschlag und den
+Nachtragsvoranschlag desselben Jahres. Verglichen wird Haushaltsstelle für
+Haushaltsstelle über den VRV-Schlüssel (Ansatz, Konto, Richtung); der Diff
+ist damit exakt und braucht kein Namens-Matching. Kennzahlen-Karten, eine
+Wasserfall-Brücke von Saldo zu Saldo, eine Treemap der Veränderungen, die
+Veränderung je Aufgabengruppe und eine filter- und sortierbare Diff-Tabelle
+mit CSV-Export. Weil jedes VRV-Dokument seine Vergleichszahl selbst
+abdruckt, **prüft die App ihren eigenen Diff** gegen das Original und meldet
+Abweichungen — die sind in der Praxis ein Hinweis darauf, dass die geladene
+Fassung des Voranschlags nicht die beschlossene ist.
 
 ### Lokal starten
 
