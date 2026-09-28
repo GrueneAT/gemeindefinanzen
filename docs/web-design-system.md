@@ -140,7 +140,7 @@ Verbleibende Befunde fuer die naechsten Runden:
 
 ## Typografie & Rhythmus (ab Iteration 2)
 
-Barlow Semi Condensed (Headline) ist von Natur aus schmal — Gewicht 900
+Raleway (Headline) ist von Natur aus schmal — Gewicht 900
 zusaetzlich macht es laut. Ruhigere Skala:
 
 | Ebene | Gewicht | Einsatz |
@@ -330,7 +330,7 @@ Diagramm-Innenleben, sauberer vertikaler Rhythmus.
 - **Diagramm-Innenleben.** Zwei geteilte Helfer in `dashboard-charts.js`
   (`tip()`, `legende()`): der Tooltip ist jetzt eine helle Karte (weisser
   Grund, `#cdd2c8`-Haarlinie, weicher Schatten, 8px-Radius, `#23271f`-Text,
-  Barlow Semi Condensed) statt der dunklen ECharts-Voreinstellung; die
+  Raleway) statt der dunklen ECharts-Voreinstellung; die
   Legende nutzt den Sekundaertext-Ton `#5e6358`. Konsistent ueber alle
   Builder (Wasserfall, Sankey, Balken, Ring, Treemap, Linien) sowie den
   Drill-down-Sankey in `sankey-drill.js`. Datenpalette und Farbzuordnung
@@ -674,8 +674,8 @@ konsistenten, wiedererkennbaren Gruene-Header:
 - **Pill-CTA**: vollrund, gruen gefuellt, weisse Schrift, grosszuegig
   gepolstert.
 - Duenne **gruene Akzentlinie** unter dem Header.
-- gruene.at nutzt Gotham (proprietaer) in leichtem Schnitt — wir bleiben
-  bei Barlow Semi Condensed des DS; uebernommen werden Header-Aufbau,
+- gruene.at nutzt eine proprietaere Schrift in leichtem Schnitt — wir bleiben
+  bei Raleway des DS; uebernommen werden Header-Aufbau,
   Weiss-Grund und Linkfarbe, nicht die Schrift.
 
 ### Iteration 15 — Weisser Gruene-Header (erledigt)

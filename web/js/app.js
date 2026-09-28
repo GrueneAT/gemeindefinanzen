@@ -513,11 +513,11 @@ async function exportierePanelAlsPng(panel) {
 // Das nackte ECharts-PNG ueber ein Off-Screen-Canvas montieren und einen
 // Branding-Footer (Titel, Dokument/Jahr, Datum, URL) unter dem Diagramm
 // einziehen. Pixel-Ratio 2 fuer Retina/Social-Media-Aufloesung; Hintergrund
-// weiss, Schrift Barlow (Design-System), Farben aus den DS-Tokens.
+// weiss, Schrift Raleway (Design-System), Farben aus den DS-Tokens.
 //
 // Layout (skaliert mit dem PixelRatio 2):
 //   - Footer-Hoehe ~96px (Logischpixel ~48), zweispaltig
-//   - Links: Diagrammtitel (Barlow Semi Condensed, kraeftig)
+//   - Links: Diagrammtitel (Raleway, kraeftig)
 //           + Dokument-Label und Datum daruntersitzend (weicher Ton)
 //   - Rechts: URL `gemeindefinanzen.gruene.at` (zurueckhaltend)
 //   - Trennlinie als duenner Strich oben am Footer
@@ -563,7 +563,7 @@ async function brandePngMitFooter(dataUrl, panel) {
   ctx.fillStyle = "#d7e0d3"
   ctx.fillRect(0, bild.height, canvas.width, 1)
 
-  // Footer-Text: Barlow Semi Condensed (Headline-Schrift des DS) fuer den
+  // Footer-Text: Raleway (Headline-Schrift des DS) fuer den
   // Titel, Inter/System fuer Meta und URL — Fonts vom DS bereits geladen.
   // CanvasContext kennt keine generischen DS-Tokens; die Werte sind
   // konsistent mit den DS-Variablen (--gat-web-text / --gat-web-text-soft /
@@ -571,8 +571,8 @@ async function brandePngMitFooter(dataUrl, panel) {
   const TEXT = "#1f261c"
   const TEXT_SOFT = "#4a5a3f"
   const GREEN_DEEP = "#2c6e40"
-  const FONT_HEAD = "'Barlow Semi Condensed', 'Barlow', sans-serif"
-  const FONT_COPY = "'Barlow', 'Inter', system-ui, sans-serif"
+  const FONT_HEAD = "'Raleway', sans-serif"
+  const FONT_COPY = "'Raleway', 'Inter', system-ui, sans-serif"
 
   const footerTop = bild.height
 

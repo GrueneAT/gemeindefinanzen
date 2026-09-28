@@ -67,7 +67,7 @@ function aktualisiereThemeFarben() {
 // gehalten, abgestimmt auf den ruhigen Web-Grundton — Werte aus DS-INK
 // (tonal): text fuer Achsenbeschriftung, soft fuer Sekundaertext, axis fuer
 // Achsenlinie, gridline fuer Trennlinien im Plot.
-const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const CHART_FONT = "Raleway, sans-serif"
 const ACHSE_TEXT = DS_INK.text
 const ACHSE_TEXT_SOFT = DS_INK.soft
 const ACHSE_LINIE = DS_INK.axis

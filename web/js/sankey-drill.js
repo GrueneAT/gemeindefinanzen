@@ -40,7 +40,7 @@ const INK = {
 }
 
 // Diagrammschrift = Seitenschrift (Gruene-AT-DS). Achsenwerte aus DS-INK.
-const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const CHART_FONT = "Raleway, sans-serif"
 const ACHSE_TEXT = DS_INK.text
 const ACHSE_LINIE = DS_INK.axis
 

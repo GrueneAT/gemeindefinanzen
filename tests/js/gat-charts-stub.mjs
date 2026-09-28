@@ -41,7 +41,7 @@ export const VA_DECAL = {
   rotation: -Math.PI / 4,
 }
 
-const CHART_FONT = "Barlow Semi Condensed, sans-serif"
+const CHART_FONT = "Raleway, sans-serif"
 
 export function tip(extra = {}) {
   return {
