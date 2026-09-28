@@ -49,16 +49,16 @@ test.describe('Vergleichs-Tab', () => {
       await expect(zeilen.nth(1)).toContainText('NVA 2026')
     })
 
-  test('Vorbelegung ist VA 2026 -> NVA 2026 mit Kennzahlen und Diagrammen',
+  test('Vorbelegung ist die interne Basis des NVA 2026 mit Kennzahlen und Diagrammen',
     async ({ page }) => {
       await ladePaar(page)
       await oeffneVergleich(page)
 
-      await expect(page.locator('#vgl-a')).toHaveValue(
-        await page.locator('#vgl-a option', { hasText: 'VA 2026' })
-          .first().getAttribute('value'),
-      )
+      // CONTEXT.md D1: die dokumentinterne Spalte gewinnt die Vorbelegung,
+      // auch wenn das passende VA 2026 geladen ist.
+      await expect(page.locator('#vgl-a')).toHaveValue('intern')
       await expect(page.locator('#vgl-kopf')).toContainText('VA 2026')
+      await expect(page.locator('#vgl-kopf')).toContainText('laut NVA')
       await expect(page.locator('#vgl-kopf')).toContainText('NVA 2026')
       await expect(page.locator('#vgl-kopf')).toContainText('Ergebnishaushalt')
 
@@ -128,23 +128,39 @@ test.describe('Vergleichs-Tab', () => {
         .toContainText('investive')
     })
 
-  test('Richtungstausch dreht Basis und Vergleich', async ({ page }) => {
-    await ladePaar(page)
-    await oeffneVergleich(page)
-    const a = await page.locator('#vgl-a').inputValue()
-    const b = await page.locator('#vgl-b').inputValue()
-    await page.locator('#vgl-tausch').click()
-    await expect(page.locator('#vgl-a')).toHaveValue(b)
-    await expect(page.locator('#vgl-b')).toHaveValue(a)
-    await expect(page.locator('#vgl-th-a')).toContainText('NVA 2026')
-  })
-
-  test('Kontrolle gegen die abgedruckte Vergleichsspalte laeuft',
+  test('Tausch ist bei interner Vorbelegung gesperrt, nach Dokumentwahl aktiv',
     async ({ page }) => {
       await ladePaar(page)
       await oeffneVergleich(page)
-      // Das Paar VA/NVA desselben Jahres erlaubt die Kontrolle — das Panel
-      // ist sichtbar und traegt ein Ergebnis.
+      // Interner Modus: der Tausch-Knopf ist gesperrt — der Sentinel darf
+      // nie nach b wandern.
+      await expect(page.locator('#vgl-tausch')).toBeDisabled()
+
+      // Erst das geladene VA 2026 als Basis waehlen, dann tauschen.
+      const vaWert = await page.locator('#vgl-a option', { hasText: /^VA 2026$/ })
+        .first().getAttribute('value')
+      await page.locator('#vgl-a').selectOption(vaWert)
+      await expect(page.locator('#vgl-tausch')).toBeEnabled()
+
+      const a = await page.locator('#vgl-a').inputValue()
+      const b = await page.locator('#vgl-b').inputValue()
+      await page.locator('#vgl-tausch').click()
+      await expect(page.locator('#vgl-a')).toHaveValue(b)
+      await expect(page.locator('#vgl-b')).toHaveValue(a)
+      await expect(page.locator('#vgl-th-a')).toContainText('NVA 2026')
+    })
+
+  test('Kontrolle gegen die abgedruckte Vergleichsspalte laeuft, sobald die Basis geladen ist',
+    async ({ page }) => {
+      await ladePaar(page)
+      await oeffneVergleich(page)
+      // Mit interner Vorbelegung nennt das Panel nur die Voraussetzung —
+      // erst die Wahl des geladenen VA 2026 als Basis loest die Kontrolle
+      // aus.
+      const vaWert = await page.locator('#vgl-a option', { hasText: /^VA 2026$/ })
+        .first().getAttribute('value')
+      await page.locator('#vgl-a').selectOption(vaWert)
+
       await expect(page.locator('#vgl-kontrolle-panel')).toBeVisible()
       await expect(page.locator('#vgl-kontrolle .vgl-pruef')).toBeVisible()
       // Die aufgelegte VA-Fassung kennt die Community Nurse noch nicht —
@@ -155,7 +171,7 @@ test.describe('Vergleichs-Tab', () => {
     })
 })
 
-test('Vergleichs-Tab bleibt verborgen, solange nur ein Dokument geladen ist',
+test('Vergleichs-Tab ist bereits mit einem Dokument sichtbar (interne Basis)',
   async ({ page }) => {
     await oeffneApp(page)
     await Promise.all([
@@ -164,5 +180,10 @@ test('Vergleichs-Tab bleibt verborgen, solange nur ein Dokument geladen ist',
     ])
     await page.waitForFunction(() => window.__appBereit === true)
     await wartebisDashboardBereit(page)
-    await expect(page.locator('.tab-btn[data-tab="vergleich"]')).toBeHidden()
+    // Der VA 2026 druckt seine Vergleichsspalte selbst ab — der Tab
+    // vergleicht ihn dagegen, ohne dass ein zweites Dokument geladen sein
+    // muesste.
+    await expect(page.locator('.tab-btn[data-tab="vergleich"]')).toBeVisible()
+    await page.locator('.tab-btn[data-tab="vergleich"]').click()
+    await expect(page.locator('#vgl-a')).toHaveValue('intern')
   })
