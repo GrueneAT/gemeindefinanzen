@@ -1288,6 +1288,49 @@ async function teste() {
     }).kontrolle === null,
   )
 
+  // RA-Soll (CONTEXT.md D2): der NVA 2025 druckt in seiner Spalte 1 den Plan
+  // inklusive Nachtrag ab — genau das Soll, das der RA 2025 in seiner
+  // Spalte 2 abdruckt. Die widerlegte Ausschlussbegruendung ist weg, der
+  // RA-Fall ist jetzt pruefbar.
+  const dNva2025 = datenPK.dokumente.find((d) => d.label === "NVA 2025")
+  const dRa2025 = datenPK.dokumente.find((d) => d.label === "RA 2025")
+  const raKEhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dNva2025.id,
+    b: dRa2025.id,
+    haushalt: "EHH",
+  }).kontrolle
+  pruefe(
+    "Kontrolle NVA 2025 -> RA 2025 EHH: 1156 geprueft, 0 Abweichungen, bestanden",
+    raKEhh !== null &&
+      raKEhh.geprueft === 1156 &&
+      raKEhh.abweichungen.length === 0 &&
+      raKEhh.bestanden === true,
+    JSON.stringify(raKEhh),
+  )
+  pruefe(
+    "Kontrolle NVA 2025 -> RA 2025 EHH: spalte ist 'Soll 2025 (laut RA)'",
+    raKEhh.spalte === "Soll 2025 (laut RA)",
+    raKEhh.spalte,
+  )
+  const raKFhh = baueDiff(datenPK.posten, datenPK.dokumente, {
+    a: dNva2025.id,
+    b: dRa2025.id,
+    haushalt: "FHH",
+  }).kontrolle
+  pruefe(
+    "Kontrolle NVA 2025 -> RA 2025 FHH: 1160 geprueft, 0 Abweichungen, bestanden",
+    raKFhh !== null &&
+      raKFhh.geprueft === 1160 &&
+      raKFhh.abweichungen.length === 0 &&
+      raKFhh.bestanden === true,
+    JSON.stringify(raKFhh),
+  )
+  pruefe(
+    "Kontrolle laeuft weiter fuer das Paar VA -> NVA desselben Jahres (spalte 'VA 2026')",
+    dEhh.kontrolle !== null && dEhh.kontrolle.spalte === "VA 2026",
+    dEhh.kontrolle && dEhh.kontrolle.spalte,
+  )
+
   // ======================================================================
   // Diff-Engine — interner Vergleich: die abgedruckte Vergleichsspalte als
   // Basis (BASIS_INTERN)
@@ -1403,7 +1446,7 @@ async function teste() {
   // Derselbe Vergleich fuer RA 2025 als Vergleichsdokument (Spalte 3 dort
   // "Abweichung RA-VA"). Keine belastbare Zahl bewegter Schluessel in der
   // Recherche — nur "0 Abweichungen" und "mehr als 0 geprueft" gepinnt.
-  const dRa2025 = datenPK.dokumente.find((d) => d.label === "RA 2025")
+  // (dRa2025 ist bereits oben im Kontroll-Block definiert.)
   const iRaEhh = baueDiff(datenPK.posten, datenPK.dokumente, {
     a: BASIS_INTERN,
     b: dRa2025.id,
